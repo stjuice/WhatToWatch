@@ -14,4 +14,18 @@
     <ProjectReference Include="..\ImdbMovieCatalog\ImdbMovieCatalog.csproj" />
   </ItemGroup>
 
+  <!--
+    The React client is a separate Node/Vite app. Keep its files out of the C# compile/publish
+    pipeline, but let them show up as plain (non-build) files in Solution Explorer so the folder
+    is visible without toggling "Show All Files". node_modules/dist are excluded since they are
+    generated and can be huge.
+  -->
+  <ItemGroup>
+    <Compile Remove="client\**" />
+    <Content Remove="client\**" />
+    <EmbeddedResource Remove="client\**" />
+    <None Remove="client\node_modules\**" />
+    <None Remove="client\dist\**" />
+  </ItemGroup>
+
 </Project>
