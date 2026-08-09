@@ -21,11 +21,11 @@
     generated and can be huge.
   -->
   <ItemGroup>
-    <Compile Remove="client\**" />
-    <Content Remove="client\**" />
-    <EmbeddedResource Remove="client\**" />
-    <None Remove="client\node_modules\**" />
-    <None Remove="client\dist\**" />
+    <Compile Remove="ClientApp\**" />
+    <Content Remove="ClientApp\**" />
+    <EmbeddedResource Remove="ClientApp\**" />
+    <None Remove="ClientApp\node_modules\**" />
+    <None Remove="ClientApp\dist\**" />
   </ItemGroup>
 
 </Project>
