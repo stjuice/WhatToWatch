@@ -1,12 +1,12 @@
 namespace ImdbMovieCatalog.Models;
 
-public class Watchlist
+public record Watchlist
 {
-    public string Id { get; set; } = string.Empty;
+    public required string Id { get; init; }
 
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; init; }
 
-    public DateTimeOffset? LastRefreshedAt { get; set; }
+    public DateTimeOffset? LastRefreshedAt { get; init; }
 
-    public IReadOnlyCollection<Movie> Movies { get; set; } = Array.Empty<Movie>();
+    public IReadOnlyCollection<Movie> Movies { get; init; } = [];
 }

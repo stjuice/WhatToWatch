@@ -1,16 +1,16 @@
 namespace ImdbMovieCatalog.Models;
 
-public class Movie
+public record Movie
 {
-    public string Id { get; set; } = string.Empty;
+    public required string Id { get; init; }
 
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; init; }
 
-    public int? Year { get; set; }
+    public int? Year { get; init; }
 
-    public string? PosterUrl { get; set; }
+    public string? PosterUrl { get; init; }
 
-    public double? Rating { get; set; }
+    public double? Rating { get; init; }
 
-    public IReadOnlyCollection<string> Genres { get; set; } = Array.Empty<string>();
+    public IReadOnlyCollection<string> Genres { get; init; } = [];
 }

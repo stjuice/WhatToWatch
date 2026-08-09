@@ -1,14 +1,14 @@
 namespace WhatToWatch.DTOs;
 
-public class MovieFilterRequest
+public record MovieFilterRequest
 {
-    public string? Query { get; set; }
+    public string? Query { get; init; }
 
-    public int? YearFrom { get; set; }
+    public int? YearFrom { get; init; }
 
-    public int? YearTo { get; set; }
+    public int? YearTo { get; init; }
 
-    public double? MinRating { get; set; }
+    public double? MinRating { get; init; }
 
-    public IReadOnlyCollection<string>? Genres { get; set; }
+    public IReadOnlyCollection<string>? Genres { get; init; }
 }

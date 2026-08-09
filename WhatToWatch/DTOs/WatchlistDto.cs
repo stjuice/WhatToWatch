@@ -1,12 +1,12 @@
 namespace WhatToWatch.DTOs;
 
-public class WatchlistDto
+public record WatchlistDto
 {
-    public string Id { get; set; } = string.Empty;
+    public required string Id { get; init; }
 
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; init; }
 
-    public DateTimeOffset? LastRefreshedAt { get; set; }
+    public DateTimeOffset? LastRefreshedAt { get; init; }
 
-    public IReadOnlyCollection<MovieDto> Movies { get; set; } = Array.Empty<MovieDto>();
+    public IReadOnlyCollection<MovieDto> Movies { get; init; } = [];
 }
