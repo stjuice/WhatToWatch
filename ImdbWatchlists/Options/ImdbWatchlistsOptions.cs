@@ -4,6 +4,11 @@ public class ImdbWatchlistsOptions
 {
     public const string SectionName = "ImdbWatchlists";
 
-    /// <summary>SQLite connection string used by the watchlist repository.</summary>
-    public string ConnectionString { get; set; } = "Data Source=whattowatch.db";
+    public string CacheDirectory { get; set; } =
+        Path.Combine(AppContext.BaseDirectory, "imdb-cache");
+
+    public string BrowserProfileDirectory { get; set; } =
+        Path.Combine(Path.GetTempPath(), "whattowatch-imdb-profile");
+
+    public bool BrowserHeadless { get; set; }
 }

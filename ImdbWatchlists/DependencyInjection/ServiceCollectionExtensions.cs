@@ -1,9 +1,11 @@
+using ImdbWatchlists.Browser;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Providers;
 using ImdbWatchlists.Repositories;
 using ImdbWatchlists.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Playwright;
 
 namespace ImdbWatchlists.DependencyInjection;
 
@@ -36,17 +38,19 @@ public static class ServiceCollectionExtensions
 
     private static IServiceCollection RegisterCore(IServiceCollection services)
     {
-        services.AddHttpClient<PublicWatchlistProvider>();
-        services.AddTransient<IWatchlistProvider>(sp =>
-            sp.GetRequiredService<PublicWatchlistProvider>());
+        services.AddSingleton(_ => Playwright.CreateAsync().GetAwaiter().GetResult());
+        services.AddSingleton<IBrowserManager, PlaywrightBrowserManager>();
+        services.AddSingleton<PlaywrightPublicWatchlistProvider>();
+        services.AddSingleton<IWatchlistProvider>(sp =>
+            sp.GetRequiredService<PlaywrightPublicWatchlistProvider>());
 
         services.AddSingleton<PrivateWatchlistProvider>();
-        services.AddTransient<IWatchlistProvider>(sp =>
+        services.AddSingleton<IWatchlistProvider>(sp =>
             sp.GetRequiredService<PrivateWatchlistProvider>());
 
         services.AddScoped<WatchlistService>();
         services.AddScoped<IImdbWatchlists, ImdbWatchlistsClient>();
-        services.AddScoped<IWatchlistRepository, SqliteWatchlistRepository>();
+        services.AddSingleton<IWatchlistRepository, JsonWatchlistRepository>();
 
         return services;
     }

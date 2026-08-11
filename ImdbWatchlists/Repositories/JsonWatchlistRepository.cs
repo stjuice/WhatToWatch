@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ImdbWatchlists.Models;
@@ -14,6 +15,7 @@ public sealed class JsonWatchlistRepository(IOptions<ImdbWatchlistsOptions> opti
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
     private readonly string _cacheDirectory = options.Value.CacheDirectory;
