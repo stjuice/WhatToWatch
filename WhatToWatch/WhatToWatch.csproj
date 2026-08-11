@@ -14,12 +14,6 @@
     <ProjectReference Include="..\ImdbWatchlists\ImdbWatchlists.csproj" />
   </ItemGroup>
 
-  <!--
-    The React client is a separate Node/Vite app. Keep its files out of the C# compile/publish
-    pipeline, but let them show up as plain (non-build) files in Solution Explorer so the folder
-    is visible without toggling "Show All Files". node_modules/dist are excluded since they are
-    generated and can be huge.
-  -->
   <ItemGroup>
     <Compile Remove="ClientApp\**" />
     <Content Remove="ClientApp\**" />
