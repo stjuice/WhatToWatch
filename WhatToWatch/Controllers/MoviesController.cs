@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WhatToWatch.DTOs;
+using WhatToWatch.Mapping;
 using WhatToWatch.Services;
 
 namespace WhatToWatch.Controllers;
@@ -9,26 +10,59 @@ namespace WhatToWatch.Controllers;
 public class MoviesController(IMovieService movieService) : ControllerBase
 {
     [HttpGet]
-    public Task<ActionResult<IReadOnlyCollection<MovieDto>>> GetMoviesAsync(
+    public async Task<ActionResult<IReadOnlyCollection<MovieDto>>> GetMoviesAsync(
         [FromQuery] MovieFilterRequest filter,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var movies = await movieService
+            .GetMoviesAsync(MovieMapper.ToFilter(filter), cancellationToken)
+            .ConfigureAwait(false);
+
+        if (movies is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(movies.Select(MovieMapper.ToDto).ToList());
     }
 
     [HttpGet("random")]
-    public Task<ActionResult<MovieDto>> GetRandomMovieAsync(
+    public async Task<ActionResult<MovieDto>> GetRandomMovieAsync(
         [FromQuery] MovieFilterRequest filter,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var movie = await movieService
+            .GetRandomMovieAsync(MovieMapper.ToFilter(filter), cancellationToken)
+            .ConfigureAwait(false);
+
+        if (movie is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(MovieMapper.ToDto(movie));
     }
 
     [HttpGet("{id}")]
-    public Task<ActionResult<MovieDto>> GetMovieAsync(
+    public async Task<ActionResult<MovieDto>> GetMovieAsync(
         string id,
+        [FromQuery] string watchlistId,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(watchlistId))
+        {
+            return BadRequest(new { error = "watchlistId is required." });
+        }
+
+        var movie = await movieService
+            .GetMovieAsync(watchlistId, id, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (movie is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(MovieMapper.ToDto(movie));
     }
 }

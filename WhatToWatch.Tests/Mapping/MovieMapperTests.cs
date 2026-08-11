@@ -56,6 +56,7 @@ public class MovieMapperTests
     {
         var request = new DTOs.MovieFilterRequest
         {
+            WatchlistId = "ls1",
             Query = "matrix",
             YearFrom = 1990,
             YearTo = 2000,
@@ -65,6 +66,7 @@ public class MovieMapperTests
 
         var filter = MovieMapper.ToFilter(request);
 
+        Assert.Equal(request.WatchlistId, filter.WatchlistId);
         Assert.Equal(request.Query, filter.Query);
         Assert.Equal(request.YearFrom, filter.YearFrom);
         Assert.Equal(request.YearTo, filter.YearTo);
@@ -75,8 +77,12 @@ public class MovieMapperTests
     [Fact]
     public void ToFilter_HandlesNullOptionalFields_WithoutThrowing()
     {
-        var filter = MovieMapper.ToFilter(new DTOs.MovieFilterRequest());
+        var filter = MovieMapper.ToFilter(new DTOs.MovieFilterRequest
+        {
+            WatchlistId = "ls1",
+        });
 
+        Assert.Equal("ls1", filter.WatchlistId);
         Assert.Null(filter.Query);
         Assert.Empty(filter.Genres);
     }

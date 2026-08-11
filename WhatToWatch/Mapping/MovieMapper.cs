@@ -47,6 +47,7 @@ public static class MovieMapper
 
     public static MovieFilter ToFilter(MovieFilterRequest request) => new()
     {
+        WatchlistId = request.WatchlistId,
         Query = request.Query,
         YearFrom = request.YearFrom,
         YearTo = request.YearTo,
