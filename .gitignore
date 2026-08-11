@@ -42,6 +42,12 @@ node_modules/
 dist/
 *.local
 
+## Local app data
+imdb-cache/
+*.db
+*.db-shm
+*.db-wal
+
 ## Others
 *.swp
 *~
