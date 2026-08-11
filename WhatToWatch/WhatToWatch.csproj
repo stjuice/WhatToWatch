@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ImdbMovieCatalog\ImdbMovieCatalog.csproj" />
+    <ProjectReference Include="..\ImdbWatchlists\ImdbWatchlists.csproj" />
   </ItemGroup>
 
   <!--

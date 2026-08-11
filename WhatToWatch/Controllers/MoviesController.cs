@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using WhatToWatch.DTOs;
+using WhatToWatch.Services;
 
 namespace WhatToWatch.Controllers;
 
 [ApiController]
 [Route("api/movies")]
-public class MoviesController : ControllerBase
+public class MoviesController(IMovieService movieService) : ControllerBase
 {
     [HttpGet]
-    public Task<ActionResult<IReadOnlyCollection<MovieDto>>> GetMovies(
+    public Task<ActionResult<IReadOnlyCollection<MovieDto>>> GetMoviesAsync(
         [FromQuery] MovieFilterRequest filter,
         CancellationToken cancellationToken)
     {
@@ -16,7 +17,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("random")]
-    public Task<ActionResult<MovieDto>> GetRandomMovie(
+    public Task<ActionResult<MovieDto>> GetRandomMovieAsync(
         [FromQuery] MovieFilterRequest filter,
         CancellationToken cancellationToken)
     {
@@ -24,7 +25,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public Task<ActionResult<MovieDto>> GetMovie(
+    public Task<ActionResult<MovieDto>> GetMovieAsync(
         string id,
         CancellationToken cancellationToken)
     {

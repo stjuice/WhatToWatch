@@ -1,10 +1,14 @@
+using ImdbWatchlists.DependencyInjection;
+using WhatToWatch.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// TODO: builder.Services.AddImdbMovieCatalog();
+builder.Services.AddImdbWatchlists(builder.Configuration);
+builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<IWatchlistService, WatchlistService>();
 
 var app = builder.Build();
 

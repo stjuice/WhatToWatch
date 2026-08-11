@@ -1,21 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using WhatToWatch.DTOs;
+using WhatToWatch.Services;
 
 namespace WhatToWatch.Controllers;
 
 [ApiController]
 [Route("api/watchlists")]
-public class WatchlistsController : ControllerBase
+public class WatchlistsController(IWatchlistService watchlistService) : ControllerBase
 {
     [HttpGet]
-    public Task<ActionResult<IReadOnlyCollection<WatchlistDto>>> GetWatchlists(
+    public Task<ActionResult<IReadOnlyCollection<WatchlistDto>>> GetWatchlistsAsync(
         CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
     [HttpGet("{id}")]
-    public Task<ActionResult<WatchlistDto>> GetWatchlist(
+    public Task<ActionResult<WatchlistDto>> GetWatchlistAsync(
         string id,
         CancellationToken cancellationToken)
     {
@@ -23,7 +24,7 @@ public class WatchlistsController : ControllerBase
     }
 
     [HttpPost("{id}/refresh")]
-    public Task<IActionResult> RefreshWatchlist(
+    public Task<IActionResult> RefreshWatchlistAsync(
         string id,
         CancellationToken cancellationToken)
     {

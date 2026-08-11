@@ -1,36 +1,29 @@
-using WhatToWatch.Controllers;
-
 namespace WhatToWatch.Tests.Controllers;
 
 public class MoviesControllerTests
 {
     [Fact(Skip = "Not implemented")]
-    public void GetMovies_ReturnsOkWithMovies_WhenFilterMatchesResults()
+    public void GetMoviesAsync_ReturnsOkWithMovies_WhenFilterMatchesResults()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void GetMovies_ReturnsEmptyList_WhenNoMoviesMatchFilter()
+    public void GetRandomMovieAsync_ReturnsOkWithMovie_WhenMatchesExist()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void GetRandomMovie_ReturnsOkWithMovie_WhenMatchesExist()
+    public void GetRandomMovieAsync_ReturnsNotFound_WhenNoMoviesMatchFilter()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void GetRandomMovie_ReturnsNotFound_WhenNoMoviesMatchFilter()
+    public void GetMovieAsync_ReturnsOkWithMovie_WhenIdExists()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void GetMovie_ReturnsOkWithMovie_WhenIdExists()
-    {
-    }
-
-    [Fact(Skip = "Not implemented")]
-    public void GetMovie_ReturnsNotFound_WhenIdDoesNotExist()
+    public void GetMovieAsync_ReturnsNotFound_WhenIdDoesNotExist()
     {
     }
 }

@@ -10,6 +10,7 @@ export interface MovieDto {
 export interface WatchlistDto {
   id: string;
   name: string;
+  url?: string;
   lastRefreshedAt?: string;
   movies: MovieDto[];
 }

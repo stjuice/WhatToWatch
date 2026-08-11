@@ -1,31 +1,29 @@
-using WhatToWatch.Controllers;
-
 namespace WhatToWatch.Tests.Controllers;
 
 public class WatchlistsControllerTests
 {
     [Fact(Skip = "Not implemented")]
-    public void GetWatchlists_ReturnsOkWithAllWatchlists()
+    public void GetWatchlistsAsync_ReturnsOkWithAllWatchlists()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void GetWatchlist_ReturnsOkWithWatchlist_WhenIdExists()
+    public void GetWatchlistAsync_ReturnsOkWithWatchlist_WhenIdExists()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void GetWatchlist_ReturnsNotFound_WhenIdDoesNotExist()
+    public void GetWatchlistAsync_ReturnsNotFound_WhenIdDoesNotExist()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void RefreshWatchlist_ReturnsAccepted_WhenRefreshIsTriggered()
+    public void RefreshWatchlistAsync_ReturnsAccepted_WhenRefreshIsTriggered()
     {
     }
 
     [Fact(Skip = "Not implemented")]
-    public void RefreshWatchlist_ReturnsNotFound_WhenIdDoesNotExist()
+    public void RefreshWatchlistAsync_ReturnsNotFound_WhenIdDoesNotExist()
     {
     }
 }

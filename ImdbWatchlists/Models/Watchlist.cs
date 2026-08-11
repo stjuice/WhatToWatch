@@ -1,6 +1,6 @@
-namespace WhatToWatch.DTOs;
+namespace ImdbWatchlists.Models;
 
-public record WatchlistDto
+public record Watchlist
 {
     public required string Id { get; init; }
 
@@ -10,5 +10,5 @@ public record WatchlistDto
 
     public DateTimeOffset? LastRefreshedAt { get; init; }
 
-    public IReadOnlyCollection<MovieDto> Movies { get; init; } = [];
+    public IReadOnlyCollection<Movie> Movies { get; init; } = [];
 }
