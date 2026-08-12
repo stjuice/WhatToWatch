@@ -7,6 +7,7 @@
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
+    <SkipSpaBuild Condition="'$(SkipSpaBuild)' == ''">false</SkipSpaBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,5 +27,30 @@
     <None Remove="ClientApp\node_modules\**" />
     <None Remove="ClientApp\dist\**" />
   </ItemGroup>
+
+  <Target Name="BuildSpa" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipSpaBuild)' != 'true'">
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" Condition="Exists('$(SpaRoot)package-lock.json')" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" Condition="!Exists('$(SpaRoot)package-lock.json')" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+  </Target>
+
+  <Target Name="CopySpaToWwwroot" AfterTargets="BuildSpa" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipSpaBuild)' != 'true'">
+    <ItemGroup>
+      <_SpaDistFiles Include="$(SpaRoot)dist\**\*.*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(MSBuildProjectDirectory)\wwwroot" Condition="Exists('$(MSBuildProjectDirectory)\wwwroot')" />
+    <Copy
+      SourceFiles="@(_SpaDistFiles)"
+      DestinationFiles="@(_SpaDistFiles->'$(MSBuildProjectDirectory)\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="IncludeWwwrootInPublish" BeforeTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="wwwroot\**\*.*" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
 </Project>

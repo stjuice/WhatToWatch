@@ -1,0 +1,17 @@
+**/.git
+**/.vs
+**/.idea
+**/bin
+**/obj
+**/node_modules
+**/ClientApp/dist
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/imdb-cache
+**/imdb-session.json
+**/wwwroot
+**/.env
+**/*.user
+**/TestResults
+**/agent-transcripts

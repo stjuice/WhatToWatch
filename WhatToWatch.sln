@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImdbWatchlists", "ImdbWatch
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImdbWatchlists.Tests", "ImdbWatchlists.Tests\ImdbWatchlists.Tests.csproj", "{F133E463-861B-4D3A-9933-F44B0A648C86}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImdbSessionBootstrap", "ImdbSessionBootstrap\ImdbSessionBootstrap.csproj", "{2498BA3D-F940-4D77-8969-56638B52AAA7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,18 @@ Global
 		{F133E463-861B-4D3A-9933-F44B0A648C86}.Release|x64.Build.0 = Release|Any CPU
 		{F133E463-861B-4D3A-9933-F44B0A648C86}.Release|x86.ActiveCfg = Release|Any CPU
 		{F133E463-861B-4D3A-9933-F44B0A648C86}.Release|x86.Build.0 = Release|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Debug|x64.Build.0 = Debug|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Debug|x86.Build.0 = Debug|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Release|x64.ActiveCfg = Release|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Release|x64.Build.0 = Release|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Release|x86.ActiveCfg = Release|Any CPU
+		{2498BA3D-F940-4D77-8969-56638B52AAA7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
