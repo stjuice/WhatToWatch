@@ -121,6 +121,47 @@ public class ImdbListHtmlParserTests
         Assert.Null(inception.Director);
     }
 
+    [Fact]
+    public void Parse_ReadsDirector_FromPrincipalCreditsV2()
+    {
+        const string html =
+            """
+            <html><body>
+            <script id="__NEXT_DATA__" type="application/json">
+            {
+              "props": { "pageProps": { "mainColumnData": { "list": {
+                "name": { "originalText": "Credits V2" },
+                "titleListItemSearch": { "edges": [
+                  { "listItem": {
+                      "id": "tt0068646",
+                      "titleText": { "text": "The Godfather" },
+                      "principalCreditsV2": [
+                        {
+                          "grouping": { "text": "Director" },
+                          "credits": [
+                            { "name": { "nameText": { "text": "Francis Ford Coppola" } } }
+                          ]
+                        },
+                        {
+                          "grouping": { "text": "Stars" },
+                          "credits": [
+                            { "name": { "nameText": { "text": "Marlon Brando" } } }
+                          ]
+                        }
+                      ]
+                  } }
+                ] }
+              } } } }
+            }
+            </script>
+            </body></html>
+            """;
+
+        var movie = Assert.Single(ImdbListHtmlParser.Parse(html, ListUrl).Movies);
+
+        Assert.Equal("Francis Ford Coppola", movie.Director);
+    }
+
     private static string BuildHtml() =>
         """
         <html>

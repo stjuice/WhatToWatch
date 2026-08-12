@@ -242,6 +242,12 @@ public static partial class ImdbListHtmlParser
 
     private static string? ReadDirector(JsonElement element)
     {
+        var fromPrincipalV2 = ReadDirectorFromPrincipalCreditsV2(element);
+        if (fromPrincipalV2 is not null)
+        {
+            return fromPrincipalV2;
+        }
+
         var fromPrincipal = ReadDirectorFromPrincipalCredits(element);
         if (fromPrincipal is not null)
         {
@@ -251,6 +257,38 @@ public static partial class ImdbListHtmlParser
         foreach (var key in (string[])["directorsPageTitle", "directors", "directorCredits"])
         {
             var name = ReadDirectorFromCreditsArray(element, key);
+            if (name is not null)
+            {
+                return name;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadDirectorFromPrincipalCreditsV2(JsonElement element)
+    {
+        if (!element.TryGetProperty("principalCreditsV2", out var principalCredits) ||
+            principalCredits.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var entry in principalCredits.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var groupingText = ReadString(entry, "grouping", "text");
+            if (!string.Equals(groupingText, "Director", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(groupingText, "Directors", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var name = ReadFirstCreditName(entry);
             if (name is not null)
             {
                 return name;
