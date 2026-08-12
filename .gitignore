@@ -44,9 +44,12 @@ dist/
 
 ## Local app data
 imdb-cache/
+imdb-session.json
 *.db
 *.db-shm
 *.db-wal
+
+WhatToWatch/wwwroot/
 
 ## Others
 *.swp
