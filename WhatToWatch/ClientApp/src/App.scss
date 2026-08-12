@@ -42,6 +42,13 @@ body {
   padding: 0.5em;
 }
 
+.app__brand-link {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  cursor: pointer;
+}
+
 .app__logo {
   display: block;
   width: 100%;

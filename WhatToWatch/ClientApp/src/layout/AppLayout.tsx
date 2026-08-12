@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "../assets/logo.svg";
 import { AppRoutes } from "../routes/AppRoutes";
 import { routePaths } from "../routes/routePaths";
@@ -10,7 +10,9 @@ export const AppLayout = () => {
   return (
     <div className="app">
       <header className={`app__brand${isMovieScreen ? " app__brand--compact" : ""}`}>
-        <img className="app__logo" src={logo} alt="WhatToWatch" />
+        <Link className="app__brand-link" to={routePaths.home} aria-label="На головну">
+          <img className="app__logo" src={logo} alt="WhatToWatch" draggable={false} />
+        </Link>
       </header>
 
       <main className="app__main">
