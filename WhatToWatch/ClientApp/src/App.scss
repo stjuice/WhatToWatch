@@ -38,10 +38,18 @@ body {
   padding: 2em;
 }
 
+.app__brand--compact {
+  padding: 0.5em;
+}
+
 .app__logo {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.app__brand--compact .app__logo {
+  width: 60%;
 }
 
 .app__main {

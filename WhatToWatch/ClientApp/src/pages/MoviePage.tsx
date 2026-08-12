@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import frame from "../assets/frame.svg";
 import placeholder from "../assets/placeholder.svg";
 import { RerollButton } from "../components/RerollButton";
@@ -15,19 +16,27 @@ const formatRuntime = (minutes?: number): string | null => {
 };
 
 export const MoviePage = () => {
-  const { movie } = useAppState();
+  const { movie, isPicking, pickError, pickRandomMovie } = useAppState();
   const posterSrc = movie?.posterUrl || placeholder;
   const genres = movie?.genres?.filter(Boolean) ?? [];
   const runtime = formatRuntime(movie?.runtimeMinutes);
 
+  useEffect(() => {
+    if (!movie && !isPicking && !pickError) {
+      void pickRandomMovie();
+    }
+  }, [movie, isPicking, pickError, pickRandomMovie]);
+
   return (
     <div className="movie-detail">
-      <div className="movie-detail__poster-stack">
-        <img
-          className="movie-detail__under"
-          src={posterSrc}
-          alt={movie?.title ? `Постер: ${movie.title}` : "Постер фільму"}
-        />
+      <div className="movie-detail__poster-stack" data-loading={isPicking}>
+        <div className="movie-detail__window">
+          <img
+            className="movie-detail__poster"
+            src={posterSrc}
+            alt={movie?.title ? `Постер: ${movie.title}` : "Постер фільму"}
+          />
+        </div>
         <img className="movie-detail__frame" src={frame} alt="" draggable={false} />
       </div>
 
@@ -51,6 +60,12 @@ export const MoviePage = () => {
             ★
           </span>
           <span>{movie.rating.toFixed(1)}</span>
+        </p>
+      ) : null}
+
+      {pickError ? (
+        <p className="movie-detail__error" role="alert">
+          {pickError}
         </p>
       ) : null}
 

@@ -9,11 +9,9 @@ export const AppLayout = () => {
 
   return (
     <div className="app">
-      {isMovieScreen ? null : (
-        <header className="app__brand">
-          <img className="app__logo" src={logo} alt="WhatToWatch" />
-        </header>
-      )}
+      <header className={`app__brand${isMovieScreen ? " app__brand--compact" : ""}`}>
+        <img className="app__logo" src={logo} alt="WhatToWatch" />
+      </header>
 
       <main className="app__main">
         <AppRoutes />
