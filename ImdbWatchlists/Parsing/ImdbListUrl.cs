@@ -28,9 +28,7 @@ public static partial class ImdbListUrl
     public static string WithPage(string url, int page)
     {
         if (page <= 1)
-        {
             return url;
-        }
 
         var uri = new Uri(url, UriKind.Absolute);
         var query = uri.Query.TrimStart('?');

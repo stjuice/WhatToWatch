@@ -46,7 +46,7 @@ public class RandomizationService(Random? random = null) : IRandomizationService
                         genre.Equals(required, StringComparison.OrdinalIgnoreCase))));
         }
 
-        return query.ToList();
+        return [.. query];
     }
 
     public Movie? PickRandom(IReadOnlyList<Movie> movies)
@@ -54,9 +54,7 @@ public class RandomizationService(Random? random = null) : IRandomizationService
         ArgumentNullException.ThrowIfNull(movies);
 
         if (movies.Count == 0)
-        {
             return null;
-        }
 
         return movies[_random.Next(movies.Count)];
     }

@@ -49,15 +49,11 @@ public sealed class PlaywrightPublicWatchlistProvider(
                 foreach (var movie in listPage.Watchlist.Movies)
                 {
                     if (seenIds.Add(movie.Id))
-                    {
                         movies.Add(movie);
-                    }
                 }
 
                 if (!listPage.HasNextPage)
-                {
                     break;
-                }
             }
 
             await browserManager.PersistStorageStateAsync(cancellationToken);

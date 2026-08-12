@@ -50,9 +50,7 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
             .ConfigureAwait(false);
 
         if (watchlist is null)
-        {
             return NotFound();
-        }
 
         return Ok(MovieMapper.ToDto(watchlist));
     }
@@ -69,9 +67,7 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
                 .ConfigureAwait(false);
 
             if (watchlist is null)
-            {
                 return NotFound();
-            }
 
             return Ok(MovieMapper.ToDto(watchlist));
         }
@@ -84,9 +80,7 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
     private ActionResult MapImdbException(ImdbWatchlistException exception)
     {
         if (IsClientError(exception))
-        {
             return BadRequest(new { error = exception.Message });
-        }
 
         return StatusCode(
             StatusCodes.Status502BadGateway,

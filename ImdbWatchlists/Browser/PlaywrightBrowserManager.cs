@@ -29,9 +29,7 @@ public sealed class PlaywrightBrowserManager(
     public async Task<IBrowserContext> GetContextAsync(CancellationToken cancellationToken = default)
     {
         if (_context is not null)
-        {
             return _context;
-        }
 
         await _contextLock.WaitAsync(cancellationToken);
         try
@@ -57,15 +55,11 @@ public sealed class PlaywrightBrowserManager(
                 context.SetDefaultNavigationTimeout(NavigationTimeoutMs);
 
                 if (_options.BlockNonEssentialResources)
-                {
                     await context.RouteAsync("**/*", BlockNonEssentialResourceAsync)
                         .WaitAsync(cancellationToken);
-                }
 
                 if (isNewProfile)
-                {
                     await SeedSessionCookiesAsync(context, cancellationToken);
-                }
 
                 _context = context;
             }

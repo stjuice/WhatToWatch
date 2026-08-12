@@ -9,9 +9,7 @@ var startUrl = args.Length > 1
 
 var outputDirectory = Path.GetDirectoryName(outputPath);
 if (!string.IsNullOrWhiteSpace(outputDirectory))
-{
     Directory.CreateDirectory(outputDirectory);
-}
 
 Console.WriteLine("IMDb session bootstrap");
 Console.WriteLine($"Output: {outputPath}");

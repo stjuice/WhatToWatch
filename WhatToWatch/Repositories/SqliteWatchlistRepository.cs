@@ -55,7 +55,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return entities.Select(ToModel).ToList();
+        return [.. entities.Select(ToModel)];
     }
 
     public async Task SaveAsync(
@@ -124,7 +124,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
         Name = entity.Name,
         Url = entity.Url,
         LastRefreshedAt = entity.LastRefreshedAt,
-        Movies = entity.Movies
+        Movies = [.. entity.Movies
             .Select(movie => new Movie
             {
                 Id = movie.Id,
@@ -136,7 +136,6 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
                 RuntimeMinutes = movie.RuntimeMinutes,
                 Director = movie.Director,
                 Genres = [.. movie.Genres],
-            })
-            .ToList(),
+            })],
     };
 }

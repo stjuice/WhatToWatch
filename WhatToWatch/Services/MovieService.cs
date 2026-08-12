@@ -36,9 +36,7 @@ public class MovieService(
             cancellationToken).ConfigureAwait(false);
 
         if (watchlist is null)
-        {
             return null;
-        }
 
         return randomizationService.Filter(watchlist.Movies, filter);
     }
@@ -55,9 +53,7 @@ public class MovieService(
             cancellationToken).ConfigureAwait(false);
 
         if (watchlist is null)
-        {
             return null;
-        }
 
         var filtered = randomizationService.Filter(watchlist.Movies, filter);
         return randomizationService.PickRandom(filtered);
@@ -72,9 +68,7 @@ public class MovieService(
             .ConfigureAwait(false);
 
         if (watchlist is null || watchlist.Movies.Count > 0)
-        {
             return watchlist;
-        }
 
         return await watchlistService
             .RefreshWatchlistAsync(watchlistId, cancellationToken)

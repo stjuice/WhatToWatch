@@ -19,9 +19,7 @@ public class MoviesController(IMovieService movieService) : ControllerBase
             .ConfigureAwait(false);
 
         if (movies is null)
-        {
             return NotFound();
-        }
 
         return Ok(movies.Select(MovieMapper.ToDto).ToList());
     }
@@ -36,9 +34,7 @@ public class MoviesController(IMovieService movieService) : ControllerBase
             .ConfigureAwait(false);
 
         if (movie is null)
-        {
             return NotFound();
-        }
 
         return Ok(MovieMapper.ToDto(movie));
     }
@@ -50,18 +46,14 @@ public class MoviesController(IMovieService movieService) : ControllerBase
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(watchlistId))
-        {
             return BadRequest(new { error = "watchlistId is required." });
-        }
 
         var movie = await movieService
             .GetMovieAsync(watchlistId, id, cancellationToken)
             .ConfigureAwait(false);
 
         if (movie is null)
-        {
             return NotFound();
-        }
 
         return Ok(MovieMapper.ToDto(movie));
     }

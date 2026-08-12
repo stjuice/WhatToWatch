@@ -29,9 +29,7 @@ public sealed class JsonWatchlistRepository(IOptions<ImdbWatchlistsOptions> opti
 
         var path = GetPath(id);
         if (!File.Exists(path))
-        {
             return null;
-        }
 
         await using var stream = File.OpenRead(path);
         return await JsonSerializer.DeserializeAsync<Watchlist>(
@@ -57,9 +55,7 @@ public sealed class JsonWatchlistRepository(IOptions<ImdbWatchlistsOptions> opti
                 cancellationToken);
 
             if (watchlist is not null)
-            {
                 watchlists.Add(watchlist);
-            }
         }
 
         return watchlists;

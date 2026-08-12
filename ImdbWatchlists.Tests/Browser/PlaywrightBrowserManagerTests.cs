@@ -97,7 +97,7 @@ public class PlaywrightBrowserManagerTests
                 It.IsAny<BrowserContextRouteOptions>()))
             .ReturnsAsync(Mock.Of<IAsyncDisposable>());
         context.Setup(item => item.AddCookiesAsync(It.IsAny<IEnumerable<Cookie>>()))
-            .Callback<IEnumerable<Cookie>>(cookies => seededCookies = cookies.ToList())
+            .Callback<IEnumerable<Cookie>>(cookies => seededCookies = [.. cookies])
             .Returns(Task.CompletedTask);
 
         var options = Microsoft.Extensions.Options.Options.Create(new ImdbWatchlistsOptions
