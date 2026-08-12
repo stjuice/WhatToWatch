@@ -114,3 +114,8 @@ $controls-bottom: 8rem;
   letter-spacing: 0.04em;
   cursor: pointer;
 }
+
+.watchlist-bucket__preview-toggle[data-active="true"] {
+  border-color: $cyan;
+  color: $cyan;
+}

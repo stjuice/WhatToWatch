@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { AddLinkButton } from "../components/AddLinkButton";
 import { ClearLinkButton } from "../components/ClearLinkButton";
@@ -26,20 +26,26 @@ const resolveBucketState = (
 export const HomePage = () => {
   const { url, setUrl, isListLoaded, isImporting, importError, pickError, loadList } =
     useAppState();
+
   // Dev-only switch to preview the empty/upload states without dropping the imported list.
   const [isEmptyPreview, setIsEmptyPreview] = useState(false);
   const showAsLoaded = isListLoaded && !(import.meta.env.DEV && isEmptyPreview);
   const bucketState = resolveBucketState(showAsLoaded, isImporting, url);
   const error = importError ?? pickError;
 
+  useEffect(() => {
+    if (isImporting || !isListLoaded)
+      setIsEmptyPreview(false);
+
+  }, [isImporting, isListLoaded]);
+
   const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUrl(event.target.value);
   };
 
   const handleUrlKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter") {
+    if (event.key !== "Enter")
       return;
-    }
 
     event.preventDefault();
     void loadList();
@@ -80,6 +86,7 @@ export const HomePage = () => {
         <button
           type="button"
           className="watchlist-bucket__preview-toggle"
+          data-active={isEmptyPreview ? "true" : undefined}
           onClick={() => {
             setIsEmptyPreview((current) => !current);
           }}
