@@ -1,27 +1,70 @@
 @use "../styles/variables" as *;
 
+// How high the input/button block sits above the bottom of the bucket art.
+// The block is taken out of flow, so changing this never moves the bucket.
+$controls-bottom: 8rem;
+
 .watchlist-bucket {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.25rem;
+  margin-bottom: 7em;
 }
 
+// No fixed height: the box hugs the bucket art so nothing offsets it.
 .watchlist-bucket__stage {
   position: relative;
-  width: min(100%, $bucket-max-width);
-  aspect-ratio: 1 / 1.15;
+  width: 100%;
   display: grid;
   place-items: center;
 }
 
+.watchlist-bucket[data-state="importing"] .watchlist-bucket__stage img {
+  animation: watchlist-bucket-pulse 1.1s ease-in-out infinite;
+  padding: 0 2em;
+
+}
+
+@keyframes watchlist-bucket-pulse {
+  50% {
+    transform: scale(0.96);
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watchlist-bucket__stage img {
+    animation: none !important;
+    transition: none;
+    padding: 0 2em;
+  }
+}
+
 .watchlist-bucket__controls {
-  width: min(100%, $bucket-max-width);
+  position: absolute;
+  right: 0;
+  bottom: $controls-bottom;
+  left: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.85rem;
+  // Let clicks through the reserved gaps so the bucket underneath stays clickable.
+  pointer-events: none;
+}
+
+.watchlist-bucket__input,
+.watchlist-bucket__action > * {
+  pointer-events: auto;
+}
+
+// Slot is always rendered so the input keeps its position when the button appears.
+.watchlist-bucket__action {
+  display: flex;
+  min-height: $tap-min;
 }
 
 .watchlist-bucket__input {
@@ -30,7 +73,7 @@
   padding: 0.7rem 1rem;
   border: 2px solid $cyan;
   border-radius: 0.35rem;
-  background: transparent;
+  background: $bg;
   color: $text;
   font-family: $font-display;
   font-size: 0.95rem;
@@ -49,9 +92,25 @@
   box-shadow: 0 0 0 1px $cyan;
 }
 
+.watchlist-bucket__input:disabled {
+  opacity: 0.6;
+}
+
 .watchlist-bucket__error {
   margin: 0;
   color: $red;
   font-size: 0.9rem;
   text-align: center;
+}
+
+.watchlist-bucket__preview-toggle {
+  padding: 0.35rem 0.7rem;
+  border: 1px dashed $text-muted;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
 }

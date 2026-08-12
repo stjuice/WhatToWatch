@@ -4,8 +4,8 @@ import { useAppState } from "../state/AppStateContext";
 import "./ClearLinkButton.scss";
 
 export const ClearLinkButton = () => {
-  const { url, clearList } = useAppState();
-  const canClear = url.trim().length > 0;
+  const { url, clearList, isImporting } = useAppState();
+  const canClear = url.trim().length > 0 && !isImporting;
 
   return (
     <Button
