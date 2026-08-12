@@ -6,6 +6,7 @@ import type {
 } from "../types/movie";
 
 const WATCHLIST_ID_KEY = "watchlistId";
+const MOVIE_ID_KEY = "movieId";
 
 export const getStoredWatchlistId = (): string | null => {
   return sessionStorage.getItem(WATCHLIST_ID_KEY);
@@ -17,6 +18,18 @@ export const setStoredWatchlistId = (id: string): void => {
 
 export const clearStoredWatchlistId = (): void => {
   sessionStorage.removeItem(WATCHLIST_ID_KEY);
+};
+
+export const getStoredMovieId = (): string | null => {
+  return sessionStorage.getItem(MOVIE_ID_KEY);
+};
+
+export const setStoredMovieId = (id: string): void => {
+  sessionStorage.setItem(MOVIE_ID_KEY, id);
+};
+
+export const clearStoredMovieId = (): void => {
+  sessionStorage.removeItem(MOVIE_ID_KEY);
 };
 
 const readErrorMessage = async (response: Response): Promise<string> => {

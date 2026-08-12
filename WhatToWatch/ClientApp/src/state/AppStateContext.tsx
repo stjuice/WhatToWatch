@@ -1,10 +1,22 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import {
+  clearStoredMovieId,
   clearStoredWatchlistId,
+  getMovie,
   getRandomMovie,
+  getStoredMovieId,
   getStoredWatchlistId,
   importWatchlist,
+  setStoredMovieId,
 } from "../api/moviesApi";
 import type { MovieDto } from "../types/movie";
 
@@ -19,6 +31,7 @@ export interface AppState {
   clearList: () => void;
   movie: MovieDto | null;
   setMovie: Dispatch<SetStateAction<MovieDto | null>>;
+  isRestoringMovie: boolean;
   isPicking: boolean;
   pickError: string | null;
   pickRandomMovie: () => Promise<MovieDto | null>;
@@ -33,6 +46,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [movie, setMovie] = useState<MovieDto | null>(null);
+  const [isRestoringMovie, setIsRestoringMovie] = useState(
+    () => Boolean(getStoredWatchlistId() && getStoredMovieId())
+  );
   const [isPicking, setIsPicking] = useState(false);
   const [pickError, setPickError] = useState<string | null>(null);
 
@@ -56,12 +72,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setWatchlistId(watchlist.id);
       setIsListLoaded(true);
       setMovie(null);
+      clearStoredMovieId();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Не вдалося додати список";
       setImportError(message);
       setIsListLoaded(false);
       setWatchlistId(null);
       clearStoredWatchlistId();
+      clearStoredMovieId();
     } finally {
       isImportingRef.current = false;
       setIsImporting(false);
@@ -76,6 +94,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setPickError(null);
     setMovie(null);
     clearStoredWatchlistId();
+    clearStoredMovieId();
   }, []);
 
   const pickRandomMovie = useCallback(async (): Promise<MovieDto | null> => {
@@ -90,6 +109,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     try {
       const picked = await getRandomMovie(watchlistId);
       setMovie(picked);
+      setStoredMovieId(picked.id);
       return picked;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Не вдалося обрати фільм";
@@ -100,6 +120,41 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setIsPicking(false);
     }
   }, [watchlistId]);
+
+  useEffect(() => {
+    if (!isRestoringMovie) {
+      return;
+    }
+
+    const storedMovieId = getStoredMovieId();
+    if (!watchlistId || !storedMovieId) {
+      setIsRestoringMovie(false);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const restore = async () => {
+      try {
+        const restored = await getMovie(storedMovieId, watchlistId);
+        if (!isCancelled) {
+          setMovie(restored);
+        }
+      } catch {
+        clearStoredMovieId();
+      } finally {
+        if (!isCancelled) {
+          setIsRestoringMovie(false);
+        }
+      }
+    };
+
+    void restore();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isRestoringMovie, watchlistId]);
 
   const state = useMemo<AppState>(
     () => ({
@@ -113,6 +168,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       clearList,
       movie,
       setMovie,
+      isRestoringMovie,
       isPicking,
       pickError,
       pickRandomMovie,
@@ -126,6 +182,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       loadList,
       clearList,
       movie,
+      isRestoringMovie,
       isPicking,
       pickError,
       pickRandomMovie,

@@ -4,9 +4,13 @@ import { useAppState } from "../state/AppStateContext";
 import { routePaths } from "./routePaths";
 
 export const MovieRoute = () => {
-  const { isListLoaded } = useAppState();
+  const { isListLoaded, movie, isRestoringMovie } = useAppState();
 
-  if (!isListLoaded) {
+  if (isRestoringMovie) {
+    return null;
+  }
+
+  if (!isListLoaded || !movie) {
     return <Navigate to={routePaths.home} replace />;
   }
 

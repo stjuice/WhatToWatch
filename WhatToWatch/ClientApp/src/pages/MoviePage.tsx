@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import frame from "../assets/frame.svg";
 import placeholder from "../assets/placeholder.svg";
 import { RerollButton } from "../components/RerollButton";
@@ -16,16 +15,10 @@ const formatRuntime = (minutes?: number): string | null => {
 };
 
 export const MoviePage = () => {
-  const { movie, isPicking, pickError, pickRandomMovie } = useAppState();
+  const { movie, isPicking, pickError } = useAppState();
   const posterSrc = movie?.posterUrl || placeholder;
   const genres = movie?.genres?.filter(Boolean) ?? [];
   const runtime = formatRuntime(movie?.runtimeMinutes);
-
-  useEffect(() => {
-    if (!movie && !isPicking && !pickError) {
-      void pickRandomMovie();
-    }
-  }, [movie, isPicking, pickError, pickRandomMovie]);
 
   return (
     <div className="movie-detail">
