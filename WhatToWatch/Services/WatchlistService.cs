@@ -1,5 +1,6 @@
 using ImdbWatchlists;
 using ImdbWatchlists.Models;
+using ImdbWatchlists.Parsing;
 using WhatToWatch.Mapping;
 using WhatToWatch.Repositories;
 using Watchlist = WhatToWatch.Models.Watchlist;
@@ -16,16 +17,16 @@ public class WatchlistService(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
+        var listUrl = ImdbListUrl.Normalize(url);
+
         var cached = await repository
-            .GetByUrlAsync(url, cancellationToken)
+            .GetByUrlAsync(listUrl, cancellationToken)
             .ConfigureAwait(false);
 
         if (cached is not null)
-        {
             return cached;
-        }
 
-        return await FetchAndSaveAsync(url, cancellationToken).ConfigureAwait(false);
+        return await FetchAndSaveAsync(listUrl, cancellationToken).ConfigureAwait(false);
     }
 
     public Task<Watchlist?> GetWatchlistAsync(
@@ -51,15 +52,11 @@ public class WatchlistService(
             .ConfigureAwait(false);
 
         if (existing is null)
-        {
             return null;
-        }
 
         if (string.IsNullOrWhiteSpace(existing.Url))
-        {
             throw new InvalidOperationException(
                 $"Watchlist '{id}' has no URL to refresh from.");
-        }
 
         return await FetchAndSaveAsync(existing.Url, cancellationToken).ConfigureAwait(false);
     }
