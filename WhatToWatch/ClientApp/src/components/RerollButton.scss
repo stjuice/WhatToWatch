@@ -1,0 +1,9 @@
+.reroll-button {
+  width: min(42vw, 7.5rem);
+  margin-top: 0.35rem;
+  padding: 0.5rem;
+}
+
+.reroll-button:disabled {
+  opacity: 0.55;
+}

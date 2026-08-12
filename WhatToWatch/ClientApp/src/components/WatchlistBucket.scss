@@ -1,0 +1,57 @@
+@use "../styles/variables" as *;
+
+.watchlist-bucket {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.watchlist-bucket__stage {
+  position: relative;
+  width: min(100%, $bucket-max-width);
+  aspect-ratio: 1 / 1.15;
+  display: grid;
+  place-items: center;
+}
+
+.watchlist-bucket__controls {
+  width: min(100%, $bucket-max-width);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
+.watchlist-bucket__input {
+  width: 100%;
+  min-height: $tap-min;
+  padding: 0.7rem 1rem;
+  border: 2px solid $cyan;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: $text;
+  font-family: $font-display;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.watchlist-bucket__input::placeholder {
+  color: $text-muted;
+  opacity: 1;
+}
+
+.watchlist-bucket__input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px $cyan;
+}
+
+.watchlist-bucket__error {
+  margin: 0;
+  color: $red;
+  font-size: 0.9rem;
+  text-align: center;
+}

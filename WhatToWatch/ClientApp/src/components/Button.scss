@@ -1,0 +1,49 @@
+@use "../styles/variables" as *;
+
+.button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: $tap-min;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $text;
+  font-family: $font-display;
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: 2px solid $cyan;
+  outline-offset: 4px;
+}
+
+.button:disabled {
+  cursor: default;
+}
+
+.button--primary {
+  padding: 0.7rem 1.25rem;
+  border-radius: 0.35rem;
+  background: $red;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.button--primary:disabled {
+  opacity: 0.55;
+}
+
+.button--icon {
+  min-width: $tap-min;
+}
+
+.button--icon img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
