@@ -22,7 +22,7 @@ export interface AppState {
 
 const AppStateContext = createContext<AppState | null>(null);
 
-export function AppStateProvider({ children }: { children: ReactNode }) {
+export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [url, setUrl] = useState("");
   const [watchlistId, setWatchlistId] = useState<string | null>(() => getStoredWatchlistId());
   const [isListLoaded, setIsListLoaded] = useState(() => Boolean(getStoredWatchlistId()));
@@ -81,9 +81,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   return <AppStateContext.Provider value={state}>{children}</AppStateContext.Provider>;
-}
+};
 
-export function useAppState(): AppState {
+export const useAppState = (): AppState => {
   const state = useContext(AppStateContext);
 
   if (!state) {
@@ -91,4 +91,4 @@ export function useAppState(): AppState {
   }
 
   return state;
-}
+};

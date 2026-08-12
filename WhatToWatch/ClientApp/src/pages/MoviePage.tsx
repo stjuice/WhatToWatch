@@ -1,10 +1,10 @@
 import frame from "../assets/frame.svg";
 import placeholder from "../assets/placeholder.svg";
+import { RerollButton } from "../components/RerollButton";
 import { useAppState } from "../state/AppStateContext";
-import { RerollButton } from "./RerollButton";
-import "./MovieDetail.scss";
+import "./MoviePage.scss";
 
-function formatRuntime(minutes?: number): string | null {
+const formatRuntime = (minutes?: number): string | null => {
   if (minutes == null || Number.isNaN(minutes) || minutes < 0) {
     return null;
   }
@@ -12,9 +12,9 @@ function formatRuntime(minutes?: number): string | null {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   return `${hours}:${mins.toString().padStart(2, "0")}`;
-}
+};
 
-export function MovieDetail() {
+export const MoviePage = () => {
   const { movie } = useAppState();
   const posterSrc = movie?.posterUrl || placeholder;
   const genres = movie?.genres?.filter(Boolean) ?? [];
@@ -57,4 +57,4 @@ export function MovieDetail() {
       <RerollButton />
     </div>
   );
-}
+};

@@ -1,3 +1,3 @@
-export function MovieList() {
+export const MovieList = () => {
   return null;
-}
+};

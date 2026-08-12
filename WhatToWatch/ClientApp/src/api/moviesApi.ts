@@ -7,19 +7,19 @@ import type {
 
 const WATCHLIST_ID_KEY = "watchlistId";
 
-export function getStoredWatchlistId(): string | null {
+export const getStoredWatchlistId = (): string | null => {
   return sessionStorage.getItem(WATCHLIST_ID_KEY);
-}
+};
 
-export function setStoredWatchlistId(id: string): void {
+export const setStoredWatchlistId = (id: string): void => {
   sessionStorage.setItem(WATCHLIST_ID_KEY, id);
-}
+};
 
-export function clearStoredWatchlistId(): void {
+export const clearStoredWatchlistId = (): void => {
   sessionStorage.removeItem(WATCHLIST_ID_KEY);
-}
+};
 
-async function readErrorMessage(response: Response): Promise<string> {
+const readErrorMessage = async (response: Response): Promise<string> => {
   try {
     const body: unknown = await response.json();
     if (
@@ -35,9 +35,9 @@ async function readErrorMessage(response: Response): Promise<string> {
   }
 
   return response.statusText || `Request failed (${response.status})`;
-}
+};
 
-async function requestJson<T>(input: string, init?: RequestInit): Promise<T> {
+const requestJson = async <T>(input: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, {
     ...init,
     headers: {
@@ -52,9 +52,9 @@ async function requestJson<T>(input: string, init?: RequestInit): Promise<T> {
   }
 
   return (await response.json()) as T;
-}
+};
 
-function toSearchParams(filter: MovieFilterRequest): URLSearchParams {
+const toSearchParams = (filter: MovieFilterRequest): URLSearchParams => {
   const params = new URLSearchParams();
   params.set("watchlistId", filter.watchlistId);
 
@@ -77,9 +77,9 @@ function toSearchParams(filter: MovieFilterRequest): URLSearchParams {
   }
 
   return params;
-}
+};
 
-export async function importWatchlist(url: string): Promise<WatchlistDto> {
+export const importWatchlist = async (url: string): Promise<WatchlistDto> => {
   const body: CreateWatchlistRequest = { url };
   const watchlist = await requestJson<WatchlistDto>("/api/watchlists", {
     method: "POST",
@@ -88,35 +88,35 @@ export async function importWatchlist(url: string): Promise<WatchlistDto> {
 
   setStoredWatchlistId(watchlist.id);
   return watchlist;
-}
+};
 
-export async function getWatchlists(): Promise<WatchlistDto[]> {
+export const getWatchlists = async (): Promise<WatchlistDto[]> => {
   return requestJson<WatchlistDto[]>("/api/watchlists");
-}
+};
 
-export async function getWatchlist(id: string): Promise<WatchlistDto> {
+export const getWatchlist = async (id: string): Promise<WatchlistDto> => {
   return requestJson<WatchlistDto>(`/api/watchlists/${encodeURIComponent(id)}`);
-}
+};
 
-export async function refreshWatchlist(id: string): Promise<WatchlistDto> {
+export const refreshWatchlist = async (id: string): Promise<WatchlistDto> => {
   return requestJson<WatchlistDto>(`/api/watchlists/${encodeURIComponent(id)}/refresh`, {
     method: "POST",
   });
-}
+};
 
-export async function getMovies(filter: MovieFilterRequest): Promise<MovieDto[]> {
+export const getMovies = async (filter: MovieFilterRequest): Promise<MovieDto[]> => {
   const params = toSearchParams(filter);
   return requestJson<MovieDto[]>(`/api/movies?${params.toString()}`);
-}
+};
 
-export async function getRandomMovie(watchlistId: string): Promise<MovieDto> {
+export const getRandomMovie = async (watchlistId: string): Promise<MovieDto> => {
   const params = toSearchParams({ watchlistId });
   return requestJson<MovieDto>(`/api/movies/random?${params.toString()}`);
-}
+};
 
-export async function getMovie(id: string, watchlistId: string): Promise<MovieDto> {
+export const getMovie = async (id: string, watchlistId: string): Promise<MovieDto> => {
   const params = new URLSearchParams({ watchlistId });
   return requestJson<MovieDto>(
     `/api/movies/${encodeURIComponent(id)}?${params.toString()}`
   );
-}
+};

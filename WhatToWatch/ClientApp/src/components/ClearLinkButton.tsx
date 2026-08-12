@@ -1,9 +1,9 @@
 import popcornEmpty from "../assets/popcorn-empty.svg";
+import { Button } from "../primitives/Button";
 import { useAppState } from "../state/AppStateContext";
-import { Button } from "./Button";
 import "./ClearLinkButton.scss";
 
-export function ClearLinkButton() {
+export const ClearLinkButton = () => {
   const { url, clearList } = useAppState();
   const canClear = url.trim().length > 0;
 
@@ -18,4 +18,4 @@ export function ClearLinkButton() {
       <img src={popcornEmpty} alt="" draggable={false} />
     </Button>
   );
-}
+};

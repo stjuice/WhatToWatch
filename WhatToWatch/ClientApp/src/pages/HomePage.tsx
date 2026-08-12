@@ -1,17 +1,17 @@
 import type { ChangeEvent } from "react";
+import { AddLinkButton } from "../components/AddLinkButton";
+import { ClearLinkButton } from "../components/ClearLinkButton";
+import { RandomButton } from "../components/RandomButton";
 import { useAppState } from "../state/AppStateContext";
-import { AddLinkButton } from "./AddLinkButton";
-import { ClearLinkButton } from "./ClearLinkButton";
-import { RandomButton } from "./RandomButton";
-import "./WatchlistBucket.scss";
+import "./HomePage.scss";
 
-export function WatchlistBucket() {
+export const HomePage = () => {
   const { url, setUrl, isListLoaded, importError } = useAppState();
   const isReadyToUpload = !isListLoaded && url.trim().length > 0;
 
-  function handleUrlChange(event: ChangeEvent<HTMLInputElement>) {
+  const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUrl(event.target.value);
-  }
+  };
 
   return (
     <div className="watchlist-bucket">
@@ -41,4 +41,4 @@ export function WatchlistBucket() {
       )}
     </div>
   );
-}
+};

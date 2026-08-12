@@ -1,8 +1,8 @@
 import { useAppState } from "../state/AppStateContext";
-import { Button } from "./Button";
+import { Button } from "../primitives/Button";
 import "./AddLinkButton.scss";
 
-export function AddLinkButton() {
+export const AddLinkButton = () => {
   const { url, loadList, isImporting } = useAppState();
   const trimmedUrl = url.trim();
 
@@ -17,4 +17,4 @@ export function AddLinkButton() {
       {isImporting ? "Додаємо…" : "Додати список"}
     </Button>
   );
-}
+};

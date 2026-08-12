@@ -1,3 +1,3 @@
-export function RandomMovie() {
+export const RandomMovie = () => {
   return null;
-}
+};

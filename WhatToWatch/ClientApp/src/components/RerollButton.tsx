@@ -1,15 +1,15 @@
 import { useState } from "react";
 import popcornPivot from "../assets/popcorn-pivot.svg";
 import { getRandomMovie } from "../api/moviesApi";
+import { Button } from "../primitives/Button";
 import { useAppState } from "../state/AppStateContext";
-import { Button } from "./Button";
 import "./RerollButton.scss";
 
-export function RerollButton() {
+export const RerollButton = () => {
   const { watchlistId, setMovie } = useAppState();
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleClick() {
+  const handleClick = async () => {
     if (!watchlistId || isLoading) {
       return;
     }
@@ -23,7 +23,7 @@ export function RerollButton() {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Button
@@ -38,4 +38,4 @@ export function RerollButton() {
       <img src={popcornPivot} alt="" draggable={false} />
     </Button>
   );
-}
+};

@@ -1,3 +1,3 @@
-export function WatchlistRefresh() {
+export const WatchlistRefresh = () => {
   return null;
-}
+};
