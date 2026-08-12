@@ -1,5 +1,6 @@
 using ImdbWatchlists.Browser;
 using ImdbWatchlists.Models;
+using ImdbWatchlists.Options;
 using ImdbWatchlists.Providers;
 using Microsoft.Playwright;
 using Moq;
@@ -100,6 +101,30 @@ public class PlaywrightPublicWatchlistProviderTests
     }
 
     [Fact]
+    public async Task GetWatchlistAsync_ParsesList_WhenHumanVerificationStatusStillCarriesListData()
+    {
+        var fixture = new PlaywrightFixture(405, Html);
+        var provider = fixture.CreateProvider();
+
+        var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
+
+        Assert.Single(watchlist.Movies);
+    }
+
+    [Fact]
+    public async Task GetWatchlistAsync_ExplainsHumanVerification_WhenListDataNeverAppears()
+    {
+        var fixture = new PlaywrightFixture(405, listDataAvailable: false, Html);
+        var provider = fixture.CreateProvider();
+
+        var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
+            provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl }));
+
+        Assert.Contains("human verification", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("405", exception.Message);
+    }
+
+    [Fact]
     public void Access_IsPublic()
     {
         var fixture = new PlaywrightFixture(Html);
@@ -160,6 +185,11 @@ public class PlaywrightPublicWatchlistProviderTests
         }
 
         public PlaywrightFixture(int status, params string[] pages)
+            : this(status, listDataAvailable: true, pages)
+        {
+        }
+
+        public PlaywrightFixture(int status, bool listDataAvailable, params string[] pages)
         {
             _pages = new Queue<string>(pages);
 
@@ -179,11 +209,21 @@ public class PlaywrightPublicWatchlistProviderTests
                     RequestedUrls.Add(url);
                     return response.Object;
                 });
-            Page.Setup(item =>
-                    item.WaitForSelectorAsync(
-                        "script#__NEXT_DATA__",
-                        It.IsAny<PageWaitForSelectorOptions>()))
-                .ReturnsAsync(element.Object);
+
+            var waitSetup = Page.Setup(item =>
+                item.WaitForSelectorAsync(
+                    "script#__NEXT_DATA__",
+                    It.IsAny<PageWaitForSelectorOptions>()));
+
+            if (listDataAvailable)
+            {
+                waitSetup.ReturnsAsync(element.Object);
+            }
+            else
+            {
+                waitSetup.ThrowsAsync(new TimeoutException("Timeout 30000ms exceeded."));
+            }
+
             Page.Setup(item => item.ContentAsync())
                 .ReturnsAsync(() => _pages.Count > 1 ? _pages.Dequeue() : _pages.Peek());
         }
@@ -196,7 +236,12 @@ public class PlaywrightPublicWatchlistProviderTests
 
         public Mock<IPage> Page { get; } = new();
 
+        public ImdbWatchlistsOptions Options { get; } = new()
+        {
+            BrowserHeadless = true,
+        };
+
         public PlaywrightPublicWatchlistProvider CreateProvider() =>
-            new(BrowserManager.Object);
+            new(BrowserManager.Object, Microsoft.Extensions.Options.Options.Create(Options));
     }
 }

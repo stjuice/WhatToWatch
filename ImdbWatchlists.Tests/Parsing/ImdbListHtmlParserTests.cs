@@ -162,6 +162,45 @@ public class ImdbListHtmlParserTests
         Assert.Equal("Francis Ford Coppola", movie.Director);
     }
 
+    [Fact]
+    public void Parse_ReadsChartTitles_FromChartPage()
+    {
+        const string html =
+            """
+            <html>
+            <head><meta property="og:title" content="Most Popular Movies" /></head>
+            <body>
+            <script id="__NEXT_DATA__" type="application/json">
+            {
+              "props": { "pageProps": { "pageData": { "chartTitles": { "edges": [
+                { "node": {
+                    "id": "tt0111161",
+                    "titleText": { "text": "The Shawshank Redemption" },
+                    "releaseYear": { "year": 1994 },
+                    "ratingsSummary": { "aggregateRating": 9.3 },
+                    "runtime": { "seconds": 8520 },
+                    "titleGenres": { "genres": [ { "genre": { "text": "Drama" } } ] }
+                } },
+                { "node": {
+                    "id": "tt0068646",
+                    "titleText": { "text": "The Godfather" },
+                    "releaseYear": { "year": 1972 }
+                } }
+              ] } } } }
+            }
+            </script>
+            </body>
+            </html>
+            """;
+
+        var chart = ImdbListHtmlParser.Parse(html, "https://www.imdb.com/chart/moviemeter/");
+
+        Assert.Equal("chart-moviemeter", chart.Id);
+        Assert.Equal("Most Popular Movies", chart.Name);
+        Assert.Equal(["tt0111161", "tt0068646"], chart.Movies.Select(movie => movie.Id));
+        Assert.Equal(142, chart.Movies.First().RuntimeMinutes);
+    }
+
     private static string BuildHtml() =>
         """
         <html>

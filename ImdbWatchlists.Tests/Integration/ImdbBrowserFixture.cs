@@ -1,5 +1,6 @@
 using ImdbWatchlists.Browser;
 using ImdbWatchlists.Options;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
@@ -23,7 +24,10 @@ public sealed class ImdbBrowserFixture : IAsyncLifetime
                 {
                     BrowserProfileDirectory = Path.Combine(
                         Path.GetTempPath(), "whattowatch-imdb-profile"),
-                }));
+                    StorageStatePath = Path.Combine(
+                        Path.GetTempPath(), "whattowatch-imdb-profile", "imdb-session.json"),
+                }),
+                NullLogger<PlaywrightBrowserManager>.Instance);
         }
         finally
         {

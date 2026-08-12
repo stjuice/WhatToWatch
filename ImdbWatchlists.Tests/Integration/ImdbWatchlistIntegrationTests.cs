@@ -1,4 +1,5 @@
 using ImdbWatchlists.Models;
+using ImdbWatchlists.Options;
 using ImdbWatchlists.Parsing;
 using ImdbWatchlists.Providers;
 using Microsoft.Playwright;
@@ -19,7 +20,8 @@ public class ImdbWatchlistIntegrationTests(ImdbBrowserFixture fixture, ITestOutp
     public async Task GetWatchlistAsync_ReadsMoviesFromRealWatchlist()
     {
         var provider = new PlaywrightPublicWatchlistProvider(
-            await fixture.GetBrowserManagerAsync());
+            await fixture.GetBrowserManagerAsync(),
+            Microsoft.Extensions.Options.Options.Create(new ImdbWatchlistsOptions()));
 
         var watchlist = await provider.GetWatchlistAsync(
             new WatchlistRequest { Url = WatchlistUrl });

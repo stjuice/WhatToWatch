@@ -10,5 +10,11 @@ public class ImdbWatchlistsOptions
     public string BrowserProfileDirectory { get; set; } =
         Path.Combine(Path.GetTempPath(), "whattowatch-imdb-profile");
 
+    public string StorageStatePath { get; set; } = "imdb-session.json";
+
     public bool BrowserHeadless { get; set; }
+
+    public bool BlockNonEssentialResources { get; set; } = true;
+
+    public int ManualChallengeTimeoutSeconds { get; set; } = 180;
 }
