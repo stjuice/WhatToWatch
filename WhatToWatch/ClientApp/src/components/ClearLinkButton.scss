@@ -7,9 +7,14 @@
   transition: transform 140ms ease;
 }
 
-.clear-link-button:not(:disabled):hover img,
 .clear-link-button:not(:disabled):focus-visible img {
   transform: scale(1.03);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .clear-link-button:not(:disabled):hover img {
+    transform: scale(1.03);
+  }
 }
 
 .clear-link-button:not(:disabled):active img {

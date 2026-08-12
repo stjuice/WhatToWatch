@@ -13,6 +13,7 @@
   color: $text;
   font-family: $font-display;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .button:focus-visible {
