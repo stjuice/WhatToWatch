@@ -41,8 +41,13 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         Assert.Equal(watchlist.Url, loaded.Url);
         Assert.Equal(watchlist.LastRefreshedAt, loaded.LastRefreshedAt);
         Assert.Single(loaded.Movies);
-        Assert.Equal("The Matrix", loaded.Movies.First().Title);
-        Assert.Equal(["Action", "Sci-Fi"], loaded.Movies.First().Genres);
+        
+        var movie = loaded.Movies.First();
+        Assert.Equal("The Matrix", movie.Title);
+        Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
+        Assert.Equal("A computer hacker learns about the true nature of reality.", movie.Plot);
+        Assert.Equal(136, movie.RuntimeMinutes);
+        Assert.Equal("Lana Wachowski", movie.Director);
     }
 
     [Fact]
@@ -136,6 +141,9 @@ public class SqliteWatchlistRepositoryTests : IDisposable
                     Year = 1999,
                     PosterUrl = "https://example.com/poster.jpg",
                     Rating = 8.7,
+                    Plot = "A computer hacker learns about the true nature of reality.",
+                    RuntimeMinutes = 136,
+                    Director = "Lana Wachowski",
                     Genres = ["Action", "Sci-Fi"],
                 },
             ],

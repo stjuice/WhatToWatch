@@ -30,6 +30,11 @@ public class ImdbListHtmlParserTests
         Assert.Equal(8.7, movie.Rating);
         Assert.Equal("https://example.com/matrix.jpg", movie.PosterUrl);
         Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
+        Assert.Equal(
+            "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+            movie.Plot);
+        Assert.Equal(136, movie.RuntimeMinutes);
+        Assert.Equal("Lana Wachowski", movie.Director);
     }
 
     [Fact]
@@ -87,6 +92,33 @@ public class ImdbListHtmlParserTests
         Assert.Equal("Unreleased Film", movie.Title);
         Assert.Null(movie.Year);
         Assert.Null(movie.Rating);
+        Assert.Null(movie.Plot);
+        Assert.Null(movie.RuntimeMinutes);
+        Assert.Null(movie.Director);
+    }
+
+    [Fact]
+    public void Parse_ReadsPlotRuntimeAndDirector_WhenPresent()
+    {
+        var movie = ImdbListHtmlParser.Parse(BuildHtml(), ListUrl).Movies.First();
+
+        Assert.Equal(
+            "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+            movie.Plot);
+        Assert.Equal(136, movie.RuntimeMinutes);
+        Assert.Equal("Lana Wachowski", movie.Director);
+    }
+
+    [Fact]
+    public void Parse_LeavesPlotRuntimeDirectorNull_WhenMissingFromEmbed()
+    {
+        var inception = ImdbListHtmlParser.Parse(BuildHtml(), ListUrl).Movies
+            .Single(movie => movie.Id == "tt1375666");
+
+        Assert.Equal("Inception", inception.Title);
+        Assert.Null(inception.Plot);
+        Assert.Null(inception.RuntimeMinutes);
+        Assert.Null(inception.Director);
     }
 
     private static string BuildHtml() =>
@@ -111,6 +143,39 @@ public class ImdbListHtmlParserTests
                           "releaseYear": { "year": 1999 },
                           "primaryImage": { "url": "https://example.com/matrix.jpg" },
                           "ratingsSummary": { "aggregateRating": 8.7 },
+                          "plot": {
+                            "plotText": {
+                              "plainText": "A computer hacker learns from mysterious rebels about the true nature of his reality."
+                            }
+                          },
+                          "runtime": { "seconds": 8160 },
+                          "principalCredits": [
+                            {
+                              "category": { "id": "director", "text": "Directors" },
+                              "credits": [
+                                {
+                                  "name": {
+                                    "nameText": { "text": "Lana Wachowski" }
+                                  }
+                                },
+                                {
+                                  "name": {
+                                    "nameText": { "text": "Lilly Wachowski" }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "category": { "id": "writer", "text": "Writers" },
+                              "credits": [
+                                {
+                                  "name": {
+                                    "nameText": { "text": "Lilly Wachowski" }
+                                  }
+                                }
+                              ]
+                            }
+                          ],
                           "titleGenres": {
                             "genres": [
                               { "genre": { "text": "Action" } },

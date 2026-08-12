@@ -14,6 +14,12 @@ public class MovieEntity
 
     public double? Rating { get; set; }
 
+    public string? Plot { get; set; }
+
+    public int? RuntimeMinutes { get; set; }
+
+    public string? Director { get; set; }
+
     public List<string> Genres { get; set; } = [];
 
     public WatchlistEntity? Watchlist { get; set; }

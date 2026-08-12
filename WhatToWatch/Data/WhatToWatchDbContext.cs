@@ -50,6 +50,9 @@ public class WhatToWatchDbContext(DbContextOptions<WhatToWatchDbContext> options
             entity.Property(movie => movie.Year);
             entity.Property(movie => movie.PosterUrl);
             entity.Property(movie => movie.Rating);
+            entity.Property(movie => movie.Plot);
+            entity.Property(movie => movie.RuntimeMinutes);
+            entity.Property(movie => movie.Director);
             entity.Property(movie => movie.Genres)
                 .HasConversion(genresConverter)
                 .HasColumnName("GenresJson")

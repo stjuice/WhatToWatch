@@ -15,6 +15,9 @@ public class MovieMapperTests
             Year = 2020,
             PosterUrl = "https://example.com/p.jpg",
             Rating = 8.1,
+            Plot = "A test plot.",
+            RuntimeMinutes = 136,
+            Director = "Test Director",
             Genres = ["Drama"],
         };
 
@@ -25,6 +28,9 @@ public class MovieMapperTests
         Assert.Equal(imdb.Year, app.Year);
         Assert.Equal(imdb.PosterUrl, app.PosterUrl);
         Assert.Equal(imdb.Rating, app.Rating);
+        Assert.Equal(imdb.Plot, app.Plot);
+        Assert.Equal(imdb.RuntimeMinutes, app.RuntimeMinutes);
+        Assert.Equal(imdb.Director, app.Director);
         Assert.Equal(imdb.Genres, app.Genres);
     }
 
@@ -38,6 +44,9 @@ public class MovieMapperTests
             Year = 2020,
             PosterUrl = "https://example.com/p.jpg",
             Rating = 8.1,
+            Plot = "A test plot.",
+            RuntimeMinutes = 136,
+            Director = "Test Director",
             Genres = ["Drama"],
         };
 
@@ -48,7 +57,26 @@ public class MovieMapperTests
         Assert.Equal(movie.Year, dto.Year);
         Assert.Equal(movie.PosterUrl, dto.PosterUrl);
         Assert.Equal(movie.Rating, dto.Rating);
+        Assert.Equal(movie.Plot, dto.Plot);
+        Assert.Equal(movie.RuntimeMinutes, dto.RuntimeMinutes);
+        Assert.Equal(movie.Director, dto.Director);
         Assert.Equal(movie.Genres, dto.Genres);
+    }
+
+    [Fact]
+    public void ToApp_Movie_MapsNullOptionalDetailFields()
+    {
+        var imdb = new ImdbWatchlists.Models.Movie
+        {
+            Id = "tt2",
+            Title = "Sparse",
+        };
+
+        var app = MovieMapper.ToApp(imdb);
+
+        Assert.Null(app.Plot);
+        Assert.Null(app.RuntimeMinutes);
+        Assert.Null(app.Director);
     }
 
     [Fact]

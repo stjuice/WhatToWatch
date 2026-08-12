@@ -105,6 +105,9 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
                 Year = movie.Year,
                 PosterUrl = movie.PosterUrl,
                 Rating = movie.Rating,
+                Plot = movie.Plot,
+                RuntimeMinutes = movie.RuntimeMinutes,
+                Director = movie.Director,
                 Genres = [.. movie.Genres],
             });
         }
@@ -129,6 +132,9 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
                 Year = movie.Year,
                 PosterUrl = movie.PosterUrl,
                 Rating = movie.Rating,
+                Plot = movie.Plot,
+                RuntimeMinutes = movie.RuntimeMinutes,
+                Director = movie.Director,
                 Genres = [.. movie.Genres],
             })
             .ToList(),

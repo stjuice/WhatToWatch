@@ -169,6 +169,9 @@ public static partial class ImdbListHtmlParser
             Year = ReadInt(element, "releaseYear", "year"),
             PosterUrl = ReadString(element, "primaryImage", "url"),
             Rating = ReadDouble(element, "ratingsSummary", "aggregateRating"),
+            Plot = ReadPlot(element),
+            RuntimeMinutes = ReadRuntimeMinutes(element),
+            Director = ReadDirector(element),
             Genres = ReadGenres(element),
         };
 
@@ -196,6 +199,171 @@ public static partial class ImdbListHtmlParser
         }
 
         return result;
+    }
+
+    private static string? ReadPlot(JsonElement element)
+    {
+        if (!element.TryGetProperty("plot", out var plotElement) ||
+            plotElement.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var plot = ReadString(plotElement, "plotText", "plainText");
+        return plot is null ? null : WebUtility.HtmlDecode(plot);
+    }
+
+    private static int? ReadRuntimeMinutes(JsonElement element)
+    {
+        if (!element.TryGetProperty("runtime", out var runtime) ||
+            runtime.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (runtime.TryGetProperty("seconds", out var seconds) &&
+            seconds.ValueKind == JsonValueKind.Number &&
+            seconds.TryGetInt32(out var totalSeconds) &&
+            totalSeconds > 0)
+        {
+            return totalSeconds / 60;
+        }
+
+        if (runtime.TryGetProperty("minutes", out var minutes) &&
+            minutes.ValueKind == JsonValueKind.Number &&
+            minutes.TryGetInt32(out var totalMinutes) &&
+            totalMinutes > 0)
+        {
+            return totalMinutes;
+        }
+
+        return null;
+    }
+
+    private static string? ReadDirector(JsonElement element)
+    {
+        var fromPrincipal = ReadDirectorFromPrincipalCredits(element);
+        if (fromPrincipal is not null)
+        {
+            return fromPrincipal;
+        }
+
+        foreach (var key in (string[])["directorsPageTitle", "directors", "directorCredits"])
+        {
+            var name = ReadDirectorFromCreditsArray(element, key);
+            if (name is not null)
+            {
+                return name;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadDirectorFromPrincipalCredits(JsonElement element)
+    {
+        if (!element.TryGetProperty("principalCredits", out var principalCredits) ||
+            principalCredits.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var entry in principalCredits.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var categoryId = ReadString(entry, "category", "id");
+            var categoryText = ReadString(entry, "category", "text");
+            var isDirector =
+                string.Equals(categoryId, "director", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(categoryText, "Director", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(categoryText, "Directors", StringComparison.OrdinalIgnoreCase);
+
+            if (!isDirector)
+            {
+                continue;
+            }
+
+            var name = ReadFirstCreditName(entry);
+            if (name is not null)
+            {
+                return name;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadDirectorFromCreditsArray(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var creditsRoot))
+        {
+            return null;
+        }
+
+        if (creditsRoot.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var entry in creditsRoot.EnumerateArray())
+            {
+                var name = ReadFirstCreditName(entry);
+                if (name is not null)
+                {
+                    return name;
+                }
+            }
+
+            return null;
+        }
+
+        return creditsRoot.ValueKind == JsonValueKind.Object
+            ? ReadFirstCreditName(creditsRoot)
+            : null;
+    }
+
+    private static string? ReadFirstCreditName(JsonElement entry)
+    {
+        if (entry.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (entry.TryGetProperty("credits", out var credits) &&
+            credits.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var credit in credits.EnumerateArray())
+            {
+                var name = ReadCreditName(credit);
+                if (name is not null)
+                {
+                    return name;
+                }
+            }
+        }
+
+        return ReadCreditName(entry);
+    }
+
+    private static string? ReadCreditName(JsonElement credit)
+    {
+        if (credit.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (credit.TryGetProperty("name", out var nameObject) &&
+            nameObject.ValueKind == JsonValueKind.Object)
+        {
+            var name = ReadString(nameObject, "nameText", "text");
+            if (name is not null)
+            {
+                return WebUtility.HtmlDecode(name);
+            }
+        }
+
+        return null;
     }
 
     private static string ExtractName(JsonElement root, string html, string url)

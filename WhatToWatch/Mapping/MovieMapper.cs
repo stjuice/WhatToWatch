@@ -14,6 +14,9 @@ public static class MovieMapper
         Year = movie.Year,
         PosterUrl = movie.PosterUrl,
         Rating = movie.Rating,
+        Plot = movie.Plot,
+        RuntimeMinutes = movie.RuntimeMinutes,
+        Director = movie.Director,
         Genres = movie.Genres,
     };
 
@@ -33,6 +36,9 @@ public static class MovieMapper
         Year = movie.Year,
         PosterUrl = movie.PosterUrl,
         Rating = movie.Rating,
+        Plot = movie.Plot,
+        RuntimeMinutes = movie.RuntimeMinutes,
+        Director = movie.Director,
         Genres = movie.Genres,
     };
 

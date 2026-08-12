@@ -12,5 +12,11 @@ public record Movie
 
     public double? Rating { get; init; }
 
+    public string? Plot { get; init; }
+
+    public int? RuntimeMinutes { get; init; }
+
+    public string? Director { get; init; }
+
     public IReadOnlyCollection<string> Genres { get; init; } = [];
 }
