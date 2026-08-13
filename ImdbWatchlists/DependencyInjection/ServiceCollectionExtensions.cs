@@ -5,6 +5,9 @@ using ImdbWatchlists.Repositories;
 using ImdbWatchlists.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Playwright;
 
 namespace ImdbWatchlists.DependencyInjection;
@@ -38,6 +41,7 @@ public static class ServiceCollectionExtensions
 
     private static IServiceCollection RegisterCore(IServiceCollection services)
     {
+        services.TryAddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddSingleton(_ => Playwright.CreateAsync().GetAwaiter().GetResult());
         services.AddSingleton<IBrowserManager, PlaywrightBrowserManager>();
         services.AddSingleton<PlaywrightPublicWatchlistProvider>();

@@ -1,7 +1,9 @@
+using System.Text.Json;
 using ImdbWatchlists.Browser;
 using ImdbWatchlists.Models;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Parsing;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
@@ -9,13 +11,13 @@ namespace ImdbWatchlists.Providers;
 
 public sealed class PlaywrightPublicWatchlistProvider(
     IBrowserManager browserManager,
-    IOptions<ImdbWatchlistsOptions> options)
+    IOptions<ImdbWatchlistsOptions> options,
+    ILogger<PlaywrightPublicWatchlistProvider> logger)
     : IWatchlistProvider
 {
     private const int MaxPages = 40;
+    private const int BodyPreviewLength = 300;
     private const float ListDataTimeoutMs = 30_000;
-
-    private const int HumanVerificationStatus = 405;
 
     private readonly ImdbWatchlistsOptions _options = options.Value;
 
@@ -34,6 +36,15 @@ public sealed class PlaywrightPublicWatchlistProvider(
 
         try
         {
+            var userAgent = await page.EvaluateAsync<string>("() => navigator.userAgent")
+                .WaitAsync(cancellationToken);
+            logger.LogInformation(
+                "IMDb Playwright browser diagnostics: UserAgent={UserAgent}; " +
+                "UsesPersistentContext={UsesPersistentContext}; StorageStateLoaded={StorageStateLoaded}",
+                userAgent,
+                browserManager.UsesPersistentContext,
+                browserManager.StorageStateLoaded);
+
             Watchlist? watchlist = null;
             var movies = new List<Movie>();
             var seenIds = new HashSet<string>(StringComparer.Ordinal);
@@ -81,14 +92,43 @@ public sealed class PlaywrightPublicWatchlistProvider(
             WaitUntil = WaitUntilState.DOMContentLoaded,
         }).WaitAsync(cancellationToken);
 
-        if (response is null || (response.Status >= 400 && response.Status != HumanVerificationStatus))
+        if (response is null)
             throw new ImdbWatchlistException(
-                $"IMDb returned HTTP {response?.Status.ToString() ?? "unknown"} for '{url}'.");
+                $"IMDb navigation to '{page.Url ?? url}' returned no HTTP response.");
+
+        var html = await page.ContentAsync().WaitAsync(cancellationToken);
+        if (!response.Ok)
+        {
+            var finalUrl = string.IsNullOrWhiteSpace(response.Url)
+                ? page.Url ?? url
+                : response.Url;
+            var preview = GetBodyPreview(html);
+            var headers = await response.AllHeadersAsync().WaitAsync(cancellationToken);
+
+            logger.LogWarning(
+                "IMDb navigation returned a non-success response. FinalUrl={FinalUrl}; " +
+                "StatusCode={StatusCode}; ResponseHeaders={ResponseHeaders}; " +
+                "HtmlPreview={HtmlPreview}; UsesPersistentContext={UsesPersistentContext}; " +
+                "StorageStateLoaded={StorageStateLoaded}",
+                finalUrl,
+                response.Status,
+                JsonSerializer.Serialize(headers),
+                preview,
+                browserManager.UsesPersistentContext,
+                browserManager.StorageStateLoaded);
+
+            throw new ImdbWatchlistException(
+                $"IMDb returned HTTP {response.Status} for '{finalUrl}'. " +
+                $"Body preview: {preview}");
+        }
 
         await WaitForListDataAsync(page, url, response.Status, cancellationToken);
 
-        return await page.ContentAsync().WaitAsync(cancellationToken);
+        return html;
     }
+
+    private static string GetBodyPreview(string html) =>
+        html[..Math.Min(html.Length, BodyPreviewLength)];
 
     private async Task WaitForListDataAsync(
         IPage page,

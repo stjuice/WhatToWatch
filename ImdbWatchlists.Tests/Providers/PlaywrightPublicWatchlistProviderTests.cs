@@ -2,6 +2,7 @@ using ImdbWatchlists.Browser;
 using ImdbWatchlists.Models;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Providers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Playwright;
 using Moq;
 
@@ -101,27 +102,29 @@ public class PlaywrightPublicWatchlistProviderTests
     }
 
     [Fact]
-    public async Task GetWatchlistAsync_ParsesList_WhenHumanVerificationStatusStillCarriesListData()
+    public async Task GetWatchlistAsync_IncludesBodyPreview_WhenResponseIsNotSuccessful()
     {
         var fixture = new PlaywrightFixture(405, Html);
         var provider = fixture.CreateProvider();
 
-        var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
+        var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
+            provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl }));
 
-        Assert.Single(watchlist.Movies);
+        Assert.Contains("405", exception.Message);
+        Assert.Contains("<html><body>", exception.Message);
     }
 
     [Fact]
     public async Task GetWatchlistAsync_ExplainsHumanVerification_WhenListDataNeverAppears()
     {
-        var fixture = new PlaywrightFixture(405, listDataAvailable: false, Html);
+        var fixture = new PlaywrightFixture(200, listDataAvailable: false, Html);
         var provider = fixture.CreateProvider();
 
         var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
             provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl }));
 
         Assert.Contains("human verification", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("405", exception.Message);
+        Assert.Contains("200", exception.Message);
     }
 
     [Fact]
@@ -195,6 +198,13 @@ public class PlaywrightPublicWatchlistProviderTests
 
             var response = new Mock<IResponse>();
             response.SetupGet(item => item.Status).Returns(status);
+            response.SetupGet(item => item.Ok).Returns(status is >= 200 and < 300);
+            response.SetupGet(item => item.Url).Returns(ListUrl);
+            response.Setup(item => item.AllHeadersAsync())
+                .ReturnsAsync(new Dictionary<string, string>
+                {
+                    ["content-type"] = "text/html",
+                });
 
             var element = new Mock<IElementHandle>();
 
@@ -202,6 +212,10 @@ public class PlaywrightPublicWatchlistProviderTests
                     manager.GetContextAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Context.Object);
             Context.Setup(item => item.NewPageAsync()).ReturnsAsync(Page.Object);
+            Page.Setup(item => item.EvaluateAsync<string>(
+                    "() => navigator.userAgent",
+                    It.IsAny<object>()))
+                .ReturnsAsync("Test Browser");
             Page.Setup(item =>
                     item.GotoAsync(It.IsAny<string>(), It.IsAny<PageGotoOptions>()))
                 .ReturnsAsync((string url, PageGotoOptions _) =>
@@ -242,6 +256,9 @@ public class PlaywrightPublicWatchlistProviderTests
         };
 
         public PlaywrightPublicWatchlistProvider CreateProvider() =>
-            new(BrowserManager.Object, Microsoft.Extensions.Options.Options.Create(Options));
+            new(
+                BrowserManager.Object,
+                Microsoft.Extensions.Options.Options.Create(Options),
+                NullLogger<PlaywrightPublicWatchlistProvider>.Instance);
     }
 }

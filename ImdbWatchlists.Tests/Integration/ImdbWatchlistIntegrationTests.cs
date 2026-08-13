@@ -2,6 +2,7 @@ using ImdbWatchlists.Models;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Parsing;
 using ImdbWatchlists.Providers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Playwright;
 using Xunit.Abstractions;
 
@@ -21,7 +22,8 @@ public class ImdbWatchlistIntegrationTests(ImdbBrowserFixture fixture, ITestOutp
     {
         var provider = new PlaywrightPublicWatchlistProvider(
             await fixture.GetBrowserManagerAsync(),
-            Microsoft.Extensions.Options.Options.Create(new ImdbWatchlistsOptions()));
+            Microsoft.Extensions.Options.Options.Create(new ImdbWatchlistsOptions()),
+            NullLogger<PlaywrightPublicWatchlistProvider>.Instance);
 
         var watchlist = await provider.GetWatchlistAsync(
             new WatchlistRequest { Url = WatchlistUrl });

@@ -26,6 +26,10 @@ public sealed class PlaywrightBrowserManager(
     private readonly SemaphoreSlim _contextLock = new(1, 1);
     private IBrowserContext? _context;
 
+    public bool UsesPersistentContext => true;
+
+    public bool StorageStateLoaded { get; private set; }
+
     public async Task<IBrowserContext> GetContextAsync(CancellationToken cancellationToken = default)
     {
         if (_context is not null)
@@ -155,6 +159,8 @@ public sealed class PlaywrightBrowserManager(
 
             await context.AddCookiesAsync(cookies.Select(ToCookie))
                 .WaitAsync(SessionFileTimeout, cancellationToken);
+                
+            StorageStateLoaded = true;
         }
         catch (Exception ex)
         {
