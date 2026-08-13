@@ -32,8 +32,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 COPY --from=build /app/publish .
 
-RUN dotnet tool install --global Microsoft.Playwright.CLI --version 1.61.0 \
-    && /root/.dotnet/tools/playwright install --with-deps chromium
+# playwright.ps1 ships with the Microsoft.Playwright package, so the browser build
+# always matches the referenced library version.
+RUN pwsh ./playwright.ps1 install --with-deps chromium
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "WhatToWatch.dll"]
