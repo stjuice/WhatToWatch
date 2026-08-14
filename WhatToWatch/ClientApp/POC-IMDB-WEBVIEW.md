@@ -77,6 +77,26 @@ Rejects with `cancelled` when the user backs out or taps **Скасувати**.
 2. Open the finished run → **Artifacts** → download **`imdb-webview-poc-debug`**.
 3. Unzip, copy `app-debug.apk` to the phone, open it and allow install from that source.
 
+## Tests
+
+From `WhatToWatch/ClientApp`:
+
+```powershell
+npm test
+```
+
+Covers the TypeScript extractor (list + chart fixtures, dedupe, null fields), parity with
+`android/.../assets/imdb/extractWatchlist.js`, and `ImdbImportService`.
+
+Android JVM helpers (needs the SDK):
+
+```powershell
+cd android
+.\gradlew.bat test --tests com.whattowatch.app.ImdbImportSupportTest
+```
+
+## Build the debug APK locally
+
 ### Locally (Gradle + adb, no Android Studio)
 
 Prerequisites, one time:

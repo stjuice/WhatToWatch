@@ -55,14 +55,17 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Unit test extract + import service
+        run: npm test
+
       - name: Build web assets and sync Capacitor
         run: npm run cap:sync
 
-      - name: Assemble debug APK
+      - name: Unit test Android helpers and assemble debug APK
         working-directory: WhatToWatch/ClientApp/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew test assembleDebug --no-daemon --stacktrace --tests com.whattowatch.app.ImdbImportSupportTest
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

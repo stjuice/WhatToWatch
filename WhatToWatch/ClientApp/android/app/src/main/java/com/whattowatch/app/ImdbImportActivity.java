@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,11 +20,7 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.Locale;
+import java.io.IOException;
 
 /**
  * Internal IMDb import screen, opened only by {@link ImdbImporterPlugin}.
@@ -48,54 +43,13 @@ public class ImdbImportActivity extends AppCompatActivity {
     /** While the user logs in or solves a challenge the list data is not on the page yet. */
     private static final long RETRY_DELAY_MS = 2000L;
 
-    /**
-     * Reads __NEXT_DATA__ and returns only the fields the app needs, or null when the page does
-     * not (yet) hold list data. Item shapes differ between IMDb list renderers, hence the fallbacks.
-     */
-    private static final String EXTRACT_SCRIPT =
-        "(function () {"
-            + "  var el = document.getElementById('__NEXT_DATA__');"
-            + "  if (!el) return null;"
-            + "  var data;"
-            + "  try { data = JSON.parse(el.textContent); } catch (e) { return null; }"
-            + "  var pageProps = data && data.props && data.props.pageProps;"
-            + "  var list = pageProps && pageProps.mainColumnData && pageProps.mainColumnData.list;"
-            + "  if (!list) return null;"
-            + "  var entries = list.items"
-            + "    || (list.titleListItemSearch && list.titleListItemSearch.edges)"
-            + "    || [];"
-            + "  var movies = [];"
-            + "  for (var i = 0; i < entries.length; i++) {"
-            + "    var entry = entries[i] || {};"
-            + "    var node = entry.node || entry;"
-            + "    var title = node.title || node.listItem || node;"
-            + "    if (!title || !title.id) continue;"
-            + "    movies.push({"
-            + "      imdbId: title.id,"
-            + "      title: title.titleText && title.titleText.text ? title.titleText.text : null,"
-            + "      year: title.releaseYear && title.releaseYear.year != null"
-            + "        ? title.releaseYear.year : null,"
-            + "      imageUrl: title.primaryImage && title.primaryImage.url"
-            + "        ? title.primaryImage.url : null"
-            + "    });"
-            + "  }"
-            + "  if (!movies.length) return null;"
-            + "  var name = list.title"
-            + "    || (list.name && (list.name.originalText || list.name.text))"
-            + "    || document.title;"
-            + "  return JSON.stringify({"
-            + "    listId: list.id || null,"
-            + "    title: name,"
-            + "    movies: movies"
-            + "  });"
-            + "})();";
-
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private WebView webView;
     private TextView statusView;
     private Runnable pendingExtract;
     private boolean isResultDelivered;
+    private String extractScript;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -107,6 +61,14 @@ public class ImdbImportActivity extends AppCompatActivity {
         webView = findViewById(R.id.imdb_import_webview);
         Button cancelButton = findViewById(R.id.imdb_import_cancel);
         cancelButton.setOnClickListener(v -> finishWithError(ERROR_CANCELLED));
+
+        try {
+            extractScript = ImdbImportSupport.loadExtractScript(getAssets());
+        } catch (IOException e) {
+            Log.e(TAG, "Could not load extract script: " + e.getMessage());
+            finishWithError("Could not load the IMDb extract script");
+            return;
+        }
 
         String url = getIntent().getStringExtra(EXTRA_URL);
         if (url == null || url.trim().isEmpty()) {
@@ -137,7 +99,11 @@ public class ImdbImportActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return shouldBlockNavigation(request.getUrl());
+                boolean blocked = ImdbImportSupport.shouldBlockNavigation(request.getUrl());
+                if (blocked) {
+                    Log.i(TAG, "Blocked app deep link: " + request.getUrl());
+                }
+                return blocked;
             }
 
             @Override
@@ -158,29 +124,6 @@ public class ImdbImportActivity extends AppCompatActivity {
         webView.loadUrl(url.trim());
     }
 
-    /**
-     * IMDb's Branch.io interstitial redirects to {@code intent://} / {@code imdb://} deep links,
-     * which a WebView cannot load (ERR_UNKNOWN_URL_SCHEME). Stay on the web version instead.
-     */
-    private boolean shouldBlockNavigation(@Nullable Uri uri) {
-        if (uri == null) {
-            return false;
-        }
-
-        String scheme = uri.getScheme();
-        if (scheme == null) {
-            return false;
-        }
-
-        scheme = scheme.toLowerCase(Locale.US);
-        if ("http".equals(scheme) || "https".equals(scheme)) {
-            return false;
-        }
-
-        Log.i(TAG, "Blocked app deep link (" + scheme + "): " + uri);
-        return true;
-    }
-
     private void scheduleExtract(long delayMs) {
         if (isResultDelivered) {
             return;
@@ -198,13 +141,13 @@ public class ImdbImportActivity extends AppCompatActivity {
     }
 
     private void extract() {
-        if (webView == null || isResultDelivered) {
+        if (webView == null || isResultDelivered || extractScript == null) {
             return;
         }
 
-        webView.evaluateJavascript(EXTRACT_SCRIPT, value -> {
-            String json = unwrapJsString(value);
-            int movieCount = countMovies(json);
+        webView.evaluateJavascript(extractScript, value -> {
+            String json = ImdbImportSupport.unwrapJsString(value);
+            int movieCount = ImdbImportSupport.countMovies(json);
 
             if (movieCount <= 0) {
                 // Most likely a login page or a bot challenge: keep polling while the user acts.
@@ -218,21 +161,6 @@ public class ImdbImportActivity extends AppCompatActivity {
             setStatus("Знайдено фільмів: " + movieCount);
             finishWithWatchlist(json);
         });
-    }
-
-    /** Returns the number of movies in the normalized payload, or -1 when it is unusable. */
-    private int countMovies(@Nullable String json) {
-        if (json == null || json.isEmpty()) {
-            return -1;
-        }
-
-        try {
-            JSONArray movies = new JSONObject(json).optJSONArray("movies");
-            return movies == null ? -1 : movies.length();
-        } catch (JSONException e) {
-            Log.w(TAG, "Extracted payload is not valid JSON: " + e.getMessage());
-            return -1;
-        }
     }
 
     private void finishWithWatchlist(String json) {
@@ -267,25 +195,6 @@ public class ImdbImportActivity extends AppCompatActivity {
     private void setStatus(String status) {
         if (statusView != null) {
             statusView.setText(status);
-        }
-    }
-
-    /**
-     * evaluateJavascript returns a JSON-encoded value (e.g. "\"{...}\"" or "null").
-     */
-    @Nullable
-    static String unwrapJsString(@Nullable String jsValue) {
-        if (jsValue == null || "null".equals(jsValue)) {
-            return null;
-        }
-
-        try {
-            // org.json handles escaped quotes / unicode from the WebView bridge.
-            Object parsed = new org.json.JSONTokener(jsValue).nextValue();
-            return parsed == null || parsed == JSONObject.NULL ? null : String.valueOf(parsed);
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to unwrap JS value: " + e.getMessage());
-            return null;
         }
     }
 
