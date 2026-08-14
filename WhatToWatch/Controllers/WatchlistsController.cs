@@ -1,5 +1,6 @@
 using ImdbWatchlists;
 using Microsoft.AspNetCore.Mvc;
+using WhatToWatch.Auth;
 using WhatToWatch.DTOs;
 using WhatToWatch.Mapping;
 using WhatToWatch.Services;
@@ -11,6 +12,7 @@ namespace WhatToWatch.Controllers;
 public class WatchlistsController(IWatchlistService watchlistService) : ControllerBase
 {
     [HttpPost]
+    [AdminAuthorize]
     public async Task<ActionResult<WatchlistDto>> ImportWatchlistAsync(
         [FromBody] CreateWatchlistRequest request,
         CancellationToken cancellationToken)
@@ -26,6 +28,26 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
         catch (ImdbWatchlistException exception)
         {
             return MapImdbException(exception);
+        }
+    }
+
+    [HttpPost("import-imdb")]
+    [AdminAuthorize]
+    public async Task<ActionResult<WatchlistDto>> ImportImdbWatchlistAsync(
+        [FromBody] ImportImdbWatchlistRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var watchlist = await watchlistService
+                .ImportFromImdbPayloadAsync(request, cancellationToken)
+                .ConfigureAwait(false);
+
+            return Ok(MovieMapper.ToDto(watchlist));
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { error = exception.Message });
         }
     }
 
@@ -55,7 +77,41 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
         return Ok(MovieMapper.ToDto(watchlist));
     }
 
+    [HttpPut("{id}")]
+    [AdminAuthorize]
+    public async Task<ActionResult<WatchlistDto>> UpdateWatchlistAsync(
+        string id,
+        [FromBody] UpdateWatchlistRequest request,
+        CancellationToken cancellationToken)
+    {
+        var watchlist = await watchlistService
+            .UpdateWatchlistAsync(id, request, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (watchlist is null)
+            return NotFound();
+
+        return Ok(MovieMapper.ToDto(watchlist));
+    }
+
+    [HttpDelete("{id}")]
+    [AdminAuthorize]
+    public async Task<IActionResult> DeleteWatchlistAsync(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        var deleted = await watchlistService
+            .DeleteWatchlistAsync(id, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
+    }
+
     [HttpPost("{id}/refresh")]
+    [AdminAuthorize]
     public async Task<ActionResult<WatchlistDto>> RefreshWatchlistAsync(
         string id,
         CancellationToken cancellationToken)
@@ -74,6 +130,10 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
         catch (ImdbWatchlistException exception)
         {
             return MapImdbException(exception);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { error = exception.Message });
         }
     }
 

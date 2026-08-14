@@ -180,6 +180,87 @@ public class WatchlistServiceTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task ImportFromImdbPayloadAsync_SavesNormalizedWatchlist()
+    {
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppWatchlist?)null);
+
+        var result = await CreateSut().ImportFromImdbPayloadAsync(
+            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
+            {
+                ListId = ListId,
+                Title = "Sci-Fi",
+                Movies =
+                [
+                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt0133093",
+                        Title = "The Matrix",
+                        Year = 1999,
+                        ImageUrl = "https://example.com/m.jpg",
+                    },
+                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt0133093",
+                        Title = "The Matrix Duplicate",
+                        Year = 1999,
+                        ImageUrl = null,
+                    },
+                ],
+            });
+
+        Assert.Equal(ListId, result.Id);
+        Assert.Equal("Sci-Fi", result.Name);
+        Assert.Equal(ListUrl, result.Url);
+        Assert.Single(result.Movies);
+        Assert.Equal("tt0133093", result.Movies.First().Id);
+        Assert.Equal("https://example.com/m.jpg", result.Movies.First().PosterUrl);
+        _repository.Verify(
+            r => r.SaveAsync(
+                It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        _imdb.Verify(
+            i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateWatchlistAsync_RenamesExistingWatchlist()
+    {
+        var existing = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateSut().UpdateWatchlistAsync(
+            ListId,
+            new WhatToWatch.DTOs.UpdateWatchlistRequest { Name = "Renamed" });
+
+        Assert.NotNull(result);
+        Assert.Equal("Renamed", result.Name);
+        _repository.Verify(
+            r => r.SaveAsync(
+                It.Is<AppWatchlist>(w => w.Id == ListId && w.Name == "Renamed"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteWatchlistAsync_DelegatesToRepository()
+    {
+        _repository
+            .Setup(r => r.DeleteAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        Assert.True(await CreateSut().DeleteWatchlistAsync(ListId));
+        _repository.Verify(
+            r => r.DeleteAsync(ListId, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     private static AppWatchlist CreateAppWatchlist(
         string id,
         DateTimeOffset? refreshedAt) =>

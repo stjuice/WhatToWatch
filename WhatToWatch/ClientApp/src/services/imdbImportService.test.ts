@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const importList = vi.fn();
 const isNativePlatform = vi.fn();
+const importImdbWatchlist = vi.fn();
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: {
@@ -12,9 +13,14 @@ vi.mock("@capacitor/core", () => ({
   }),
 }));
 
+vi.mock("../api/moviesApi", () => ({
+  importImdbWatchlist: (...args: unknown[]) => importImdbWatchlist(...args),
+}));
+
 describe("ImdbImportService", () => {
   beforeEach(() => {
     importList.mockReset();
+    importImdbWatchlist.mockReset();
     isNativePlatform.mockReset();
     vi.resetModules();
   });
@@ -45,9 +51,9 @@ describe("ImdbImportService", () => {
     ).rejects.toThrow("Імпорт через IMDb доступний лише в мобільному застосунку");
   });
 
-  it("forwards the trimmed url to the plugin and returns the watchlist", async () => {
+  it("extracts via plugin then posts to the Render API", async () => {
     isNativePlatform.mockReturnValue(true);
-    const watchlist = {
+    const extracted = {
       listId: "ls055592025",
       title: "My Favourites",
       movies: [
@@ -59,7 +65,13 @@ describe("ImdbImportService", () => {
         },
       ],
     };
-    importList.mockResolvedValue(watchlist);
+    const saved = {
+      id: "ls055592025",
+      name: "My Favourites",
+      movies: [{ id: "tt0133093", title: "The Matrix", year: 1999, genres: [] }],
+    };
+    importList.mockResolvedValue(extracted);
+    importImdbWatchlist.mockResolvedValue(saved);
 
     const { ImdbImportService } = await import("../services/imdbImportService");
     const result = await ImdbImportService.importFromImdb(
@@ -69,6 +81,11 @@ describe("ImdbImportService", () => {
     expect(importList).toHaveBeenCalledWith({
       url: "https://www.imdb.com/list/ls055592025/",
     });
-    expect(result).toEqual(watchlist);
+    expect(importImdbWatchlist).toHaveBeenCalledWith({
+      listId: "ls055592025",
+      title: "My Favourites",
+      movies: extracted.movies,
+    });
+    expect(result).toEqual(saved);
   });
 });

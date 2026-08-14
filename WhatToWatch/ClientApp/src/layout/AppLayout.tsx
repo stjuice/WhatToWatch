@@ -6,6 +6,7 @@ import { routePaths } from "../routes/routePaths";
 export const AppLayout = () => {
   const { pathname } = useLocation();
   const isMovieScreen = pathname === routePaths.movie;
+  const isStudio = pathname.startsWith(routePaths.studio);
 
   return (
     <div className="app">
@@ -18,6 +19,14 @@ export const AppLayout = () => {
       <main className="app__main">
         <AppRoutes />
       </main>
+
+      {!isStudio && !isMovieScreen ? (
+        <footer className="app__footer">
+          <Link className="app__studio-link" to={routePaths.studio}>
+            Studio
+          </Link>
+        </footer>
+      ) : null}
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useAppState } from "../state/AppStateContext";
 import "./RerollButton.scss";
 
 export const RerollButton = () => {
-  const { watchlistId, isPicking, pickRandomMovie } = useAppState();
+  const { isPicking, pickRandomMovie } = useAppState();
 
   return (
     <Button
@@ -13,7 +13,7 @@ export const RerollButton = () => {
       onClick={() => {
         void pickRandomMovie();
       }}
-      disabled={!watchlistId || isPicking}
+      disabled={isPicking}
       aria-busy={isPicking}
       aria-label="Інший випадковий фільм"
     >

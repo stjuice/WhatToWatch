@@ -5,13 +5,16 @@ import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import "./RandomButton.scss";
 
-export const RandomButton = () => {
-  const { watchlistId, isPicking, pickRandomMovie } = useAppState();
+type Props = {
+  watchlistId?: string | null;
+};
+
+export const RandomButton = ({ watchlistId }: Props) => {
+  const { isPicking, pickRandomMovie } = useAppState();
   const navigate = useNavigate();
 
   const handleClick = async () => {
-    const picked = await pickRandomMovie();
-
+    const picked = await pickRandomMovie(watchlistId);
     if (picked) {
       navigate(routePaths.movie);
     }
@@ -24,7 +27,7 @@ export const RandomButton = () => {
       onClick={() => {
         void handleClick();
       }}
-      disabled={!watchlistId || isPicking}
+      disabled={isPicking}
       aria-busy={isPicking}
       aria-label="Отримати випадковий фільм"
     >

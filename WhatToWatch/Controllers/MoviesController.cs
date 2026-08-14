@@ -42,7 +42,7 @@ public class MoviesController(IMovieService movieService) : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<MovieDto>> GetMovieAsync(
         string id,
-        [FromQuery] string watchlistId,
+        [FromQuery] string? watchlistId,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(watchlistId))

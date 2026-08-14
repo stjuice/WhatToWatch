@@ -67,3 +67,22 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.app__footer {
+  width: min(100%, $content-max-width);
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.app__studio-link {
+  color: $text-muted;
+  text-decoration: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.app__studio-link:hover {
+  color: $cyan;
+}

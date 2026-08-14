@@ -116,6 +116,16 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         Assert.Null(await _repository.GetByUrlAsync("https://www.imdb.com/list/ls999/"));
     }
 
+    [Fact]
+    public async Task DeleteAsync_RemovesWatchlistAndMovies()
+    {
+        await _repository.SaveAsync(CreateWatchlist("ls1", "Favourites"));
+
+        Assert.True(await _repository.DeleteAsync("ls1"));
+        Assert.Null(await _repository.GetAsync("ls1"));
+        Assert.False(await _repository.DeleteAsync("ls1"));
+    }
+
     public void Dispose()
     {
         _db.Dispose();
