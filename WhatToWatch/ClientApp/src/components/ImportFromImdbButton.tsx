@@ -11,7 +11,7 @@ type Props = {
 export const ImportFromImdbButton = ({ disabled = false, onImport }: Props) => {
   return (
     <Button onClick={onImport} disabled={disabled}>
-      Імпорт з IMDb
+      Import from IMDb
     </Button>
   );
 };

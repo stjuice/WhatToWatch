@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getWatchlist } from "../api/moviesApi";
 import popcornFull from "../assets/popcorn-full.svg";
+import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
@@ -18,7 +19,7 @@ export const ListPage = () => {
 
   useEffect(() => {
     if (!id) {
-      setError("Список не знайдено");
+      setError(text("list.notFound"));
       setLoading(false);
       return;
     }
@@ -37,7 +38,7 @@ export const ListPage = () => {
       } catch (err) {
         if (!cancelled) {
           setWatchlist(null);
-          setError(err instanceof Error ? err.message : "Не вдалося завантажити список");
+          setError(err instanceof Error ? err.message : text("list.loadFailed"));
         }
       } finally {
         if (!cancelled) {
@@ -65,10 +66,10 @@ export const ListPage = () => {
   return (
     <div className="list-page">
       <Link className="list-page__back" to={routePaths.home}>
-        ← Усі списки
+        {text("list.back")}
       </Link>
 
-      {loading ? <p className="list-page__status">Завантаження…</p> : null}
+      {loading ? <p className="list-page__status">{text("list.loading")}</p> : null}
       {error ? (
         <p className="list-page__error" role="alert">
           {error}
@@ -78,7 +79,9 @@ export const ListPage = () => {
       {watchlist ? (
         <>
           <h1 className="list-page__title">{watchlist.name}</h1>
-          <p className="list-page__meta">{watchlist.movies.length} фільмів</p>
+          <p className="list-page__meta">
+            {text("list.movieCount", { count: watchlist.movies.length })}
+          </p>
 
           <Button
             variant="icon"
@@ -88,7 +91,7 @@ export const ListPage = () => {
             }}
             disabled={isPicking || watchlist.movies.length === 0}
             aria-busy={isPicking}
-            aria-label={`Випадковий фільм зі списку ${watchlist.name}`}
+            aria-label={text("list.randomAria", { name: watchlist.name })}
           >
             <img src={popcornFull} alt="" draggable={false} />
           </Button>

@@ -43,7 +43,7 @@ export const StudioPage = () => {
         await action();
         await refreshWatchlists();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Помилка");
+        setError(err instanceof Error ? err.message : "Something went wrong");
       } finally {
         setIsBusy(false);
       }
@@ -54,13 +54,13 @@ export const StudioPage = () => {
   const handleLogin = (event: FormEvent) => {
     event.preventDefault();
     if (!adminKey.trim()) {
-      setError("Введіть ключ адміністратора");
+      setError("Enter the admin API key");
       return;
     }
     setAdminApiKey(adminKey);
     setIsAuthed(true);
     setError(null);
-    setMessage("Увійшли в Studio");
+    setMessage("Signed in to Studio");
   };
 
   const handleLogout = () => {
@@ -74,10 +74,10 @@ export const StudioPage = () => {
     runAction(async () => {
       const trimmed = url.trim();
       if (!trimmed) {
-        throw new Error("Вкажіть посилання на список IMDb");
+        throw new Error("Enter an IMDb list URL");
       }
       const watchlist = await importWatchlistByUrl(trimmed);
-      setMessage(`Імпортовано «${watchlist.name}» (${watchlist.movies.length})`);
+      setMessage(`Imported “${watchlist.name}” (${watchlist.movies.length})`);
       setUrl("");
     });
 
@@ -85,12 +85,12 @@ export const StudioPage = () => {
     runAction(async () => {
       const trimmed = url.trim();
       if (!trimmed) {
-        throw new Error("Вкажіть посилання на список IMDb");
+        throw new Error("Enter an IMDb list URL");
       }
 
       setImportLog([
-        "Відкриваємо IMDb у захищеному вікні…",
-        "Очікуємо завантаження списку або перевірки IMDb.",
+        "Opening IMDb in a secure window…",
+        "Waiting for the list to load or for IMDb verification.",
       ]);
 
       try {
@@ -98,18 +98,18 @@ export const StudioPage = () => {
           onStatus: (entry) => setImportLog((current) => [...current.slice(-4), entry]),
         });
         setImportLog([
-          `Список «${watchlist.name}» збережено на сервері.`,
-          `Фільмів: ${watchlist.movies.length}.`,
+          `List “${watchlist.name}” saved on the server.`,
+          `Movies: ${watchlist.movies.length}.`,
         ]);
-        setMessage(`Імпортовано «${watchlist.name}»`);
+        setMessage(`Imported “${watchlist.name}”`);
         setUrl("");
       } catch (err) {
-        const text = err instanceof Error ? err.message : "Помилка імпорту";
+        const text = err instanceof Error ? err.message : "Import failed";
         if (text === "cancelled") {
-          setImportLog(["Імпорт скасовано."]);
+          setImportLog(["Import cancelled."]);
           return;
         }
-        setImportLog([`Помилка імпорту: ${text}`]);
+        setImportLog([`Import error: ${text}`]);
         throw err;
       }
     });
@@ -117,27 +117,27 @@ export const StudioPage = () => {
   const handleRefresh = (list: WatchlistDto) =>
     runAction(async () => {
       const updated = await refreshWatchlist(list.id);
-      setMessage(`Оновлено «${updated.name}» (${updated.movies.length})`);
+      setMessage(`Refreshed “${updated.name}” (${updated.movies.length})`);
     });
 
   const handleDelete = (list: WatchlistDto) =>
     runAction(async () => {
-      if (!window.confirm(`Видалити «${list.name}»?`)) {
+      if (!window.confirm(`Delete “${list.name}”?`)) {
         return;
       }
       await deleteWatchlist(list.id);
-      setMessage(`Видалено «${list.name}»`);
+      setMessage(`Deleted “${list.name}”`);
     });
 
   const handleSaveName = (id: string) =>
     runAction(async () => {
       const name = editingName.trim();
       if (!name) {
-        throw new Error("Назва не може бути порожньою");
+        throw new Error("Name cannot be empty");
       }
       const updated = await updateWatchlist(id, { name });
       setEditingId(null);
-      setMessage(`Збережено «${updated.name}»`);
+      setMessage(`Saved “${updated.name}”`);
     });
 
   if (!isAuthed) {
@@ -157,11 +157,11 @@ export const StudioPage = () => {
             onChange={(event) => setAdminKeyInput(event.target.value)}
           />
           <button className="studio__button" type="submit">
-            Увійти
+            Sign in
           </button>
           <p className="studio__status">
-            Це той самий ключ, що на сервері. Якщо <code>ADMIN_API_KEY</code> не задано
-            на Render, використовуйте <code>dev-admin-key</code>.
+            Same key as on the server. If <code>ADMIN_API_KEY</code> is not set on Render,
+            use <code>dev-admin-key</code>.
           </p>
         </form>
         {error ? (
@@ -178,7 +178,7 @@ export const StudioPage = () => {
       <div className="studio__header">
         <h1 className="studio__title">Studio</h1>
         <button className="studio__button studio__button--ghost" type="button" onClick={handleLogout}>
-          Вийти
+          Sign out
         </button>
       </div>
 
@@ -191,7 +191,7 @@ export const StudioPage = () => {
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://www.imdb.com/list/…"
           disabled={isBusy}
-          aria-label="Посилання на список IMDb"
+          aria-label="IMDb list URL"
         />
         <div className="studio__actions">
           {hasNativeImporter ? (
@@ -225,7 +225,7 @@ export const StudioPage = () => {
 
       <section className="studio__panel">
         <h2 className="studio__section-title">Watchlists</h2>
-        {watchlistsLoading ? <p className="studio__status">Завантаження…</p> : null}
+        {watchlistsLoading ? <p className="studio__status">Loading…</p> : null}
         <ul className="studio__lists">
           {watchlists.map((list) => (
             <li key={list.id} className="studio__list-item">

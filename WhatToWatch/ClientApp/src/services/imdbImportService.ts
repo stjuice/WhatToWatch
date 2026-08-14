@@ -14,21 +14,23 @@ const importFromImdb = async (
   options?: ImportOptions
 ): Promise<WatchlistDto> => {
   if (!isAvailable()) {
-    throw new Error("Імпорт через IMDb доступний лише в мобільному застосунку");
+    throw new Error("IMDb import is only available in the mobile app");
   }
 
   const trimmedUrl = url.trim();
   if (!trimmedUrl) {
-    throw new Error("Вкажіть посилання на список IMDb");
+    throw new Error("Enter an IMDb list URL");
   }
 
-  options?.onStatus?.("Відкриваємо IMDb…");
+  options?.onStatus?.("Opening IMDb…");
   const imported = await ImdbImporter.importList({ url: trimmedUrl });
 
   console.log(
     `[ImdbImport] extracted ${imported.listId} "${imported.title}" (${imported.movies.length} movies)`
   );
-  options?.onStatus?.(`Отримано ${imported.movies.length} фільмів. Зберігаємо на сервері…`);
+  options?.onStatus?.(
+    `Got ${imported.movies.length} movies. Saving to the server…`
+  );
 
   try {
     const saved = await importImdbWatchlist({
@@ -37,7 +39,7 @@ const importFromImdb = async (
       movies: imported.movies,
     });
     console.log(`[ImdbImport] saved ${saved.id} on server`);
-    options?.onStatus?.(`Збережено «${saved.name}».`);
+    options?.onStatus?.(`Saved “${saved.name}”.`);
     return saved;
   } catch (error) {
     console.error("[ImdbImport] server save failed", error);

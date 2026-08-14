@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import popcornFull from "../assets/popcorn-full.svg";
+import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
@@ -33,14 +34,14 @@ export const HomePage = () => {
         }}
         disabled={isPicking || watchlists.length === 0}
         aria-busy={isPicking}
-        aria-label="Випадковий фільм з усіх списків"
+        aria-label={text("home.randomAllAria")}
       >
         <img src={popcornFull} alt="" draggable={false} />
       </Button>
 
-      <p className="public-home__hint">Випадковий фільм з усіх списків</p>
+      <p className="public-home__hint">{text("home.randomAll")}</p>
 
-      {watchlistsLoading ? <p className="public-home__status">Завантаження…</p> : null}
+      {watchlistsLoading ? <p className="public-home__status">{text("home.loading")}</p> : null}
       {watchlistsError ? (
         <p className="public-home__error" role="alert">
           {watchlistsError}
@@ -53,7 +54,7 @@ export const HomePage = () => {
       ) : null}
 
       {!watchlistsLoading && watchlists.length === 0 && !watchlistsError ? (
-        <p className="public-home__status">Поки немає жодного списку.</p>
+        <p className="public-home__status">{text("home.empty")}</p>
       ) : null}
 
       <ul className="public-home__lists">

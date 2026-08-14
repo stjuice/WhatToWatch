@@ -1,3 +1,5 @@
+import { text } from "../i18n/text";
+
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, "");
 
 /** Absolute API origin from Vite, or empty for same-origin (dev proxy / Render web). */
@@ -67,7 +69,7 @@ export const requestJson = async <T>(
   if (init?.admin) {
     const key = getAdminApiKey();
     if (!key) {
-      throw new Error("Потрібен ключ адміністратора");
+      throw new Error("Admin API key required");
     }
     headers["X-Admin-Key"] = key;
   }
@@ -91,10 +93,7 @@ export const requestJson = async <T>(
         `Check VITE_API_BASE_URL and server CORS.`,
       error
     );
-    throw new Error(
-      `Не вдалося з'єднатися з API (${apiBaseUrl || "same-origin"}). ` +
-        `Перевірте підключення та адресу сервера.`
-    );
+    throw new Error(text("errors.apiNetwork", { base: apiBaseUrl || "same-origin" }));
   }
 
   const elapsedMs = Math.round(performance.now() - startedAt);

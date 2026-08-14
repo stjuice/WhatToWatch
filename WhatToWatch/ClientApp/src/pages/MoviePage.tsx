@@ -1,6 +1,7 @@
 import frame from "../assets/frame.svg";
 import placeholder from "../assets/placeholder.svg";
 import { RerollButton } from "../components/RerollButton";
+import { text } from "../i18n/text";
 import { useAppState } from "../state/AppStateContext";
 import "./MoviePage.scss";
 
@@ -27,7 +28,11 @@ export const MoviePage = () => {
           <img
             className="movie-detail__poster"
             src={posterSrc}
-            alt={movie?.title ? `Постер: ${movie.title}` : "Постер фільму"}
+            alt={
+              movie?.title
+                ? text("movie.posterAlt", { title: movie.title })
+                : text("movie.posterAltFallback")
+            }
           />
         </div>
         <img className="movie-detail__frame" src={frame} alt="" draggable={false} />

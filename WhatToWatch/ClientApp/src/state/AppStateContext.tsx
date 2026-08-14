@@ -19,6 +19,7 @@ import {
   setStoredMovieId,
   setStoredWatchlistId,
 } from "../api/moviesApi";
+import { text } from "../i18n/text";
 import type { MovieDto, WatchlistDto } from "../types/movie";
 
 export interface AppState {
@@ -59,7 +60,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const lists = await getWatchlists();
       setWatchlists(lists);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Не вдалося завантажити списки";
+      const message = error instanceof Error ? error.message : text("errors.watchlistsLoadFailed");
       setWatchlistsError(message);
     } finally {
       setWatchlistsLoading(false);
@@ -105,7 +106,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         }
         return picked;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Не вдалося обрати фільм";
+        const message = error instanceof Error ? error.message : text("errors.pickFailed");
         setPickError(message);
         return null;
       } finally {
