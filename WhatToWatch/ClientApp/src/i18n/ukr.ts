@@ -18,6 +18,7 @@ export const ukr = {
 
   "movie.posterAlt": "Постер: {title}",
   "movie.posterAltFallback": "Постер фільму",
+  "movie.openOnImdb": "Відкрити на IMDb: {title}",
   "movie.director": "Режисер: {name}",
   "movie.rerollAria": "Інший випадковий фільм",
   "movie.randomAria": "Отримати випадковий фільм",
