@@ -61,11 +61,15 @@ jobs:
       - name: Build web assets and sync Capacitor
         run: npm run cap:sync
 
-      - name: Unit test Android helpers and assemble debug APK
+      - name: Unit test Android helpers
         working-directory: WhatToWatch/ClientApp/android
         run: |
           chmod +x gradlew
-          ./gradlew test assembleDebug --no-daemon --stacktrace --tests com.whattowatch.app.ImdbImportSupportTest
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Assemble debug APK
+        working-directory: WhatToWatch/ClientApp/android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
