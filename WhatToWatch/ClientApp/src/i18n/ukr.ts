@@ -10,7 +10,6 @@ export const ukr = {
   "home.loading": "Завантаження…",
   "home.empty": "Поки немає жодного списку.",
 
-  "list.back": "← Усі списки",
   "list.loading": "Завантаження…",
   "list.notFound": "Список не знайдено",
   "list.loadFailed": "Не вдалося завантажити список",
