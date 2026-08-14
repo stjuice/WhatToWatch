@@ -3,7 +3,7 @@ name: Build IMDb WebView POC APK
 on:
   workflow_dispatch:
   push:
-    branches: [improve-android-communication-api]
+    branches: [main, master]
     paths:
       - "WhatToWatch/ClientApp/**"
       - ".github/workflows/imdb-webview-poc.yml"
