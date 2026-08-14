@@ -86,19 +86,36 @@ public sealed class PlaywrightPublicWatchlistProvider(
         string url,
         CancellationToken cancellationToken)
     {
-        var response = await page.GotoAsync(url, new PageGotoOptions
-        {
-            Timeout = 60_000,
-            WaitUntil = WaitUntilState.DOMContentLoaded,
-        }).WaitAsync(cancellationToken);
+        IResponse? response = null;
+        string html = string.Empty;
 
-        if (response is null)
-            throw new ImdbWatchlistException(
-                $"IMDb navigation to '{page.Url ?? url}' returned no HTTP response.");
-
-        var html = await page.ContentAsync().WaitAsync(cancellationToken);
-        if (!response.Ok)
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
+            response = await page.GotoAsync(url, new PageGotoOptions
+            {
+                Timeout = 60_000,
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+            }).WaitAsync(cancellationToken);
+
+            if (response is null)
+                throw new ImdbWatchlistException(
+                    $"IMDb navigation to '{page.Url ?? url}' returned no HTTP response.");
+
+            html = await page.ContentAsync().WaitAsync(cancellationToken);
+            if (response.Ok)
+                break;
+
+            if (response.Status == 403 && attempt < 3)
+            {
+                logger.LogWarning(
+                    "IMDb returned HTTP 403 for {Url} (attempt {Attempt}/3). Retrying.",
+                    url,
+                    attempt);
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), cancellationToken)
+                    .ConfigureAwait(false);
+                continue;
+            }
+
             var finalUrl = string.IsNullOrWhiteSpace(response.Url)
                 ? page.Url ?? url
                 : response.Url;
@@ -117,14 +134,28 @@ public sealed class PlaywrightPublicWatchlistProvider(
                 browserManager.UsesPersistentContext,
                 browserManager.StorageStateLoaded);
 
-            throw new ImdbWatchlistException(
-                $"IMDb returned HTTP {response.Status} for '{finalUrl}'. " +
-                $"Body preview: {preview}");
+            throw new ImdbWatchlistException(FormatHttpError(response.Status, finalUrl, preview));
         }
 
-        await WaitForListDataAsync(page, url, response.Status, cancellationToken);
+        await WaitForListDataAsync(page, url, response!.Status, cancellationToken);
 
         return html;
+    }
+
+    private static string FormatHttpError(int status, string url, string preview)
+    {
+        if (status == 403)
+        {
+            return
+                "IMDb blocked this server from opening the list (HTTP 403). " +
+                "Render datacenter IPs are often blocked unless a saved IMDb session " +
+                "is on the disk at /var/data/imdb-session.json " +
+                "(run ImdbSessionBootstrap locally, copy the file, restart the service). " +
+                "Android import still works because it uses your phone's browser. " +
+                $"URL: {url}";
+        }
+
+        return $"IMDb returned HTTP {status} for '{url}'. Body preview: {preview}";
     }
 
     private static string GetBodyPreview(string html) =>

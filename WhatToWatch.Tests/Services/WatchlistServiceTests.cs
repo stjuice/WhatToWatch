@@ -181,79 +181,18 @@ public class WatchlistServiceTests
     }
 
     [Fact]
-    public async Task ImportFromImdbPayloadAsync_SavesNormalizedWatchlist_ThenRefreshesFromImdb()
+    public async Task ImportFromImdbPayloadAsync_SavesNormalizedWatchlist_WithoutServerScrape()
     {
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppWatchlist?)null);
-        _imdb
-            .Setup(i => i.GetListAsync(
-                It.Is<WatchlistRequest>(r => r.Url == ListUrl),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateImdbWatchlist(ListId, name: "Favourites"));
 
         var result = await CreateSut().ImportFromImdbPayloadAsync(
             new WhatToWatch.DTOs.ImportImdbWatchlistRequest
             {
                 ListId = ListId,
                 Title = "Sci-Fi",
-                Movies =
-                [
-                    new WhatToWatch.DTOs.ImportImdbMovieRequest
-                    {
-                        ImdbId = "tt0133093",
-                        Title = "The Matrix",
-                        Year = 1999,
-                        ImageUrl = "https://example.com/m.jpg",
-                    },
-                    new WhatToWatch.DTOs.ImportImdbMovieRequest
-                    {
-                        ImdbId = "tt0133093",
-                        Title = "The Matrix Duplicate",
-                        Year = 1999,
-                        ImageUrl = null,
-                    },
-                ],
-            });
-
-        Assert.Equal(ListId, result.Id);
-        Assert.Equal("Favourites", result.Name);
-        Assert.Equal(ListUrl, result.Url);
-        var movie = Assert.Single(result.Movies);
-        Assert.Equal("tt0133093", movie.Id);
-        Assert.Equal(8.7, movie.Rating);
-        Assert.Equal("A computer hacker learns from mysterious rebels.", movie.Plot);
-        Assert.Equal(136, movie.RuntimeMinutes);
-        Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
-        _repository.Verify(
-            r => r.SaveAsync(
-                It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
-                It.IsAny<CancellationToken>()),
-            Times.Exactly(2));
-        _imdb.Verify(
-            i => i.GetListAsync(
-                It.Is<WatchlistRequest>(r => r.Url == ListUrl && r.Access == WatchlistAccess.Public),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task ImportFromImdbPayloadAsync_KeepsPayloadMetadata_WhenRefreshFails()
-    {
-        _repository
-            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppWatchlist?)null);
-        _imdb
-            .Setup(i => i.GetListAsync(
-                It.IsAny<WatchlistRequest>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ImdbWatchlistException("IMDb blocked the scrape."));
-
-        var result = await CreateSut().ImportFromImdbPayloadAsync(
-            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
-            {
-                ListId = ListId,
-                Title = "Sci-Fi",
+                Url = ListUrl,
                 Movies =
                 [
                     new WhatToWatch.DTOs.ImportImdbMovieRequest
@@ -268,19 +207,31 @@ public class WatchlistServiceTests
                         Director = "Lana Wachowski",
                         Genres = ["Action", "Sci-Fi"],
                     },
+                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt0133093",
+                        Title = "The Matrix Duplicate",
+                        Year = 1999,
+                        ImageUrl = null,
+                    },
                 ],
             });
 
         var movie = Assert.Single(result.Movies);
+        Assert.Equal(ListId, result.Id);
         Assert.Equal("Sci-Fi", result.Name);
+        Assert.Equal(ListUrl, result.Url);
+        Assert.Equal("tt0133093", movie.Id);
         Assert.Equal(8.7, movie.Rating);
-        Assert.Equal("A computer hacker learns from mysterious rebels.", movie.Plot);
-        Assert.Equal(136, movie.RuntimeMinutes);
-        Assert.Equal("Lana Wachowski", movie.Director);
         Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(
+                It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
+                It.IsAny<CancellationToken>()),
             Times.Once);
+        _imdb.Verify(
+            i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

@@ -51,25 +51,17 @@ public class WatchlistService(
         {
             Id = listId,
             Name = request.Title.Trim(),
-            Url = string.IsNullOrWhiteSpace(existing?.Url)
-                ? BuildListUrl(listId)
-                : existing.Url,
+            Url = !string.IsNullOrWhiteSpace(request.Url)
+                ? request.Url.Trim()
+                : string.IsNullOrWhiteSpace(existing?.Url)
+                    ? BuildListUrl(listId)
+                    : existing.Url,
             LastRefreshedAt = DateTimeOffset.UtcNow,
             Movies = DeduplicateMovies(request.Movies),
         };
 
         await repository.SaveAsync(watchlist, cancellationToken).ConfigureAwait(false);
-
-        try
-        {
-            return await FetchAndSaveAsync(watchlist.Url!, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (ImdbWatchlistException)
-        {
-            // Keep the payload we already saved so import is not lost if IMDb scrape fails.
-            return watchlist;
-        }
+        return watchlist;
     }
 
     public Task<Watchlist?> GetWatchlistAsync(

@@ -50,5 +50,6 @@ export interface ImportImdbMovieRequest {
 export interface ImportImdbWatchlistRequest {
   listId: string;
   title: string;
+  url?: string;
   movies: ImportImdbMovieRequest[];
 }

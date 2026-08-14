@@ -10,6 +10,8 @@ public record ImportImdbWatchlistRequest
     [Required]
     public required string Title { get; init; }
 
+    public string? Url { get; init; }
+
     [Required]
     [MinLength(1)]
     public required IReadOnlyCollection<ImportImdbMovieRequest> Movies { get; init; }

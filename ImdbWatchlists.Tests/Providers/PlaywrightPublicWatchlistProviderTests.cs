@@ -115,6 +115,23 @@ public class PlaywrightPublicWatchlistProviderTests
     }
 
     [Fact]
+    public async Task GetWatchlistAsync_ExplainsServerBlock_WhenImdbReturns403()
+    {
+        var fixture = new PlaywrightFixture(403, Html);
+        var provider = fixture.CreateProvider();
+
+        var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
+            provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl }));
+
+        Assert.Contains("403", exception.Message);
+        Assert.Contains("blocked", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("imdb-session.json", exception.Message);
+        fixture.Page.Verify(
+            page => page.GotoAsync(ListUrl, It.IsAny<PageGotoOptions>()),
+            Times.Exactly(3));
+    }
+
+    [Fact]
     public async Task GetWatchlistAsync_ExplainsHumanVerification_WhenListDataNeverAppears()
     {
         var fixture = new PlaywrightFixture(200, listDataAvailable: false, Html);
