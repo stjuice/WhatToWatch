@@ -26,4 +26,14 @@ public record ImportImdbMovieRequest
     public int? Year { get; init; }
 
     public string? ImageUrl { get; init; }
+
+    public double? Rating { get; init; }
+
+    public string? Plot { get; init; }
+
+    public int? RuntimeMinutes { get; init; }
+
+    public string? Director { get; init; }
+
+    public IReadOnlyCollection<string>? Genres { get; init; }
 }

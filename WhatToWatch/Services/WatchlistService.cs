@@ -51,13 +51,25 @@ public class WatchlistService(
         {
             Id = listId,
             Name = request.Title.Trim(),
-            Url = existing?.Url ?? BuildListUrl(listId),
+            Url = string.IsNullOrWhiteSpace(existing?.Url)
+                ? BuildListUrl(listId)
+                : existing.Url,
             LastRefreshedAt = DateTimeOffset.UtcNow,
             Movies = DeduplicateMovies(request.Movies),
         };
 
         await repository.SaveAsync(watchlist, cancellationToken).ConfigureAwait(false);
-        return watchlist;
+
+        try
+        {
+            return await FetchAndSaveAsync(watchlist.Url!, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (ImdbWatchlistException)
+        {
+            // Keep the payload we already saved so import is not lost if IMDb scrape fails.
+            return watchlist;
+        }
     }
 
     public Task<Watchlist?> GetWatchlistAsync(
@@ -163,7 +175,11 @@ public class WatchlistService(
                 Title = movie.Title.Trim(),
                 Year = movie.Year,
                 PosterUrl = string.IsNullOrWhiteSpace(movie.ImageUrl) ? null : movie.ImageUrl.Trim(),
-                Genres = [],
+                Rating = movie.Rating,
+                Plot = string.IsNullOrWhiteSpace(movie.Plot) ? null : movie.Plot.Trim(),
+                RuntimeMinutes = movie.RuntimeMinutes,
+                Director = string.IsNullOrWhiteSpace(movie.Director) ? null : movie.Director.Trim(),
+                Genres = NormalizeGenres(movie.Genres),
             });
         }
 
@@ -171,5 +187,16 @@ public class WatchlistService(
             throw new ArgumentException("At least one valid movie is required.");
 
         return result;
+    }
+
+    private static IReadOnlyCollection<string> NormalizeGenres(
+        IReadOnlyCollection<string>? genres)
+    {
+        if (genres is null || genres.Count == 0)
+            return [];
+
+        return [.. genres
+            .Where(genre => !string.IsNullOrWhiteSpace(genre))
+            .Select(genre => genre.Trim())];
     }
 }

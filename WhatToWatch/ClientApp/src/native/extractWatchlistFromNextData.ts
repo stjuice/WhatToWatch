@@ -77,12 +77,155 @@ function visit(node: unknown, movies: ImportedMovie[], seen: Set<string>): void 
       title: titleText,
       year: typeof releaseYear === "number" ? releaseYear : null,
       imageUrl: typeof primaryImage === "string" ? primaryImage : null,
+      rating: readRating(record),
+      plot: readPlot(record),
+      runtimeMinutes: readRuntimeMinutes(record),
+      director: readDirector(record),
+      genres: readGenres(record),
     });
   }
 
   for (const value of Object.values(record)) {
     visit(value, movies, seen);
   }
+}
+
+function readRating(record: Record<string, unknown>): number | null {
+  const summary = record.ratingsSummary;
+  if (!summary || typeof summary !== "object") {
+    return null;
+  }
+
+  const rating = (summary as { aggregateRating?: unknown }).aggregateRating;
+  return typeof rating === "number" ? rating : null;
+}
+
+function readPlot(record: Record<string, unknown>): string | null {
+  const plot = record.plot;
+  if (!plot || typeof plot !== "object") {
+    return null;
+  }
+
+  const plotText = (plot as { plotText?: { plainText?: unknown } }).plotText;
+  return typeof plotText?.plainText === "string" ? plotText.plainText : null;
+}
+
+function readRuntimeMinutes(record: Record<string, unknown>): number | null {
+  const runtime = record.runtime;
+  if (!runtime || typeof runtime !== "object") {
+    return null;
+  }
+
+  const value = runtime as { seconds?: unknown; minutes?: unknown };
+  if (typeof value.seconds === "number" && value.seconds > 0) {
+    return Math.floor(value.seconds / 60);
+  }
+
+  if (typeof value.minutes === "number" && value.minutes > 0) {
+    return value.minutes;
+  }
+
+  return null;
+}
+
+function readGenres(record: Record<string, unknown>): string[] {
+  const titleGenres = record.titleGenres;
+  if (!titleGenres || typeof titleGenres !== "object") {
+    return [];
+  }
+
+  const genres = (titleGenres as { genres?: unknown }).genres;
+  if (!Array.isArray(genres)) {
+    return [];
+  }
+
+  const result: string[] = [];
+  for (const entry of genres) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const genre = (entry as { genre?: { text?: unknown } }).genre;
+    if (typeof genre?.text === "string" && genre.text) {
+      result.push(genre.text);
+    }
+  }
+
+  return result;
+}
+
+function readDirector(record: Record<string, unknown>): string | null {
+  const fromV2 = readDirectorFromCredits(
+    record.principalCreditsV2,
+    (entry) => {
+      const text = (entry.grouping as { text?: unknown } | undefined)?.text;
+      return typeof text === "string" && /^directors?$/i.test(text);
+    }
+  );
+  if (fromV2) {
+    return fromV2;
+  }
+
+  return readDirectorFromCredits(record.principalCredits, (entry) => {
+    const category = entry.category as { id?: unknown; text?: unknown } | undefined;
+    const id = category?.id;
+    const text = category?.text;
+    return (
+      (typeof id === "string" && id.toLowerCase() === "director") ||
+      (typeof text === "string" && /^directors?$/i.test(text))
+    );
+  });
+}
+
+function readDirectorFromCredits(
+  credits: unknown,
+  isDirector: (entry: Record<string, unknown>) => boolean
+): string | null {
+  if (!Array.isArray(credits)) {
+    return null;
+  }
+
+  for (const entry of credits) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const record = entry as Record<string, unknown>;
+    if (!isDirector(record)) {
+      continue;
+    }
+
+    const name = readFirstCreditName(record);
+    if (name) {
+      return name;
+    }
+  }
+
+  return null;
+}
+
+function readFirstCreditName(entry: Record<string, unknown>): string | null {
+  const credits = entry.credits;
+  if (Array.isArray(credits)) {
+    for (const credit of credits) {
+      const name = readCreditName(credit);
+      if (name) {
+        return name;
+      }
+    }
+  }
+
+  return readCreditName(entry);
+}
+
+function readCreditName(credit: unknown): string | null {
+  if (!credit || typeof credit !== "object") {
+    return null;
+  }
+
+  const name = (credit as { name?: { nameText?: { text?: unknown } } }).name;
+  const text = name?.nameText?.text;
+  return typeof text === "string" && text ? text : null;
 }
 
 function findListName(node: unknown): string | null {

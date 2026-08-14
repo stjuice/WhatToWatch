@@ -181,11 +181,16 @@ public class WatchlistServiceTests
     }
 
     [Fact]
-    public async Task ImportFromImdbPayloadAsync_SavesNormalizedWatchlist()
+    public async Task ImportFromImdbPayloadAsync_SavesNormalizedWatchlist_ThenRefreshesFromImdb()
     {
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppWatchlist?)null);
+        _imdb
+            .Setup(i => i.GetListAsync(
+                It.Is<WatchlistRequest>(r => r.Url == ListUrl),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateImdbWatchlist(ListId, name: "Favourites"));
 
         var result = await CreateSut().ImportFromImdbPayloadAsync(
             new WhatToWatch.DTOs.ImportImdbWatchlistRequest
@@ -212,19 +217,70 @@ public class WatchlistServiceTests
             });
 
         Assert.Equal(ListId, result.Id);
-        Assert.Equal("Sci-Fi", result.Name);
+        Assert.Equal("Favourites", result.Name);
         Assert.Equal(ListUrl, result.Url);
-        Assert.Single(result.Movies);
-        Assert.Equal("tt0133093", result.Movies.First().Id);
-        Assert.Equal("https://example.com/m.jpg", result.Movies.First().PosterUrl);
+        var movie = Assert.Single(result.Movies);
+        Assert.Equal("tt0133093", movie.Id);
+        Assert.Equal(8.7, movie.Rating);
+        Assert.Equal("A computer hacker learns from mysterious rebels.", movie.Plot);
+        Assert.Equal(136, movie.RuntimeMinutes);
+        Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
         _repository.Verify(
             r => r.SaveAsync(
                 It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
                 It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Exactly(2));
         _imdb.Verify(
-            i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            i => i.GetListAsync(
+                It.Is<WatchlistRequest>(r => r.Url == ListUrl && r.Access == WatchlistAccess.Public),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ImportFromImdbPayloadAsync_KeepsPayloadMetadata_WhenRefreshFails()
+    {
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppWatchlist?)null);
+        _imdb
+            .Setup(i => i.GetListAsync(
+                It.IsAny<WatchlistRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ImdbWatchlistException("IMDb blocked the scrape."));
+
+        var result = await CreateSut().ImportFromImdbPayloadAsync(
+            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
+            {
+                ListId = ListId,
+                Title = "Sci-Fi",
+                Movies =
+                [
+                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt0133093",
+                        Title = "The Matrix",
+                        Year = 1999,
+                        ImageUrl = "https://example.com/m.jpg",
+                        Rating = 8.7,
+                        Plot = "A computer hacker learns from mysterious rebels.",
+                        RuntimeMinutes = 136,
+                        Director = "Lana Wachowski",
+                        Genres = ["Action", "Sci-Fi"],
+                    },
+                ],
+            });
+
+        var movie = Assert.Single(result.Movies);
+        Assert.Equal("Sci-Fi", result.Name);
+        Assert.Equal(8.7, movie.Rating);
+        Assert.Equal("A computer hacker learns from mysterious rebels.", movie.Plot);
+        Assert.Equal(136, movie.RuntimeMinutes);
+        Assert.Equal("Lana Wachowski", movie.Director);
+        Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
+        _repository.Verify(
+            r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -297,6 +353,9 @@ public class WatchlistServiceTests
                     Title = "The Matrix",
                     Year = 1999,
                     Rating = 8.7,
+                    Plot = "A computer hacker learns from mysterious rebels.",
+                    RuntimeMinutes = 136,
+                    Director = "Lana Wachowski",
                     Genres = ["Action", "Sci-Fi"],
                 },
             ],

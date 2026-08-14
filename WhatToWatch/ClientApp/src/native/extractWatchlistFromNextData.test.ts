@@ -28,6 +28,28 @@ const listPageNextData = {
                   titleText: { text: "The Matrix" },
                   releaseYear: { year: 1999 },
                   primaryImage: { url: "https://example.com/matrix.jpg" },
+                  ratingsSummary: { aggregateRating: 8.7 },
+                  plot: {
+                    plotText: {
+                      plainText:
+                        "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+                    },
+                  },
+                  runtime: { seconds: 8160 },
+                  principalCredits: [
+                    {
+                      category: { id: "director", text: "Directors" },
+                      credits: [
+                        { name: { nameText: { text: "Lana Wachowski" } } },
+                      ],
+                    },
+                  ],
+                  titleGenres: {
+                    genres: [
+                      { genre: { text: "Action" } },
+                      { genre: { text: "Sci-Fi" } },
+                    ],
+                  },
                 },
               },
               {
@@ -63,6 +85,9 @@ const chartPageNextData = {
                 titleText: { text: "The Shawshank Redemption" },
                 releaseYear: { year: 1994 },
                 primaryImage: { url: "https://example.com/shawshank.jpg" },
+                ratingsSummary: { aggregateRating: 9.3 },
+                runtime: { seconds: 8520 },
+                titleGenres: { genres: [{ genre: { text: "Drama" } }] },
               },
             },
             {
@@ -129,6 +154,11 @@ describe("extractWatchlistFromNextData", () => {
       title: "The Matrix",
       year: 1999,
       imageUrl: "https://example.com/matrix.jpg",
+      rating: 8.7,
+      plot: "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+      runtimeMinutes: 136,
+      director: "Lana Wachowski",
+      genres: ["Action", "Sci-Fi"],
     });
     expect(watchlist?.movies.filter((movie) => movie.imdbId === "tt0133093")).toHaveLength(1);
   });
@@ -164,6 +194,11 @@ describe("extractWatchlistFromNextData", () => {
       title: "Unreleased Film",
       year: null,
       imageUrl: null,
+      rating: null,
+      plot: null,
+      runtimeMinutes: null,
+      director: null,
+      genres: [],
     });
   });
 
@@ -178,6 +213,11 @@ describe("extractWatchlistFromNextData", () => {
       "tt0111161",
       "tt0068646",
     ]);
+    expect(watchlist?.movies[0]).toMatchObject({
+      rating: 9.3,
+      runtimeMinutes: 142,
+      genres: ["Drama"],
+    });
   });
 
   it("returns null when __NEXT_DATA__ has no titles yet", () => {
