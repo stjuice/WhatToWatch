@@ -25,15 +25,24 @@ const importFromImdb = async (
   options?.onStatus?.("Відкриваємо IMDb…");
   const imported = await ImdbImporter.importList({ url: trimmedUrl });
 
+  console.log(
+    `[ImdbImport] extracted ${imported.listId} "${imported.title}" (${imported.movies.length} movies)`
+  );
   options?.onStatus?.(`Отримано ${imported.movies.length} фільмів. Зберігаємо на сервері…`);
-  const saved = await importImdbWatchlist({
-    listId: imported.listId,
-    title: imported.title,
-    movies: imported.movies,
-  });
 
-  options?.onStatus?.(`Збережено «${saved.name}».`);
-  return saved;
+  try {
+    const saved = await importImdbWatchlist({
+      listId: imported.listId,
+      title: imported.title,
+      movies: imported.movies,
+    });
+    console.log(`[ImdbImport] saved ${saved.id} on server`);
+    options?.onStatus?.(`Збережено «${saved.name}».`);
+    return saved;
+  } catch (error) {
+    console.error("[ImdbImport] server save failed", error);
+    throw error;
+  }
 };
 
 export const ImdbImportService = {

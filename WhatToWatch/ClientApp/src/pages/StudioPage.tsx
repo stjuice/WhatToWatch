@@ -159,6 +159,10 @@ export const StudioPage = () => {
           <button className="studio__button" type="submit">
             Увійти
           </button>
+          <p className="studio__status">
+            Це той самий ключ, що на сервері. Якщо <code>ADMIN_API_KEY</code> не задано
+            на Render, використовуйте <code>dev-admin-key</code>.
+          </p>
         </form>
         {error ? (
           <p className="studio__error" role="alert">

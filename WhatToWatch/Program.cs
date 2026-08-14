@@ -1,6 +1,7 @@
 using ImdbWatchlists.DependencyInjection;
 using ImdbWatchlists.Options;
 using Microsoft.EntityFrameworkCore;
+using WhatToWatch.Auth;
 using WhatToWatch.Data;
 using WhatToWatch.Options;
 using WhatToWatch.Repositories;
@@ -22,20 +23,18 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<WhatToWatchOptions>(options =>
 {
     builder.Configuration.GetSection(WhatToWatchOptions.SectionName).Bind(options);
-
-    // Allow a plain ADMIN_API_KEY env var as a friendlier alias on Render.
-    var envKey = builder.Configuration["ADMIN_API_KEY"];
-    if (!string.IsNullOrWhiteSpace(envKey))
-        options.AdminApiKey = envKey.Trim();
+    var resolved = AdminApiKey.Resolve(builder.Configuration);
+    if (!string.IsNullOrWhiteSpace(resolved))
+        options.AdminApiKey = resolved;
 });
 
 var whatToWatchOptions = builder.Configuration
     .GetSection(WhatToWatchOptions.SectionName)
     .Get<WhatToWatchOptions>() ?? new WhatToWatchOptions();
 
-var adminKeyOverride = builder.Configuration["ADMIN_API_KEY"];
-if (!string.IsNullOrWhiteSpace(adminKeyOverride))
-    whatToWatchOptions.AdminApiKey = adminKeyOverride.Trim();
+var resolvedAdminKey = AdminApiKey.Resolve(builder.Configuration);
+if (!string.IsNullOrWhiteSpace(resolvedAdminKey))
+    whatToWatchOptions.AdminApiKey = resolvedAdminKey;
 
 var imdbOptions = builder.Configuration
     .GetSection(ImdbWatchlistsOptions.SectionName)
@@ -77,10 +76,14 @@ app.UseStaticFiles();
 app.UseCors();
 app.UseAuthorization();
 
-app.MapGet("/health", async (WhatToWatchDbContext db) =>
+app.MapGet("/health", async (WhatToWatchDbContext db, IConfiguration configuration) =>
 {
     await db.Database.CanConnectAsync();
-    return Results.Ok(new { status = "healthy" });
+    return Results.Ok(new
+    {
+        status = "healthy",
+        adminKeyConfigured = AdminApiKey.Resolve(configuration) is not null,
+    });
 });
 
 app.MapControllers();
