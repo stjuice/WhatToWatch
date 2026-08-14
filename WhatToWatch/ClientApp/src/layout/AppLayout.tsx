@@ -1,5 +1,6 @@
 import { Link, matchPath, useLocation } from "react-router-dom";
 import logo from "../assets/logo.svg";
+import { RerollButton } from "../components/RerollButton";
 import { useGestureBack } from "../hooks/useGestureBack";
 import { text } from "../i18n/text";
 import { AppRoutes } from "../routes/AppRoutes";
@@ -30,7 +31,11 @@ export const AppLayout = () => {
         <AppRoutes />
       </main>
 
-      {!isStudio && !isMovieScreen ? (
+      {isMovieScreen ? (
+        <footer className="app__footer app__footer--reroll">
+          <RerollButton />
+        </footer>
+      ) : !isStudio ? (
         <footer className="app__footer">
           <Link className="app__studio-link" to={routePaths.studio}>
             Studio

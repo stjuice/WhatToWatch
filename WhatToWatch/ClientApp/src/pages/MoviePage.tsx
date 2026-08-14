@@ -1,6 +1,5 @@
 import frame from "../assets/frame.svg";
 import placeholder from "../assets/placeholder.svg";
-import { RerollButton } from "../components/RerollButton";
 import { text } from "../i18n/text";
 import { useAppState } from "../state/AppStateContext";
 import { getMovieCoreFields } from "./movieCoreFields";
@@ -54,8 +53,6 @@ export const MoviePage = () => {
           {pickError}
         </p>
       )}
-
-      <RerollButton />
     </div>
   );
 };
