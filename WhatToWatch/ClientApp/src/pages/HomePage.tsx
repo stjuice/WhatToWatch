@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { AddLinkButton } from "../components/AddLinkButton";
 import { ClearLinkButton } from "../components/ClearLinkButton";
+import { ImportFromImdbButton } from "../components/ImportFromImdbButton";
 import { RandomButton } from "../components/RandomButton";
+import { ImdbImportService } from "../services/imdbImportService";
 import { useAppState } from "../state/AppStateContext";
 import "./HomePage.scss";
 
@@ -24,8 +26,17 @@ const resolveBucketState = (
 };
 
 export const HomePage = () => {
-  const { url, setUrl, isListLoaded, isImporting, importError, pickError, loadList } =
-    useAppState();
+  const {
+    url,
+    setUrl,
+    isListLoaded,
+    isImporting,
+    importError,
+    pickError,
+    nativeImportLog,
+    loadList,
+  } = useAppState();
+  const hasNativeImporter = ImdbImportService.isAvailable();
 
   // Dev-only switch to preview the empty/upload states without dropping the imported list.
   const [isEmptyPreview, setIsEmptyPreview] = useState(false);
@@ -70,7 +81,11 @@ export const HomePage = () => {
             />
 
             <div className="watchlist-bucket__action">
-              {bucketState === "idle" ? null : <AddLinkButton />}
+              {bucketState === "idle" ? null : hasNativeImporter ? (
+                <ImportFromImdbButton />
+              ) : (
+                <AddLinkButton />
+              )}
             </div>
           </div>
         )}
@@ -80,6 +95,14 @@ export const HomePage = () => {
         <p className="watchlist-bucket__error" role="alert">
           {error}
         </p>
+      ) : null}
+
+      {nativeImportLog.length > 0 ? (
+        <div className="watchlist-bucket__import-log" role="status" aria-live="polite">
+          {nativeImportLog.map((entry, index) => (
+            <div key={`${index}-${entry}`}>{entry}</div>
+          ))}
+        </div>
       ) : null}
 
       {import.meta.env.DEV && isListLoaded ? (

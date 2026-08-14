@@ -67,6 +67,10 @@ $controls-bottom: 8rem;
   min-height: $tap-min;
 }
 
+.watchlist-bucket__action > * {
+  width: 100%;
+}
+
 .watchlist-bucket__input {
   width: 100%;
   min-height: $tap-min;
@@ -101,6 +105,22 @@ $controls-bottom: 8rem;
   color: $red;
   font-size: 0.9rem;
   text-align: center;
+}
+
+.watchlist-bucket__import-log {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba($cyan, 0.45);
+  border-radius: 0.35rem;
+  background: rgba($bg, 0.9);
+  color: $text-muted;
+  font-family: $font-system;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.watchlist-bucket__import-log > div:last-child {
+  color: $cyan;
 }
 
 .watchlist-bucket__preview-toggle {

@@ -18,6 +18,7 @@ import {
   importWatchlist,
   setStoredMovieId,
 } from "../api/moviesApi";
+import { ImdbImportService } from "../services/imdbImportService";
 import type { MovieDto } from "../types/movie";
 
 export interface AppState {
@@ -27,7 +28,9 @@ export interface AppState {
   isListLoaded: boolean;
   isImporting: boolean;
   importError: string | null;
+  nativeImportLog: string[];
   loadList: () => Promise<void>;
+  importFromImdb: () => Promise<void>;
   clearList: () => void;
   movie: MovieDto | null;
   setMovie: Dispatch<SetStateAction<MovieDto | null>>;
@@ -45,6 +48,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [isListLoaded, setIsListLoaded] = useState(() => Boolean(getStoredWatchlistId()));
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [nativeImportLog, setNativeImportLog] = useState<string[]>([]);
+  const [nativeMovies, setNativeMovies] = useState<MovieDto[]>([]);
   const [movie, setMovie] = useState<MovieDto | null>(null);
   const [isRestoringMovie, setIsRestoringMovie] = useState(
     () => Boolean(getStoredWatchlistId() && getStoredMovieId())
@@ -66,9 +71,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setIsImporting(true);
     setImportError(null);
     setPickError(null);
+    setNativeImportLog([]);
 
     try {
       const watchlist = await importWatchlist(trimmedUrl);
+      setNativeMovies([]);
       setWatchlistId(watchlist.id);
       setIsListLoaded(true);
       setMovie(null);
@@ -86,6 +93,55 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [url]);
 
+  const importFromImdb = useCallback(async () => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl || isImportingRef.current) {
+      return;
+    }
+
+    isImportingRef.current = true;
+    setIsImporting(true);
+    setImportError(null);
+    setPickError(null);
+    setNativeImportLog([
+      "Відкриваємо IMDb у захищеному вікні…",
+      "Очікуємо завантаження списку або перевірки IMDb.",
+    ]);
+
+    try {
+      const watchlist = await ImdbImportService.importFromImdb(trimmedUrl);
+      const movies: MovieDto[] = watchlist.movies.map((item) => ({
+        id: item.imdbId,
+        title: item.title,
+        ...(item.year == null ? {} : { year: item.year }),
+        ...(item.imageUrl == null ? {} : { posterUrl: item.imageUrl }),
+        genres: [],
+      }));
+
+      setNativeMovies(movies);
+      setWatchlistId(watchlist.listId);
+      setIsListLoaded(true);
+      setMovie(null);
+      clearStoredWatchlistId();
+      clearStoredMovieId();
+      setNativeImportLog([
+        `Список «${watchlist.title}» отримано.`,
+        `Імпортовано фільмів: ${movies.length}.`,
+        "IMDb закрито. Список готовий до використання.",
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Не вдалося імпортувати список IMDb";
+      const wasCancelled = message === "cancelled";
+      setImportError(wasCancelled ? null : message);
+      setNativeImportLog([
+        wasCancelled ? "Імпорт скасовано." : `Помилка імпорту: ${message}`,
+      ]);
+    } finally {
+      isImportingRef.current = false;
+      setIsImporting(false);
+    }
+  }, [url]);
+
   const clearList = useCallback(() => {
     setUrl("");
     setWatchlistId(null);
@@ -93,6 +149,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setImportError(null);
     setPickError(null);
     setMovie(null);
+    setNativeMovies([]);
+    setNativeImportLog([]);
     clearStoredWatchlistId();
     clearStoredMovieId();
   }, []);
@@ -107,6 +165,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setPickError(null);
 
     try {
+      if (nativeMovies.length > 0) {
+        const picked = nativeMovies[Math.floor(Math.random() * nativeMovies.length)]!;
+        setMovie(picked);
+        return picked;
+      }
+
       const picked = await getRandomMovie(watchlistId);
       setMovie(picked);
       setStoredMovieId(picked.id);
@@ -119,7 +183,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       isPickingRef.current = false;
       setIsPicking(false);
     }
-  }, [watchlistId]);
+  }, [nativeMovies, watchlistId]);
 
   useEffect(() => {
     if (!isRestoringMovie) {
@@ -164,7 +228,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       isListLoaded,
       isImporting,
       importError,
+      nativeImportLog,
       loadList,
+      importFromImdb,
       clearList,
       movie,
       setMovie,
@@ -179,7 +245,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       isListLoaded,
       isImporting,
       importError,
+      nativeImportLog,
       loadList,
+      importFromImdb,
       clearList,
       movie,
       isRestoringMovie,
