@@ -29,10 +29,10 @@ Log tag: **`ImdbWebViewPoc`**
 
 ## Prerequisites (one time, no Android Studio)
 
-- **JDK 17+** — Android Gradle Plugin 8.7 will not run on JDK 8.
+- **JDK 21** — Capacitor 7 compiles with `sourceCompatibility 21`, so JDK 8 or 17 will fail.
 
 ```powershell
-winget install --id Microsoft.OpenJDK.17 -e
+winget install --id Microsoft.OpenJDK.21 -e
 ```
 
 - **Android command-line tools + SDK packages** (`compileSdk` is 35):
@@ -44,7 +44,7 @@ winget install --id Google.AndroidSDK.CommandLineTools -e
 Then point the environment at the SDK and install the packages (adjust paths if your install differs):
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-17.0.13.11-hotspot"
+$env:JAVA_HOME = (Get-ChildItem "C:\Program Files\Microsoft\jdk-21*" | Select-Object -First 1).FullName
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" --sdk_root="$env:ANDROID_HOME" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 $env:Path = "$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
@@ -62,7 +62,7 @@ Set-Content -Path WhatToWatch\ClientApp\android\local.properties -Value "sdk.dir
 
 GitHub Actions builds the debug APK and publishes it as a workflow artifact:
 
-1. Open **Actions → Build IMDb WebView POC APK** on GitHub (or push to `main` / run **workflow_dispatch**).
+1. Open **Actions → Build IMDb WebView POC APK** on GitHub (pushes to `poc-android-web` trigger it, or run **workflow_dispatch**).
 2. Open the finished run → **Artifacts** → download **`imdb-webview-poc-debug`**.
 3. Unzip and copy `app-debug.apk` to the phone, then open it and allow install from that source.
 

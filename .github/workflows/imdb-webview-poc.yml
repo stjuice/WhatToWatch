@@ -33,11 +33,12 @@ jobs:
           cache: npm
           cache-dependency-path: WhatToWatch/ClientApp/package-lock.json
 
-      - name: Setup JDK 17
+      # Capacitor 7 compiles with sourceCompatibility 21, so JDK 17 fails to build.
+      - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
