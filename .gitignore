@@ -42,6 +42,19 @@ node_modules/
 dist/
 *.local
 
+## Capacitor / Android (local SDK & build outputs)
+WhatToWatch/ClientApp/android/.gradle/
+WhatToWatch/ClientApp/android/app/build/
+WhatToWatch/ClientApp/android/build/
+WhatToWatch/ClientApp/android/local.properties
+WhatToWatch/ClientApp/android/captures/
+WhatToWatch/ClientApp/android/.idea/
+WhatToWatch/ClientApp/android/*.iml
+WhatToWatch/ClientApp/android/app/src/main/assets/public/
+WhatToWatch/ClientApp/android/app/src/main/assets/capacitor.config.json
+WhatToWatch/ClientApp/android/app/src/main/assets/capacitor.plugins.json
+WhatToWatch/ClientApp/android/app/src/main/res/xml/config.xml
+
 ## Local app data
 imdb-cache/
 imdb-session.json
