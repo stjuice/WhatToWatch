@@ -37,7 +37,7 @@ describe("ImdbImportService", () => {
     const { ImdbImportService } = await import("../services/imdbImportService");
 
     await expect(ImdbImportService.importFromImdb("   ")).rejects.toThrow(
-      "Вкажіть посилання на список IMDb"
+      "Enter an IMDb list URL"
     );
     expect(importList).not.toHaveBeenCalled();
   });
@@ -48,7 +48,7 @@ describe("ImdbImportService", () => {
 
     await expect(
       ImdbImportService.importFromImdb("https://www.imdb.com/list/ls1/")
-    ).rejects.toThrow("Імпорт через IMDb доступний лише в мобільному застосунку");
+    ).rejects.toThrow("IMDb import is only available in the mobile app");
   });
 
   it("extracts via plugin then posts to the Render API", async () => {

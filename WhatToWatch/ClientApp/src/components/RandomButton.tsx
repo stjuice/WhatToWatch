@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import popcornFull from "../assets/popcorn-full.svg";
+import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
@@ -29,7 +30,7 @@ export const RandomButton = ({ watchlistId }: Props) => {
       }}
       disabled={isPicking}
       aria-busy={isPicking}
-      aria-label="Отримати випадковий фільм"
+      aria-label={text("movie.randomAria")}
     >
       <img src={popcornFull} alt="" draggable={false} />
     </Button>
