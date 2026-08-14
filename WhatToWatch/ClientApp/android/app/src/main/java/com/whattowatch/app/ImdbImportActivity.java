@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 
 /**
  * Internal IMDb import screen, opened only by {@link ImdbImporterPlugin}.
@@ -47,9 +48,12 @@ public class ImdbImportActivity extends AppCompatActivity {
 
     private WebView webView;
     private TextView statusView;
+    private TextView logView;
+    private final ArrayDeque<String> visualLog = new ArrayDeque<>();
     private Runnable pendingExtract;
     private boolean isResultDelivered;
     private String extractScript;
+    private int extractAttempt;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -58,6 +62,7 @@ public class ImdbImportActivity extends AppCompatActivity {
         setContentView(R.layout.activity_imdb_import);
 
         statusView = findViewById(R.id.imdb_import_status);
+        logView = findViewById(R.id.imdb_import_log);
         webView = findViewById(R.id.imdb_import_webview);
         Button cancelButton = findViewById(R.id.imdb_import_cancel);
         cancelButton.setOnClickListener(v -> finishWithError(ERROR_CANCELLED));
@@ -102,6 +107,7 @@ public class ImdbImportActivity extends AppCompatActivity {
                 boolean blocked = ImdbImportSupport.shouldBlockNavigation(request.getUrl());
                 if (blocked) {
                     Log.i(TAG, "Blocked app deep link: " + request.getUrl());
+                    appendVisualLog("Заблоковано перехід у застосунок IMDb.");
                 }
                 return blocked;
             }
@@ -109,12 +115,14 @@ public class ImdbImportActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(WebView view, String pageUrl, Bitmap favicon) {
                 setStatus("Завантажуємо IMDb…");
+                appendVisualLog("IMDb завантажується…");
                 Log.i(TAG, "onPageStarted: " + pageUrl);
             }
 
             @Override
             public void onPageFinished(WebView view, String pageUrl) {
                 Log.i(TAG, "onPageFinished: " + pageUrl);
+                appendVisualLog("Сторінку завантажено. Шукаємо дані списку…");
                 scheduleExtract(FIRST_ATTEMPT_DELAY_MS);
             }
         });
@@ -145,6 +153,8 @@ public class ImdbImportActivity extends AppCompatActivity {
             return;
         }
 
+        extractAttempt++;
+        appendVisualLog("Спроба читання №" + extractAttempt + "…");
         webView.evaluateJavascript(extractScript, value -> {
             String json = ImdbImportSupport.unwrapJsString(value);
             int movieCount = ImdbImportSupport.countMovies(json);
@@ -153,12 +163,14 @@ public class ImdbImportActivity extends AppCompatActivity {
                 // Most likely a login page or a bot challenge: keep polling while the user acts.
                 Log.i(TAG, "List data not available yet; retrying in " + RETRY_DELAY_MS + "ms");
                 setStatus("Очікуємо список. За потреби увійдіть в IMDb…");
+                appendVisualLog("Дані ще недоступні. Очікуємо вхід або перевірку IMDb.");
                 scheduleExtract(RETRY_DELAY_MS);
                 return;
             }
 
             Log.i(TAG, "Extracted " + movieCount + " movies (" + json.length() + " chars)");
             setStatus("Знайдено фільмів: " + movieCount);
+            appendVisualLog("Готово. Отримано фільмів: " + movieCount + ".");
             finishWithWatchlist(json);
         });
     }
@@ -196,6 +208,25 @@ public class ImdbImportActivity extends AppCompatActivity {
         if (statusView != null) {
             statusView.setText(status);
         }
+    }
+
+    private void appendVisualLog(String message) {
+        if (logView == null) {
+            return;
+        }
+        if (visualLog.size() == 5) {
+            visualLog.removeFirst();
+        }
+        visualLog.addLast("• " + message);
+
+        StringBuilder visibleText = new StringBuilder();
+        for (String entry : visualLog) {
+            if (visibleText.length() > 0) {
+                visibleText.append('\n');
+            }
+            visibleText.append(entry);
+        }
+        logView.setText(visibleText.toString());
     }
 
     @Override

@@ -27,6 +27,18 @@
             android:text="Скасувати" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/imdb_import_log"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="5"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:text="Журнал імпорту:"
+        android:textIsSelectable="true"
+        android:textSize="11sp" />
+
     <WebView
         android:id="@+id/imdb_import_webview"
         android:layout_width="match_parent"

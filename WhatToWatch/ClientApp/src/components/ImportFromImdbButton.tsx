@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { Button } from "../primitives/Button";
-import { ImdbImportService } from "../services/imdbImportService";
 import { useAppState } from "../state/AppStateContext";
 
 /**
@@ -8,29 +6,12 @@ import { useAppState } from "../state/AppStateContext";
  * where the Capacitor plugin exists.
  */
 export const ImportFromImdbButton = () => {
-  const { url } = useAppState();
-  const [isImporting, setIsImporting] = useState(false);
-
-  if (!ImdbImportService.isAvailable()) {
-    return null;
-  }
-
-  const handleClick = async () => {
-    setIsImporting(true);
-
-    try {
-      await ImdbImportService.importFromImdb(url);
-    } catch (error) {
-      console.error("[ImdbImport] import failed", error);
-    } finally {
-      setIsImporting(false);
-    }
-  };
+  const { url, isImporting, importFromImdb } = useAppState();
 
   return (
     <Button
       onClick={() => {
-        void handleClick();
+        void importFromImdb();
       }}
       disabled={isImporting || !url.trim()}
     >
