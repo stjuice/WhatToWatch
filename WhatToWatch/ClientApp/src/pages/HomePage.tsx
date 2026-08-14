@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { AddLinkButton } from "../components/AddLinkButton";
 import { ClearLinkButton } from "../components/ClearLinkButton";
+import { ImportFromImdbButton } from "../components/ImportFromImdbButton";
 import { RandomButton } from "../components/RandomButton";
 import { useAppState } from "../state/AppStateContext";
 import "./HomePage.scss";
@@ -71,6 +72,7 @@ export const HomePage = () => {
 
             <div className="watchlist-bucket__action">
               {bucketState === "idle" ? null : <AddLinkButton />}
+              <ImportFromImdbButton />
             </div>
           </div>
         )}

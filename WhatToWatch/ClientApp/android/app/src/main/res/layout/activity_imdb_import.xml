@@ -4,49 +4,31 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/imdb_poc_status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="10dp"
-        android:text="IMDb WebView POC"
-        android:textSize="13sp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="6dp">
+        android:gravity="center_vertical"
+        android:padding="8dp">
 
-        <Button
-            android:id="@+id/imdb_poc_extract"
+        <TextView
+            android:id="@+id/imdb_import_status"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="12sp"
-            android:text="Extract" />
+            android:text="Відкриваємо список…"
+            android:textSize="13sp" />
 
         <Button
-            android:id="@+id/imdb_poc_copy"
-            android:layout_width="0dp"
+            android:id="@+id/imdb_import_cancel"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:textSize="12sp"
-            android:text="Copy JSON" />
-
-        <Button
-            android:id="@+id/imdb_poc_done"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:text="Done" />
+            android:text="Скасувати" />
     </LinearLayout>
 
     <WebView
-        android:id="@+id/imdb_poc_webview"
+        android:id="@+id/imdb_import_webview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />

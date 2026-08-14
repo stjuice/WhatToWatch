@@ -9,17 +9,13 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!--
-            POC ONLY: ImdbImportActivity is the launcher so the APK can be tested with
-            adb alone. Move the MAIN/LAUNCHER intent-filter back to MainActivity when
-            the experiment is over.
-        -->
         <activity
-            android:name=".ImdbImportActivity"
-            android:exported="true"
-            android:label="IMDb WebView POC"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation">
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,13 +24,13 @@
 
         </activity>
 
+        <!-- Internal import screen: launched only by ImdbImporterPlugin, never by the launcher. -->
         <activity
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
-            android:name=".MainActivity"
+            android:name=".ImdbImportActivity"
+            android:exported="false"
             android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.NoActionBarLaunch"
-            android:launchMode="singleTask"
-            android:exported="true" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

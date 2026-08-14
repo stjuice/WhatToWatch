@@ -1,76 +1,99 @@
-# IMDb Android WebView POC
+# Android IMDb import (in-app WebView)
 
-Isolated Capacitor Android experiment to verify whether a user-device WebView can load an IMDb list page and read `__NEXT_DATA__` with `evaluateJavascript`.
+Imports an IMDb list through a WebView inside the Android app instead of scraping IMDb from the
+server. IMDb is loaded on the user's device, so login and human verification work, and the list is
+normalized on-device before it reaches React.
 
-This is **not** wired into the React UI, ASP.NET endpoints, or the current Playwright import flow.
-No Android Studio required: everything below runs with the Gradle wrapper and Android platform-tools (adb).
+The backend endpoints and the existing Playwright import flow are untouched.
 
-## What was added
+## Flow
 
-| Path | Purpose |
-|------|---------|
-| `WhatToWatch/ClientApp/capacitor.config.ts` | Capacitor app config |
-| `WhatToWatch/ClientApp/android/` | Generated Capacitor Android project |
-| `.../ImdbImportActivity.java` | WebView screen: loads IMDb, auto-extracts, copies, dumps to file |
-| `.../ImdbImportPlugin.java` | Optional Capacitor bridge back to JavaScript |
-| `.../activity_imdb_import.xml` | POC layout (status + Extract / Copy JSON / Done + WebView) |
-| `.../AndroidManifest.xml` | `ImdbImportActivity` is the **temporary launcher activity** |
-| `public/poc/imdb-webview.html` | Standalone HTML launcher (only needed for the JS-bridge variant) |
-| `src/poc/imdbImportPlugin.ts` | Optional TS wrapper |
+```text
+React (ImportFromImdbButton)
+  → ImdbImportService.importFromImdb(url)
+  → ImdbImporter.importList({ url })            Capacitor plugin
+  → ImdbImportActivity                          internal WebView, no launcher icon
+  → IMDb page (login / verification if needed)
+  → evaluateJavascript reads __NEXT_DATA__
+  → normalized to { listId, title, movies[] }
+  → activity closes itself
+  → React receives ImportedWatchlist
+```
 
-## Success checks
+## Files
 
-1. IMDb loads inside the WebView
-2. You can complete login / human verification manually
-3. Logcat shows `document.title`
-4. Logcat shows `__NEXT_DATA__` with a non-zero length (inline when small, as a file path when large)
+| Path | Role |
+|------|------|
+| `capacitor.config.ts` | Capacitor app config |
+| `android/` | Capacitor Android project |
+| `.../ImdbImportActivity.java` | Internal WebView screen, extraction + normalization |
+| `.../ImdbImporterPlugin.java` | Capacitor plugin `ImdbImporter.importList` |
+| `.../MainActivity.java` | Registers the plugin |
+| `.../activity_imdb_import.xml` | Status text, Cancel button, WebView |
+| `src/native/imdbImporter.ts` | Plugin typings (`ImportedWatchlist`) |
+| `src/services/imdbImportService.ts` | `ImdbImportService.importFromImdb(url)` |
+| `src/components/ImportFromImdbButton.tsx` | Native-only trigger in `HomePage` |
 
-Log tag: **`ImdbWebViewPoc`**
+## API
 
-## Prerequisites (one time, no Android Studio)
+```ts
+const result = await ImdbImporter.importList({
+  url: "https://www.imdb.com/list/ls4117371353/",
+});
+
+interface ImportedWatchlist {
+  listId: string;
+  title: string;
+  movies: Array<{
+    imdbId: string;
+    title: string;
+    year: number | null;
+    imageUrl: string | null;
+  }>;
+}
+```
+
+Rejects with `cancelled` when the user backs out or taps **Скасувати**.
+
+## Behavior notes
+
+- `ImdbImportActivity` is `exported="false"` and has no `MAIN`/`LAUNCHER` filter, so it is only
+  reachable through the plugin — the user never sees a separate IMDb app.
+- After each page load the activity waits ~1.2 s for Next.js hydration, then runs the extraction
+  script. If the page holds no list data (login screen, bot challenge) it retries every 2 s while
+  the user works through it, and closes as soon as the list appears.
+- `intent://`, `imdb://` and any other non-http(s) scheme is blocked in `shouldOverrideUrlLoading`,
+  which fixes the `ERR_UNKNOWN_URL_SCHEME` error from IMDb's Branch.io app banner.
+- Only the first page of a list is present in `__NEXT_DATA__` (~250 items). Pagination is not
+  handled yet.
+- The button renders only when `Capacitor.isNativePlatform()` is true, so the web build is unchanged.
+
+## Build the debug APK
+
+### Via GitHub Actions (no local SDK)
+
+1. **Actions → Build IMDb WebView POC APK** (pushes to `poc-android-web` trigger it, or run
+   **workflow_dispatch**).
+2. Open the finished run → **Artifacts** → download **`imdb-webview-poc-debug`**.
+3. Unzip, copy `app-debug.apk` to the phone, open it and allow install from that source.
+
+### Locally (Gradle + adb, no Android Studio)
+
+Prerequisites, one time:
 
 - **JDK 21** — Capacitor 7 compiles with `sourceCompatibility 21`, so JDK 8 or 17 will fail.
 
 ```powershell
 winget install --id Microsoft.OpenJDK.21 -e
-```
-
-- **Android command-line tools + SDK packages** (`compileSdk` is 35):
-
-```powershell
 winget install --id Google.AndroidSDK.CommandLineTools -e
-```
 
-Then point the environment at the SDK and install the packages (adjust paths if your install differs):
-
-```powershell
 $env:JAVA_HOME = (Get-ChildItem "C:\Program Files\Microsoft\jdk-21*" | Select-Object -First 1).FullName
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" --sdk_root="$env:ANDROID_HOME" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 $env:Path = "$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
 ```
 
-Gradle also accepts an explicit SDK path instead of `ANDROID_HOME`:
-
-```powershell
-Set-Content -Path WhatToWatch\ClientApp\android\local.properties -Value "sdk.dir=$($env:LOCALAPPDATA -replace '\\','\\')\\Android\\Sdk"
-```
-
-- A physical Android device with **USB debugging** enabled and authorized (`adb devices` shows `device`).
-
-## Download a prebuilt APK (no local SDK / ADB)
-
-GitHub Actions builds the debug APK and publishes it as a workflow artifact:
-
-1. Open **Actions → Build IMDb WebView POC APK** on GitHub (pushes to `poc-android-web` trigger it, or run **workflow_dispatch**).
-2. Open the finished run → **Artifacts** → download **`imdb-webview-poc-debug`**.
-3. Unzip and copy `app-debug.apk` to the phone, then open it and allow install from that source.
-
-Workflow file: `.github/workflows/imdb-webview-poc.yml`
-
-## Build the debug APK locally
-
-From `WhatToWatch/ClientApp`:
+Build, from `WhatToWatch/ClientApp`:
 
 ```powershell
 npm install
@@ -80,112 +103,56 @@ cd android
 .\gradlew.bat assembleDebug
 ```
 
-Or the shortcut (does build + sync + assemble):
-
-```powershell
-npm run poc:apk
-```
-
-APK output:
+Or `npm run poc:apk` (build + sync + assemble). APK:
 
 ```text
 WhatToWatch\ClientApp\android\app\build\outputs\apk\debug\app-debug.apk
 ```
 
-## Install on the device
+Install:
 
 ```powershell
-adb install -r WhatToWatch\ClientApp\android\app\build\outputs\apk\debug\app-debug.apk
+adb install -r c:\Development\Personal\WhatToWatch\WhatToWatch\ClientApp\android\app\build\outputs\apk\debug\app-debug.apk
 ```
 
-Or, from `WhatToWatch/ClientApp`:
+Or `npm run poc:install`.
+
+## Testing the flow
+
+1. Launch the app (normal launcher icon → React UI).
+2. Paste an IMDb list URL in the existing input.
+3. Tap **Імпорт з IMDb**.
+4. IMDb opens in the in-app WebView; log in or pass verification if asked.
+5. The screen closes on its own and React logs the watchlist.
+
+Native log:
 
 ```powershell
-npm run poc:install
+adb logcat -s ImdbImport:I
 ```
-
-## Run the POC
-
-`ImdbImportActivity` is the launcher activity for this POC, so just tap the app icon, or start it explicitly:
-
-```powershell
-adb shell am start -n com.whattowatch.app/.ImdbImportActivity
-```
-
-With a custom list URL:
-
-```powershell
-adb shell am start -n com.whattowatch.app/.ImdbImportActivity --es imdb_url "https://www.imdb.com/list/ls4117371353/"
-```
-
-Behavior:
-
-- After **every** page load the activity waits ~1.5 s for Next.js hydration and automatically logs `document.title` and `__NEXT_DATA__`.
-- **Extract** re-runs the probe manually (use it after finishing a login or bot challenge).
-- **Copy JSON** puts the extracted `__NEXT_DATA__` on the device clipboard; if the payload is too large for the clipboard it is written to a file instead and the path is logged.
-- **Done** closes the activity and returns the result to the Capacitor bridge (only relevant for the JS-bridge variant).
-
-## Logcat
-
-```powershell
-adb logcat -c
-adb logcat -s ImdbWebViewPoc:I
-```
-
-Expected output:
 
 ```text
-ImdbWebViewPoc: Opening IMDb URL: https://www.imdb.com/list/ls4117371353/
-ImdbWebViewPoc: onPageFinished: https://www.imdb.com/list/ls4117371353/
-ImdbWebViewPoc: document.title => Some list - IMDb
-ImdbWebViewPoc: __NEXT_DATA__ present=true length=284913
-ImdbWebViewPoc: __NEXT_DATA__ preview: {"props":{"pageProps":...
-ImdbWebViewPoc: __NEXT_DATA__ too large for Logcat; saved to: /storage/emulated/0/Android/data/com.whattowatch.app/files/next-data-1723620000000.json
-ImdbWebViewPoc: Pull it with: adb pull /storage/emulated/0/Android/data/com.whattowatch.app/files/next-data-1723620000000.json
+ImdbImport: Opening IMDb list: https://www.imdb.com/list/ls4117371353/
+ImdbImport: onPageFinished: https://www.imdb.com/list/ls4117371353/
+ImdbImport: List data not available yet; retrying in 2000ms
+ImdbImport: Extracted 152 movies (18432 chars)
 ```
 
-Payloads up to 3500 characters are logged inline as `__NEXT_DATA__ json: ...`; anything larger goes to a file because a single Logcat message is truncated near 4 KB.
+React log (`chromium` tag, or Chrome DevTools remote inspection):
 
-Pull the dump to your machine:
-
-```powershell
-adb pull /storage/emulated/0/Android/data/com.whattowatch.app/files/next-data-<timestamp>.json
+```text
+[ImdbImport] imported watchlist { listId: "ls4117371353", title: "...", movies: [...] }
 ```
 
-List available dumps:
+## Next steps (not done yet)
 
-```powershell
-adb shell ls -l /storage/emulated/0/Android/data/com.whattowatch.app/files/
-```
+- Feed `ImportedWatchlist` into `AppStateContext` / the backend instead of only logging it.
+- Handle lists longer than one page.
 
-If `__NEXT_DATA__` is missing, finish the login/verification in the WebView and tap **Extract** again.
+## Removing the integration
 
-## Return value to JavaScript (optional bridge variant)
-
-`ImdbImport.openAndExtract({ url })` resolves with:
-
-```ts
-{
-  ok: true,
-  title: string,
-  nextData?: string,      // full __NEXT_DATA__ JSON when it fits in the Intent
-  nextDataLength: number,
-  nextDataFile?: string   // on-device path when the payload was dumped to a file
-}
-```
-
-Reaching this path requires `MainActivity` to be the launcher again (see below).
-
-## Removing the POC later
-
-Delete / revert:
-
-- `ClientApp/android/` (or at least the `ImdbImport*` Java/layout files, the manifest launcher swap, and the `MainActivity` plugin registration)
-- `ClientApp/capacitor.config.ts`
-- `ClientApp/public/poc/`
-- `ClientApp/src/poc/`
-- Capacitor packages and the `cap:sync` / `poc:apk` / `poc:install` scripts in `package.json`
-- the `/poc/` entry in `vite.config.ts` `navigateFallbackDenylist`
-- Capacitor ignore rules in the repo `.gitignore`
-
-To restore normal app behavior without deleting the POC, move the `MAIN`/`LAUNCHER` intent-filter in `AndroidManifest.xml` from `ImdbImportActivity` back to `MainActivity`.
+Delete `android/`, `capacitor.config.ts`, `src/native/imdbImporter.ts`,
+`src/services/imdbImportService.ts`, `src/components/ImportFromImdbButton.tsx`, its two lines in
+`src/pages/HomePage.tsx`, the Capacitor packages and `cap:sync` / `poc:apk` / `poc:install` scripts
+in `package.json`, the Capacitor rules in the repo `.gitignore`, and
+`.github/workflows/imdb-webview-poc.yml`.

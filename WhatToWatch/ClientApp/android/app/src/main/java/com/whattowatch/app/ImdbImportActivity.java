@@ -2,11 +2,9 @@ package com.whattowatch.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,51 +17,85 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Locale;
 
 /**
- * Isolated POC activity: loads an IMDb list in a WebView and extracts
- * document.title + __NEXT_DATA__ via evaluateJavascript.
+ * Internal IMDb import screen, opened only by {@link ImdbImporterPlugin}.
  *
- * Not part of the production import flow. Safe to delete with the rest of the POC.
+ * Loads the list in a WebView so the user can log in or pass human verification, extracts and
+ * normalizes the list from __NEXT_DATA__, then closes itself and hands the result to the plugin.
  */
 public class ImdbImportActivity extends AppCompatActivity {
-    public static final String TAG = "ImdbWebViewPoc";
+    public static final String TAG = "ImdbImport";
 
     public static final String EXTRA_URL = "imdb_url";
-    public static final String EXTRA_TITLE = "document_title";
-    public static final String EXTRA_NEXT_DATA = "next_data";
-    public static final String EXTRA_NEXT_DATA_LENGTH = "next_data_length";
-    public static final String EXTRA_NEXT_DATA_FILE = "next_data_file";
+    public static final String EXTRA_WATCHLIST_JSON = "watchlist_json";
     public static final String EXTRA_ERROR = "error";
 
-    public static final String DEFAULT_LIST_URL = "https://www.imdb.com/list/ls4117371353/";
+    public static final String ERROR_CANCELLED = "cancelled";
 
-    /** A single Logcat message is truncated around 4 KB, so keep inline dumps below that. */
-    private static final int LOGCAT_SAFE_LENGTH = 3500;
+    /** Next.js needs a moment to hydrate after onPageFinished. */
+    private static final long FIRST_ATTEMPT_DELAY_MS = 1200L;
 
-    /** Binder transaction limit is ~1 MB and it is shared with the rest of the Intent. */
-    private static final int INTENT_EXTRA_LIMIT = 700_000;
+    /** While the user logs in or solves a challenge the list data is not on the page yet. */
+    private static final long RETRY_DELAY_MS = 2000L;
 
-    /** Next.js hydration finishes shortly after onPageFinished. */
-    private static final long AUTO_EXTRACT_DELAY_MS = 1500L;
+    /**
+     * Reads __NEXT_DATA__ and returns only the fields the app needs, or null when the page does
+     * not (yet) hold list data. Item shapes differ between IMDb list renderers, hence the fallbacks.
+     */
+    private static final String EXTRACT_SCRIPT =
+        "(function () {"
+            + "  var el = document.getElementById('__NEXT_DATA__');"
+            + "  if (!el) return null;"
+            + "  var data;"
+            + "  try { data = JSON.parse(el.textContent); } catch (e) { return null; }"
+            + "  var pageProps = data && data.props && data.props.pageProps;"
+            + "  var list = pageProps && pageProps.mainColumnData && pageProps.mainColumnData.list;"
+            + "  if (!list) return null;"
+            + "  var entries = list.items"
+            + "    || (list.titleListItemSearch && list.titleListItemSearch.edges)"
+            + "    || [];"
+            + "  var movies = [];"
+            + "  for (var i = 0; i < entries.length; i++) {"
+            + "    var entry = entries[i] || {};"
+            + "    var node = entry.node || entry;"
+            + "    var title = node.title || node.listItem || node;"
+            + "    if (!title || !title.id) continue;"
+            + "    movies.push({"
+            + "      imdbId: title.id,"
+            + "      title: title.titleText && title.titleText.text ? title.titleText.text : null,"
+            + "      year: title.releaseYear && title.releaseYear.year != null"
+            + "        ? title.releaseYear.year : null,"
+            + "      imageUrl: title.primaryImage && title.primaryImage.url"
+            + "        ? title.primaryImage.url : null"
+            + "    });"
+            + "  }"
+            + "  if (!movies.length) return null;"
+            + "  var name = list.title"
+            + "    || (list.name && (list.name.originalText || list.name.text))"
+            + "    || document.title;"
+            + "  return JSON.stringify({"
+            + "    listId: list.id || null,"
+            + "    title: name,"
+            + "    movies: movies"
+            + "  });"
+            + "})();";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private WebView webView;
     private TextView statusView;
-    private String lastTitle = "";
-    private String lastNextData = "";
-    private String lastNextDataFile = null;
-    private Runnable pendingAutoExtract;
+    private Runnable pendingExtract;
+    private boolean isResultDelivered;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -71,15 +103,16 @@ public class ImdbImportActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_imdb_import);
 
-        statusView = findViewById(R.id.imdb_poc_status);
-        webView = findViewById(R.id.imdb_poc_webview);
-        Button extractButton = findViewById(R.id.imdb_poc_extract);
-        Button copyButton = findViewById(R.id.imdb_poc_copy);
-        Button doneButton = findViewById(R.id.imdb_poc_done);
+        statusView = findViewById(R.id.imdb_import_status);
+        webView = findViewById(R.id.imdb_import_webview);
+        Button cancelButton = findViewById(R.id.imdb_import_cancel);
+        cancelButton.setOnClickListener(v -> finishWithError(ERROR_CANCELLED));
 
         String url = getIntent().getStringExtra(EXTRA_URL);
         if (url == null || url.trim().isEmpty()) {
-            url = DEFAULT_LIST_URL;
+            Log.e(TAG, "No list url passed to ImdbImportActivity");
+            finishWithError("No IMDb list url was provided");
+            return;
         }
 
         CookieManager cookieManager = CookieManager.getInstance();
@@ -104,201 +137,143 @@ public class ImdbImportActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
+                return shouldBlockNavigation(request.getUrl());
             }
 
             @Override
             public void onPageStarted(WebView view, String pageUrl, Bitmap favicon) {
-                setStatus("Loading…");
+                setStatus("Завантажуємо IMDb…");
                 Log.i(TAG, "onPageStarted: " + pageUrl);
             }
 
             @Override
             public void onPageFinished(WebView view, String pageUrl) {
                 Log.i(TAG, "onPageFinished: " + pageUrl);
-                scheduleAutoExtract();
+                scheduleExtract(FIRST_ATTEMPT_DELAY_MS);
             }
         });
 
-        extractButton.setOnClickListener(v -> extractFromPage(false));
-        copyButton.setOnClickListener(v -> copyNextDataToClipboard());
-        doneButton.setOnClickListener(v -> finishWithResult());
-
-        Log.i(TAG, "Opening IMDb URL: " + url);
-        setStatus("Opening list…");
-        webView.loadUrl(url);
-    }
-
-    /** Runs an extraction pass after every page load, debounced against SPA navigations. */
-    private void scheduleAutoExtract() {
-        if (pendingAutoExtract != null) {
-            mainHandler.removeCallbacks(pendingAutoExtract);
-        }
-
-        setStatus("Loaded. Auto-extract in " + AUTO_EXTRACT_DELAY_MS + "ms…");
-        pendingAutoExtract = () -> {
-            pendingAutoExtract = null;
-            extractFromPage(false);
-        };
-        mainHandler.postDelayed(pendingAutoExtract, AUTO_EXTRACT_DELAY_MS);
-    }
-
-    private void extractFromPage(boolean finishWhenDone) {
-        if (webView == null) {
-            return;
-        }
-
-        setStatus("Running evaluateJavascript…");
-        Log.i(TAG, "evaluateJavascript: document.title");
-
-        webView.evaluateJavascript("document.title", titleValue -> {
-            lastTitle = unwrapJsString(titleValue);
-            Log.i(TAG, "document.title => " + lastTitle);
-
-            Log.i(TAG, "evaluateJavascript: __NEXT_DATA__ textContent");
-            webView.evaluateJavascript(
-                "(function(){ var el = document.getElementById('__NEXT_DATA__'); "
-                    + "return el ? el.textContent : null; })();",
-                nextDataValue -> {
-                    lastNextData = unwrapJsString(nextDataValue);
-                    lastNextDataFile = null;
-
-                    int length = lastNextData == null ? 0 : lastNextData.length();
-                    boolean present = length > 0 && !"null".equals(lastNextData);
-
-                    Log.i(TAG, "__NEXT_DATA__ present=" + present + " length=" + length);
-
-                    if (!present) {
-                        Log.w(TAG, "__NEXT_DATA__ missing or empty. "
-                            + "Complete login/verification in the WebView, then tap Extract.");
-                        setStatus("No __NEXT_DATA__. Login/verify, then Extract.");
-                    } else if (length <= LOGCAT_SAFE_LENGTH) {
-                        Log.i(TAG, "__NEXT_DATA__ json: " + lastNextData);
-                        setStatus("OK: title + __NEXT_DATA__ (" + length + " chars, logged inline)");
-                    } else {
-                        Log.i(TAG, "__NEXT_DATA__ preview: "
-                            + lastNextData.substring(0, Math.min(240, length)));
-                        File dumped = writeNextDataToFile(lastNextData);
-                        if (dumped == null) {
-                            setStatus("Extracted " + length + " chars, but file dump failed.");
-                        } else {
-                            lastNextDataFile = dumped.getAbsolutePath();
-                            Log.i(TAG, "__NEXT_DATA__ too large for Logcat; saved to: " + lastNextDataFile);
-                            Log.i(TAG, "Pull it with: adb pull " + lastNextDataFile);
-                            setStatus("OK: " + length + " chars saved to " + dumped.getName());
-                        }
-                    }
-
-                    if (finishWhenDone) {
-                        finishWithResult();
-                    }
-                }
-            );
-        });
+        Log.i(TAG, "Opening IMDb list: " + url);
+        setStatus("Відкриваємо список…");
+        webView.loadUrl(url.trim());
     }
 
     /**
-     * Dumps the payload into the app-specific external directory, which
-     * {@code adb pull} can read without root on a debug build.
+     * IMDb's Branch.io interstitial redirects to {@code intent://} / {@code imdb://} deep links,
+     * which a WebView cannot load (ERR_UNKNOWN_URL_SCHEME). Stay on the web version instead.
      */
-    @Nullable
-    private File writeNextDataToFile(String json) {
-        File dir = getExternalFilesDir(null);
-        if (dir == null) {
-            dir = getCacheDir();
+    private boolean shouldBlockNavigation(@Nullable Uri uri) {
+        if (uri == null) {
+            return false;
         }
 
-        File file = new File(dir, "next-data-" + System.currentTimeMillis() + ".json");
-        try (FileOutputStream out = new FileOutputStream(file)) {
-            out.write(json.getBytes(StandardCharsets.UTF_8));
-            return file;
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to write __NEXT_DATA__ dump: " + e.getMessage());
-            return null;
+        String scheme = uri.getScheme();
+        if (scheme == null) {
+            return false;
         }
+
+        scheme = scheme.toLowerCase(Locale.US);
+        if ("http".equals(scheme) || "https".equals(scheme)) {
+            return false;
+        }
+
+        Log.i(TAG, "Blocked app deep link (" + scheme + "): " + uri);
+        return true;
     }
 
-    private void copyNextDataToClipboard() {
-        if (!hasNextData()) {
-            toastAndStatus("Nothing to copy yet — run Extract first.");
+    private void scheduleExtract(long delayMs) {
+        if (isResultDelivered) {
             return;
         }
 
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        if (clipboard == null) {
-            toastAndStatus("Clipboard unavailable.");
+        if (pendingExtract != null) {
+            mainHandler.removeCallbacks(pendingExtract);
+        }
+
+        pendingExtract = () -> {
+            pendingExtract = null;
+            extract();
+        };
+        mainHandler.postDelayed(pendingExtract, delayMs);
+    }
+
+    private void extract() {
+        if (webView == null || isResultDelivered) {
             return;
+        }
+
+        webView.evaluateJavascript(EXTRACT_SCRIPT, value -> {
+            String json = unwrapJsString(value);
+            int movieCount = countMovies(json);
+
+            if (movieCount <= 0) {
+                // Most likely a login page or a bot challenge: keep polling while the user acts.
+                Log.i(TAG, "List data not available yet; retrying in " + RETRY_DELAY_MS + "ms");
+                setStatus("Очікуємо список. За потреби увійдіть в IMDb…");
+                scheduleExtract(RETRY_DELAY_MS);
+                return;
+            }
+
+            Log.i(TAG, "Extracted " + movieCount + " movies (" + json.length() + " chars)");
+            setStatus("Знайдено фільмів: " + movieCount);
+            finishWithWatchlist(json);
+        });
+    }
+
+    /** Returns the number of movies in the normalized payload, or -1 when it is unusable. */
+    private int countMovies(@Nullable String json) {
+        if (json == null || json.isEmpty()) {
+            return -1;
         }
 
         try {
-            clipboard.setPrimaryClip(ClipData.newPlainText("__NEXT_DATA__", lastNextData));
-            Log.i(TAG, "Copied __NEXT_DATA__ to clipboard (" + lastNextData.length() + " chars)");
-            toastAndStatus("Copied " + lastNextData.length() + " chars to clipboard.");
-        } catch (RuntimeException e) {
-            // Clipboard also travels over Binder, so very large payloads can be rejected.
-            Log.w(TAG, "Clipboard copy failed: " + e.getMessage());
-            File dumped = writeNextDataToFile(lastNextData);
-            if (dumped == null) {
-                toastAndStatus("Copy failed and file dump failed.");
-            } else {
-                lastNextDataFile = dumped.getAbsolutePath();
-                Log.i(TAG, "Clipboard too small for payload; saved to: " + lastNextDataFile);
-                Log.i(TAG, "Pull it with: adb pull " + lastNextDataFile);
-                toastAndStatus("Too large for clipboard. Saved to " + dumped.getName());
-            }
+            JSONArray movies = new JSONObject(json).optJSONArray("movies");
+            return movies == null ? -1 : movies.length();
+        } catch (JSONException e) {
+            Log.w(TAG, "Extracted payload is not valid JSON: " + e.getMessage());
+            return -1;
         }
     }
 
-    private void finishWithResult() {
-        Intent result = new Intent();
-        result.putExtra(EXTRA_TITLE, lastTitle);
-
-        if (hasNextData()) {
-            result.putExtra(EXTRA_NEXT_DATA_LENGTH, lastNextData.length());
-            if (lastNextData.length() <= INTENT_EXTRA_LIMIT) {
-                result.putExtra(EXTRA_NEXT_DATA, lastNextData);
-            } else {
-                Log.w(TAG, "nextData length=" + lastNextData.length()
-                    + " exceeds Intent budget; returning file path only.");
-                result.putExtra(EXTRA_ERROR, "nextData too large for Intent bridge; see file dump");
-            }
-            if (lastNextDataFile != null) {
-                result.putExtra(EXTRA_NEXT_DATA_FILE, lastNextDataFile);
-            }
-            setResult(Activity.RESULT_OK, result);
-        } else {
-            result.putExtra(EXTRA_NEXT_DATA_LENGTH, 0);
-            result.putExtra(EXTRA_ERROR, "__NEXT_DATA__ not found");
-            setResult(Activity.RESULT_CANCELED, result);
+    private void finishWithWatchlist(String json) {
+        if (isResultDelivered) {
+            return;
         }
 
-        Log.i(TAG, "Finishing activity. titleLen="
-            + (lastTitle == null ? 0 : lastTitle.length())
-            + " nextDataLen="
-            + (lastNextData == null ? 0 : lastNextData.length())
-            + " nextDataFile=" + lastNextDataFile);
+        isResultDelivered = true;
+        mainHandler.removeCallbacksAndMessages(null);
+
+        Intent result = new Intent();
+        result.putExtra(EXTRA_WATCHLIST_JSON, json);
+        setResult(Activity.RESULT_OK, result);
         finish();
     }
 
-    private boolean hasNextData() {
-        return lastNextData != null && !lastNextData.isEmpty() && !"null".equals(lastNextData);
-    }
+    private void finishWithError(String error) {
+        if (isResultDelivered) {
+            return;
+        }
 
-    private void toastAndStatus(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        setStatus(message);
+        isResultDelivered = true;
+        mainHandler.removeCallbacksAndMessages(null);
+
+        Log.i(TAG, "Import finished without data: " + error);
+        Intent result = new Intent();
+        result.putExtra(EXTRA_ERROR, error);
+        setResult(Activity.RESULT_CANCELED, result);
+        finish();
     }
 
     private void setStatus(String status) {
         if (statusView != null) {
             statusView.setText(status);
         }
-        Log.i(TAG, "status: " + status);
     }
 
     /**
-     * evaluateJavascript returns a JSON-encoded value (e.g. "\"Home\"" or "null").
+     * evaluateJavascript returns a JSON-encoded value (e.g. "\"{...}\"" or "null").
      */
+    @Nullable
     static String unwrapJsString(@Nullable String jsValue) {
         if (jsValue == null || "null".equals(jsValue)) {
             return null;
@@ -307,12 +282,10 @@ public class ImdbImportActivity extends AppCompatActivity {
         try {
             // org.json handles escaped quotes / unicode from the WebView bridge.
             Object parsed = new org.json.JSONTokener(jsValue).nextValue();
-            return parsed == null || parsed == org.json.JSONObject.NULL
-                ? null
-                : String.valueOf(parsed);
+            return parsed == null || parsed == JSONObject.NULL ? null : String.valueOf(parsed);
         } catch (Exception e) {
-            Log.w(TAG, "Failed to unwrap JS value, using raw: " + e.getMessage());
-            return jsValue;
+            Log.w(TAG, "Failed to unwrap JS value: " + e.getMessage());
+            return null;
         }
     }
 
@@ -322,7 +295,7 @@ public class ImdbImportActivity extends AppCompatActivity {
             webView.goBack();
             return;
         }
-        super.onBackPressed();
+        finishWithError(ERROR_CANCELLED);
     }
 
     @Override
