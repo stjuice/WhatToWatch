@@ -19,12 +19,23 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
-builder.Services.Configure<WhatToWatchOptions>(
-    builder.Configuration.GetSection(WhatToWatchOptions.SectionName));
+builder.Services.Configure<WhatToWatchOptions>(options =>
+{
+    builder.Configuration.GetSection(WhatToWatchOptions.SectionName).Bind(options);
+
+    // Allow a plain ADMIN_API_KEY env var as a friendlier alias on Render.
+    var envKey = builder.Configuration["ADMIN_API_KEY"];
+    if (!string.IsNullOrWhiteSpace(envKey))
+        options.AdminApiKey = envKey.Trim();
+});
 
 var whatToWatchOptions = builder.Configuration
     .GetSection(WhatToWatchOptions.SectionName)
     .Get<WhatToWatchOptions>() ?? new WhatToWatchOptions();
+
+var adminKeyOverride = builder.Configuration["ADMIN_API_KEY"];
+if (!string.IsNullOrWhiteSpace(adminKeyOverride))
+    whatToWatchOptions.AdminApiKey = adminKeyOverride.Trim();
 
 var imdbOptions = builder.Configuration
     .GetSection(ImdbWatchlistsOptions.SectionName)
@@ -43,6 +54,10 @@ builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IWatchlistService, WatchlistService>();
 
 var app = builder.Build();
+
+app.Logger.LogInformation(
+    "Admin API key configured: {Configured}. Watchlist writes require the X-Admin-Key header.",
+    !string.IsNullOrWhiteSpace(whatToWatchOptions.AdminApiKey));
 
 using (var scope = app.Services.CreateScope())
 {

@@ -16,12 +16,17 @@ public sealed class AdminAuthorizeAttribute : Attribute, IAuthorizationFilter
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        var options = context.HttpContext.RequestServices
-            .GetRequiredService<IOptions<WhatToWatchOptions>>()
-            .Value;
+        var services = context.HttpContext.RequestServices;
+        var options = services.GetRequiredService<IOptions<WhatToWatchOptions>>().Value;
+        var logger = services.GetService<ILoggerFactory>()?.CreateLogger("AdminAuthorize");
+        var path = context.HttpContext.Request.Path;
 
         if (string.IsNullOrWhiteSpace(options.AdminApiKey))
         {
+            logger?.LogError(
+                "Admin write blocked on {Path}: WhatToWatch:AdminApiKey is not configured. " +
+                "Set the WhatToWatch__AdminApiKey (or ADMIN_API_KEY) environment variable.",
+                path);
             context.Result = new ObjectResult(new { error = "Admin API key is not configured." })
             {
                 StatusCode = StatusCodes.Status503ServiceUnavailable,
@@ -32,6 +37,10 @@ public sealed class AdminAuthorizeAttribute : Attribute, IAuthorizationFilter
         if (!TryReadPresentedKey(context.HttpContext.Request, out var presented)
             || !string.Equals(presented, options.AdminApiKey, StringComparison.Ordinal))
         {
+            logger?.LogWarning(
+                "Admin write rejected on {Path}: {Reason}.",
+                path,
+                presented.Length == 0 ? "no admin key presented" : "admin key mismatch");
             context.Result = new UnauthorizedObjectResult(new { error = "Invalid or missing admin key." });
         }
     }

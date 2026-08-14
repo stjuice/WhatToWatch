@@ -8,6 +8,12 @@ export const apiUrl = (path: string): string => {
   return `${apiBaseUrl}${normalized}`;
 };
 
+const log = (message: string, ...details: unknown[]): void => {
+  console.log(`[api] ${message}`, ...details);
+};
+
+log(`base URL = ${apiBaseUrl || "(same-origin)"}`);
+
 export const ADMIN_KEY_STORAGE = "w2w.adminApiKey";
 
 export const getAdminApiKey = (): string | null => {
@@ -67,13 +73,37 @@ export const requestJson = async <T>(
   }
 
   const { admin: _admin, ...fetchInit } = init ?? {};
-  const response = await fetch(apiUrl(path), {
-    ...fetchInit,
-    headers,
-  });
+  const method = (fetchInit.method ?? "GET").toUpperCase();
+  const url = apiUrl(path);
+  const startedAt = performance.now();
+  log(`→ ${method} ${url}${init?.admin ? " (admin)" : ""}`);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchInit,
+      headers,
+    });
+  } catch (error) {
+    // Network-level failure ("Failed to fetch"): CORS, DNS, offline, or wrong base URL.
+    log(
+      `✗ ${method} ${url} failed before a response (network/CORS). ` +
+        `Check VITE_API_BASE_URL and server CORS.`,
+      error
+    );
+    throw new Error(
+      `Не вдалося з'єднатися з API (${apiBaseUrl || "same-origin"}). ` +
+        `Перевірте підключення та адресу сервера.`
+    );
+  }
+
+  const elapsedMs = Math.round(performance.now() - startedAt);
+  log(`← ${method} ${url} ${response.status} (${elapsedMs}ms)`);
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response));
+    const message = await readErrorMessage(response);
+    log(`✗ ${method} ${url} ${response.status}: ${message}`);
+    throw new Error(message);
   }
 
   if (response.status === 204) {
