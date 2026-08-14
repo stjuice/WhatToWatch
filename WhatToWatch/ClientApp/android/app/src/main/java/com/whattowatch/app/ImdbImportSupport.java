@@ -2,7 +2,6 @@ package com.whattowatch.app;
 
 import android.content.res.AssetManager;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -92,7 +91,6 @@ final class ImdbImportSupport {
             Object parsed = new org.json.JSONTokener(jsValue).nextValue();
             return parsed == null || parsed == JSONObject.NULL ? null : String.valueOf(parsed);
         } catch (Exception e) {
-            Log.w(ImdbImportActivity.TAG, "Failed to unwrap JS value: " + e.getMessage());
             return null;
         }
     }
