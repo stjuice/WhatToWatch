@@ -10,6 +10,8 @@ public record ImportImdbWatchlistRequest
     [Required]
     public required string Title { get; init; }
 
+    public string? Url { get; init; }
+
     [Required]
     [MinLength(1)]
     public required IReadOnlyCollection<ImportImdbMovieRequest> Movies { get; init; }
@@ -26,4 +28,14 @@ public record ImportImdbMovieRequest
     public int? Year { get; init; }
 
     public string? ImageUrl { get; init; }
+
+    public double? Rating { get; init; }
+
+    public string? Plot { get; init; }
+
+    public int? RuntimeMinutes { get; init; }
+
+    public string? Director { get; init; }
+
+    public IReadOnlyCollection<string>? Genres { get; init; }
 }

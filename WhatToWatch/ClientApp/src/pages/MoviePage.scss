@@ -13,13 +13,13 @@
 
 .movie-detail__poster-stack {
   position: relative;
-  aspect-ratio: 455.25 / 576.75;
+  aspect-ratio: 600 / 576.75;
   width: min(100%, 20rem);
 }
 
 .movie-detail__window {
   position: absolute;
-  inset: 7.4% 14% 6.4% 14.2%;
+  inset: 7.4% 22.69% 6.4% 22.84%;
   overflow: hidden;
 }
 
@@ -76,6 +76,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  margin: 0;
   font-size: 1.1rem;
   color: $text;
 }

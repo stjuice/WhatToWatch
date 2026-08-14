@@ -40,9 +40,6 @@ public sealed class PlaywrightBrowserManager(
         {
             if (_context is null)
             {
-                var isNewProfile = !Directory.Exists(_options.BrowserProfileDirectory)
-                    || !Directory.EnumerateFileSystemEntries(_options.BrowserProfileDirectory).Any();
-
                 Directory.CreateDirectory(_options.BrowserProfileDirectory);
 
                 var context = await playwright.Chromium.LaunchPersistentContextAsync(
@@ -52,6 +49,15 @@ public sealed class PlaywrightBrowserManager(
                         Channel = "chromium",
                         Headless = _options.BrowserHeadless,
                         Locale = "en-US",
+                        TimezoneId = "America/New_York",
+                        UserAgent =
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                            "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                        ExtraHTTPHeaders = new Dictionary<string, string>
+                        {
+                            ["Accept-Language"] = "en-US,en;q=0.9",
+                        },
+                        Args = ["--disable-blink-features=AutomationControlled"],
                         Timeout = LaunchTimeoutMs,
                     }).WaitAsync(cancellationToken);
 
@@ -62,8 +68,7 @@ public sealed class PlaywrightBrowserManager(
                     await context.RouteAsync("**/*", BlockNonEssentialResourceAsync)
                         .WaitAsync(cancellationToken);
 
-                if (isNewProfile)
-                    await SeedSessionCookiesAsync(context, cancellationToken);
+                await SeedSessionCookiesAsync(context, cancellationToken);
 
                 _context = context;
             }
@@ -128,7 +133,6 @@ public sealed class PlaywrightBrowserManager(
             case "image":
             case "media":
             case "font":
-            case "stylesheet":
                 await route.AbortAsync();
                 break;
 

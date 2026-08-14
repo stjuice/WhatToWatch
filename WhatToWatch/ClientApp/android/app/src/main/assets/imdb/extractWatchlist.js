@@ -17,6 +17,92 @@
     return null;
   }
 
+  function readRating(node) {
+    var rating = node.ratingsSummary && node.ratingsSummary.aggregateRating;
+    return typeof rating === "number" ? rating : null;
+  }
+
+  function readPlot(node) {
+    var plot =
+      node.plot && node.plot.plotText && node.plot.plotText.plainText;
+    return typeof plot === "string" ? plot : null;
+  }
+
+  function readRuntimeMinutes(node) {
+    if (!node.runtime) return null;
+    if (typeof node.runtime.seconds === "number" && node.runtime.seconds > 0) {
+      return Math.floor(node.runtime.seconds / 60);
+    }
+    if (typeof node.runtime.minutes === "number" && node.runtime.minutes > 0) {
+      return node.runtime.minutes;
+    }
+    return null;
+  }
+
+  function readGenres(node) {
+    var genres =
+      node.titleGenres && Array.isArray(node.titleGenres.genres)
+        ? node.titleGenres.genres
+        : [];
+    var result = [];
+    for (var i = 0; i < genres.length; i++) {
+      var text = genres[i] && genres[i].genre && genres[i].genre.text;
+      if (typeof text === "string" && text) result.push(text);
+    }
+    return result;
+  }
+
+  function readCreditName(credit) {
+    var text =
+      credit && credit.name && credit.name.nameText && credit.name.nameText.text;
+    return typeof text === "string" && text ? text : null;
+  }
+
+  function readFirstCreditName(entry) {
+    if (entry.credits && Array.isArray(entry.credits)) {
+      for (var i = 0; i < entry.credits.length; i++) {
+        var name = readCreditName(entry.credits[i]);
+        if (name) return name;
+      }
+    }
+    return readCreditName(entry);
+  }
+
+  function isDirectorCategory(text) {
+    return typeof text === "string" && /^directors?$/i.test(text);
+  }
+
+  function readDirector(node) {
+    var v2 = node.principalCreditsV2;
+    if (Array.isArray(v2)) {
+      for (var i = 0; i < v2.length; i++) {
+        var grouping = v2[i] && v2[i].grouping && v2[i].grouping.text;
+        if (isDirectorCategory(grouping)) {
+          var fromV2 = readFirstCreditName(v2[i]);
+          if (fromV2) return fromV2;
+        }
+      }
+    }
+
+    var credits = node.principalCredits;
+    if (Array.isArray(credits)) {
+      for (var j = 0; j < credits.length; j++) {
+        var category = credits[j] && credits[j].category;
+        var id = category && category.id;
+        var text = category && category.text;
+        if (
+          (typeof id === "string" && id.toLowerCase() === "director") ||
+          isDirectorCategory(text)
+        ) {
+          var fromV1 = readFirstCreditName(credits[j]);
+          if (fromV1) return fromV1;
+        }
+      }
+    }
+
+    return null;
+  }
+
   function extractWatchlistFromNextData(root, options) {
     var movies = [];
     var seen = {};
@@ -37,6 +123,11 @@
           title: titleText,
           year: node.releaseYear && node.releaseYear.year != null ? node.releaseYear.year : null,
           imageUrl: node.primaryImage && node.primaryImage.url ? node.primaryImage.url : null,
+          rating: readRating(node),
+          plot: readPlot(node),
+          runtimeMinutes: readRuntimeMinutes(node),
+          director: readDirector(node),
+          genres: readGenres(node),
         });
       }
 

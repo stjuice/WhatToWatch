@@ -121,6 +121,67 @@ public class PlaywrightBrowserManagerTests
         Cleanup(root);
     }
 
+    [Fact]
+    public async Task GetContextAsync_SeedsCookies_WhenProfileDirectoryAlreadyExists()
+    {
+        var playwright = new Mock<IPlaywright>();
+        var chromium = new Mock<IBrowserType>();
+        var context = new Mock<IBrowserContext>();
+        var root = Path.Combine(Path.GetTempPath(), $"whattowatch-test-{Guid.NewGuid():N}");
+        var profileDirectory = Path.Combine(root, "profile");
+        var storageStatePath = Path.Combine(root, "imdb-session.json");
+
+        Directory.CreateDirectory(profileDirectory);
+        await File.WriteAllTextAsync(Path.Combine(profileDirectory, "placeholder"), "x");
+        await File.WriteAllTextAsync(
+            storageStatePath,
+            """
+            {
+              "cookies": [
+                {
+                  "name": "session-id",
+                  "value": "existing-profile",
+                  "domain": ".imdb.com",
+                  "path": "/",
+                  "secure": true,
+                  "sameSite": "Lax"
+                }
+              ]
+            }
+            """);
+
+        IEnumerable<Cookie>? seededCookies = null;
+        playwright.SetupGet(item => item.Chromium).Returns(chromium.Object);
+        chromium.Setup(item => item.LaunchPersistentContextAsync(
+                It.IsAny<string>(),
+                It.IsAny<BrowserTypeLaunchPersistentContextOptions>()))
+            .ReturnsAsync(context.Object);
+        context.Setup(item => item.RouteAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<IRoute, Task>>(),
+                It.IsAny<BrowserContextRouteOptions>()))
+            .ReturnsAsync(Mock.Of<IAsyncDisposable>());
+        context.Setup(item => item.AddCookiesAsync(It.IsAny<IEnumerable<Cookie>>()))
+            .Callback<IEnumerable<Cookie>>(cookies => seededCookies = [.. cookies])
+            .Returns(Task.CompletedTask);
+
+        var options = Microsoft.Extensions.Options.Options.Create(new ImdbWatchlistsOptions
+        {
+            BrowserProfileDirectory = profileDirectory,
+            StorageStatePath = storageStatePath,
+        });
+
+        await using var manager = new PlaywrightBrowserManager(
+            playwright.Object,
+            options,
+            NullLogger<PlaywrightBrowserManager>.Instance);
+        await manager.GetContextAsync();
+
+        Assert.Equal("existing-profile", Assert.Single(seededCookies!).Value);
+
+        Cleanup(root);
+    }
+
     private static void Cleanup(string directory)
     {
         try

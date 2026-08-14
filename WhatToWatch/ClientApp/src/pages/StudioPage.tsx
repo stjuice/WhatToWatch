@@ -116,6 +116,15 @@ export const StudioPage = () => {
 
   const handleRefresh = (list: WatchlistDto) =>
     runAction(async () => {
+      const listUrl = list.url?.trim();
+      if (hasNativeImporter && listUrl) {
+        const updated = await ImdbImportService.importFromImdb(listUrl, {
+          onStatus: (entry) => setImportLog((current) => [...current.slice(-4), entry]),
+        });
+        setMessage(`Refreshed “${updated.name}” (${updated.movies.length})`);
+        return;
+      }
+
       const updated = await refreshWatchlist(list.id);
       setMessage(`Refreshed “${updated.name}” (${updated.movies.length})`);
     });

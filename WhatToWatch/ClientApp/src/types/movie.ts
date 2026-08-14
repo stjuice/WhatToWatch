@@ -40,10 +40,16 @@ export interface ImportImdbMovieRequest {
   title: string;
   year: number | null;
   imageUrl: string | null;
+  rating?: number | null;
+  plot?: string | null;
+  runtimeMinutes?: number | null;
+  director?: string | null;
+  genres?: string[];
 }
 
 export interface ImportImdbWatchlistRequest {
   listId: string;
   title: string;
+  url?: string;
   movies: ImportImdbMovieRequest[];
 }

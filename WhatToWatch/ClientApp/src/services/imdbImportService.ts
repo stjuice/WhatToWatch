@@ -36,6 +36,7 @@ const importFromImdb = async (
     const saved = await importImdbWatchlist({
       listId: imported.listId,
       title: imported.title,
+      url: trimmedUrl,
       movies: imported.movies,
     });
     console.log(`[ImdbImport] saved ${saved.id} on server`);

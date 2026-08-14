@@ -84,6 +84,7 @@ describe("ImdbImportService", () => {
     expect(importImdbWatchlist).toHaveBeenCalledWith({
       listId: "ls055592025",
       title: "My Favourites",
+      url: "https://www.imdb.com/list/ls055592025/",
       movies: extracted.movies,
     });
     expect(result).toEqual(saved);
