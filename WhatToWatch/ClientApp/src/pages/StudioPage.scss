@@ -1,0 +1,132 @@
+@use "../styles/variables" as *;
+
+.studio {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.studio__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.studio__title {
+  margin: 0;
+  font-family: $font-display;
+  font-size: 1.8rem;
+}
+
+.studio__section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+.studio__panel,
+.studio__login {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.studio__label {
+  font-size: 0.9rem;
+  color: $text-muted;
+}
+
+.studio__input {
+  width: 100%;
+  min-height: $tap-min;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba($text, 0.25);
+  border-radius: 0;
+  background: transparent;
+  color: $text;
+  font: inherit;
+}
+
+.studio__button {
+  min-height: $tap-min;
+  padding: 0.55rem 1rem;
+  border: 1px solid $cyan;
+  background: transparent;
+  color: $cyan;
+  font: inherit;
+  cursor: pointer;
+}
+
+.studio__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.studio__button--ghost {
+  border-color: rgba($text, 0.35);
+  color: $text;
+}
+
+.studio__button--danger {
+  border-color: $red;
+  color: $red;
+}
+
+.studio__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.studio__log,
+.studio__status,
+.studio__message {
+  margin: 0;
+  color: $text-muted;
+  font-size: 0.92rem;
+}
+
+.studio__error {
+  margin: 0;
+  color: $red;
+}
+
+.studio__lists {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.studio__list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba($text, 0.14);
+}
+
+.studio__list-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.studio__list-meta span {
+  color: $text-muted;
+  font-size: 0.88rem;
+}
+
+.studio__list-actions,
+.studio__edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}

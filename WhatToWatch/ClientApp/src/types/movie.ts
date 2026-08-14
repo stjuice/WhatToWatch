@@ -19,7 +19,7 @@ export interface WatchlistDto {
 }
 
 export interface MovieFilterRequest {
-  watchlistId: string;
+  watchlistId?: string;
   query?: string;
   yearFrom?: number;
   yearTo?: number;
@@ -29,4 +29,21 @@ export interface MovieFilterRequest {
 
 export interface CreateWatchlistRequest {
   url: string;
+}
+
+export interface UpdateWatchlistRequest {
+  name: string;
+}
+
+export interface ImportImdbMovieRequest {
+  imdbId: string;
+  title: string;
+  year: number | null;
+  imageUrl: string | null;
+}
+
+export interface ImportImdbWatchlistRequest {
+  listId: string;
+  title: string;
+  movies: ImportImdbMovieRequest[];
 }

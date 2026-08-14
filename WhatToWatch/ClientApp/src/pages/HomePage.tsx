@@ -1,122 +1,71 @@
-import { useEffect, useState } from "react";
-import type { ChangeEvent, KeyboardEvent } from "react";
-import { AddLinkButton } from "../components/AddLinkButton";
-import { ClearLinkButton } from "../components/ClearLinkButton";
-import { ImportFromImdbButton } from "../components/ImportFromImdbButton";
-import { RandomButton } from "../components/RandomButton";
-import { ImdbImportService } from "../services/imdbImportService";
+import { Link, useNavigate } from "react-router-dom";
+import popcornFull from "../assets/popcorn-full.svg";
+import { Button } from "../primitives/Button";
+import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import "./HomePage.scss";
 
-type BucketState = "idle" | "readyToUpload" | "importing" | "loaded";
-
-const resolveBucketState = (
-  isListLoaded: boolean,
-  isImporting: boolean,
-  url: string
-): BucketState => {
-  if (isListLoaded) {
-    return "loaded";
-  }
-  if (isImporting) {
-    return "importing";
-  }
-
-  return url.trim().length > 0 ? "readyToUpload" : "idle";
-};
-
 export const HomePage = () => {
   const {
-    url,
-    setUrl,
-    isListLoaded,
-    isImporting,
-    importError,
+    watchlists,
+    watchlistsLoading,
+    watchlistsError,
+    isPicking,
     pickError,
-    nativeImportLog,
-    loadList,
+    pickRandomMovie,
   } = useAppState();
-  const hasNativeImporter = ImdbImportService.isAvailable();
+  const navigate = useNavigate();
 
-  // Dev-only switch to preview the empty/upload states without dropping the imported list.
-  const [isEmptyPreview, setIsEmptyPreview] = useState(false);
-  const showAsLoaded = isListLoaded && !(import.meta.env.DEV && isEmptyPreview);
-  const bucketState = resolveBucketState(showAsLoaded, isImporting, url);
-  const error = importError ?? pickError;
-
-  useEffect(() => {
-    if (isImporting || !isListLoaded)
-      setIsEmptyPreview(false);
-
-  }, [isImporting, isListLoaded]);
-
-  const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setUrl(event.target.value);
-  };
-
-  const handleUrlKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter")
-      return;
-
-    event.preventDefault();
-    void loadList();
+  const handleRandomAll = async () => {
+    const picked = await pickRandomMovie(null);
+    if (picked) {
+      navigate(routePaths.movie);
+    }
   };
 
   return (
-    <div className="watchlist-bucket" data-state={bucketState}>
-      <div className="watchlist-bucket__stage">
-        {bucketState === "loaded" ? <RandomButton /> : <ClearLinkButton />}
+    <div className="public-home">
+      <Button
+        variant="icon"
+        className="public-home__random"
+        onClick={() => {
+          void handleRandomAll();
+        }}
+        disabled={isPicking || watchlists.length === 0}
+        aria-busy={isPicking}
+        aria-label="Випадковий фільм з усіх списків"
+      >
+        <img src={popcornFull} alt="" draggable={false} />
+      </Button>
 
-        {bucketState === "loaded" ? null : (
-          <div className="watchlist-bucket__controls">
-            <input
-              className="watchlist-bucket__input"
-              type="url"
-              value={url}
-              onChange={handleUrlChange}
-              onKeyDown={handleUrlKeyDown}
-              disabled={isImporting}
-              placeholder="ВСТАВИТИ ПОСИЛАННЯ"
-              aria-label="Посилання на список IMDb"
-            />
+      <p className="public-home__hint">Випадковий фільм з усіх списків</p>
 
-            <div className="watchlist-bucket__action">
-              {bucketState === "idle" ? null : hasNativeImporter ? (
-                <ImportFromImdbButton />
-              ) : (
-                <AddLinkButton />
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {error ? (
-        <p className="watchlist-bucket__error" role="alert">
-          {error}
+      {watchlistsLoading ? <p className="public-home__status">Завантаження…</p> : null}
+      {watchlistsError ? (
+        <p className="public-home__error" role="alert">
+          {watchlistsError}
+        </p>
+      ) : null}
+      {pickError ? (
+        <p className="public-home__error" role="alert">
+          {pickError}
         </p>
       ) : null}
 
-      {nativeImportLog.length > 0 ? (
-        <div className="watchlist-bucket__import-log" role="status" aria-live="polite">
-          {nativeImportLog.map((entry, index) => (
-            <div key={`${index}-${entry}`}>{entry}</div>
-          ))}
-        </div>
+      {!watchlistsLoading && watchlists.length === 0 && !watchlistsError ? (
+        <p className="public-home__status">Поки немає жодного списку.</p>
       ) : null}
 
-      {import.meta.env.DEV && isListLoaded ? (
-        <button
-          type="button"
-          className="watchlist-bucket__preview-toggle"
-          data-active={isEmptyPreview ? "true" : undefined}
-          onClick={() => {
-            setIsEmptyPreview((current) => !current);
-          }}
-        >
-          {isEmptyPreview ? "dev: повний кошик" : "dev: порожній кошик"}
-        </button>
-      ) : null}
+      <ul className="public-home__lists">
+        {watchlists.map((list) => (
+          <li key={list.id}>
+            <Link className="public-home__list-link" to={routePaths.list(list.id)}>
+              <span className="public-home__list-name">{list.name}</span>
+              <span className="public-home__list-count">{list.movies.length}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

@@ -29,16 +29,12 @@ public class MovieService(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(filter);
-        ArgumentException.ThrowIfNullOrWhiteSpace(filter.WatchlistId);
 
-        var watchlist = await GetPopulatedWatchlistAsync(
-            filter.WatchlistId,
-            cancellationToken).ConfigureAwait(false);
-
-        if (watchlist is null)
+        var movies = await ResolveMoviesAsync(filter, cancellationToken).ConfigureAwait(false);
+        if (movies is null)
             return null;
 
-        return randomizationService.Filter(watchlist.Movies, filter);
+        return randomizationService.Filter(movies, filter);
     }
 
     public async Task<Movie?> GetRandomMovieAsync(
@@ -46,17 +42,33 @@ public class MovieService(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(filter);
-        ArgumentException.ThrowIfNullOrWhiteSpace(filter.WatchlistId);
+
+        var movies = await ResolveMoviesAsync(filter, cancellationToken).ConfigureAwait(false);
+        if (movies is null)
+            return null;
+
+        var filtered = randomizationService.Filter(movies, filter);
+        return randomizationService.PickRandom(filtered);
+    }
+
+    private async Task<IReadOnlyCollection<Movie>?> ResolveMoviesAsync(
+        MovieFilter filter,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(filter.WatchlistId))
+        {
+            var watchlists = await repository
+                .GetAllAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. watchlists.SelectMany(watchlist => watchlist.Movies)];
+        }
 
         var watchlist = await GetPopulatedWatchlistAsync(
             filter.WatchlistId,
             cancellationToken).ConfigureAwait(false);
 
-        if (watchlist is null)
-            return null;
-
-        var filtered = randomizationService.Filter(watchlist.Movies, filter);
-        return randomizationService.PickRandom(filtered);
+        return watchlist?.Movies;
     }
 
     private async Task<Watchlist?> GetPopulatedWatchlistAsync(

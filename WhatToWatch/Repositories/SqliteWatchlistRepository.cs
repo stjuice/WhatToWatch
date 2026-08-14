@@ -115,6 +115,25 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<bool> DeleteAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        await db.Movies
+            .Where(movie => movie.WatchlistId == id)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var deleted = await db.Watchlists
+            .Where(item => item.Id == id)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return deleted > 0;
+    }
+
     private static string NormalizeUrl(string url) =>
         url.Trim().TrimEnd('/').ToLowerInvariant();
 

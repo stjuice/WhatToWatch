@@ -1,21 +1,17 @@
 import { Button } from "../primitives/Button";
-import { useAppState } from "../state/AppStateContext";
+
+type Props = {
+  disabled?: boolean;
+  onImport: () => void;
+};
 
 /**
- * Opens the in-app IMDb WebView import flow. Renders only in the native app,
- * where the Capacitor plugin exists.
+ * Opens the in-app IMDb WebView import flow. Used from Studio on Android.
  */
-export const ImportFromImdbButton = () => {
-  const { url, isImporting, importFromImdb } = useAppState();
-
+export const ImportFromImdbButton = ({ disabled = false, onImport }: Props) => {
   return (
-    <Button
-      onClick={() => {
-        void importFromImdb();
-      }}
-      disabled={isImporting || !url.trim()}
-    >
-      {isImporting ? "Імпортуємо…" : "Імпорт з IMDb"}
+    <Button onClick={onImport} disabled={disabled}>
+      Імпорт з IMDb
     </Button>
   );
 };

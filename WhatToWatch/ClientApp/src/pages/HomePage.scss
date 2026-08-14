@@ -1,141 +1,64 @@
 @use "../styles/variables" as *;
 
-// How high the input/button block sits above the bottom of the bucket art.
-// The block is taken out of flow, so changing this never moves the bucket.
-$controls-bottom: 8rem;
-
-.watchlist-bucket {
+.public-home {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-  margin-bottom: 7em;
+  gap: 1rem;
 }
 
-// No fixed height: the box hugs the bucket art so nothing offsets it.
-.watchlist-bucket__stage {
-  position: relative;
+.public-home__random {
+  width: min(100%, 18rem);
+}
+
+.public-home__random img {
   width: 100%;
-  display: grid;
-  place-items: center;
+  height: auto;
+  display: block;
 }
 
-.watchlist-bucket[data-state="importing"] .watchlist-bucket__stage img {
-  animation: watchlist-bucket-pulse 1.1s ease-in-out infinite;
-  padding: 0 2em;
-
+.public-home__hint,
+.public-home__status {
+  margin: 0;
+  text-align: center;
+  color: $text-muted;
+  font-size: 0.95rem;
 }
 
-@keyframes watchlist-bucket-pulse {
-  50% {
-    transform: scale(0.96);
-    opacity: 0.75;
-  }
+.public-home__error {
+  margin: 0;
+  text-align: center;
+  color: $red;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .watchlist-bucket__stage img {
-    animation: none !important;
-    transition: none;
-    padding: 0 2em;
-  }
-}
-
-.watchlist-bucket__controls {
-  position: absolute;
-  right: 0;
-  bottom: $controls-bottom;
-  left: 0;
-  z-index: 1;
+.public-home__lists {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 0.85rem;
-  // Let clicks through the reserved gaps so the bucket underneath stays clickable.
-  pointer-events: none;
+  gap: 0.65rem;
 }
 
-.watchlist-bucket__input,
-.watchlist-bucket__action > * {
-  pointer-events: auto;
-}
-
-// Slot is always rendered so the input keeps its position when the button appears.
-.watchlist-bucket__action {
+.public-home__list-link {
   display: flex;
-  min-height: $tap-min;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba($text, 0.18);
 }
 
-.watchlist-bucket__action > * {
-  width: 100%;
-}
-
-.watchlist-bucket__input {
-  width: 100%;
-  min-height: $tap-min;
-  padding: 0.7rem 1rem;
-  border: 2px solid $cyan;
-  border-radius: 0.35rem;
-  background: $bg;
-  color: $text;
+.public-home__list-name {
   font-family: $font-display;
-  font-size: 0.95rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-align: center;
+  font-size: 1.15rem;
 }
 
-.watchlist-bucket__input::placeholder {
-  color: $text-muted;
-  opacity: 1;
-}
-
-.watchlist-bucket__input:focus {
-  outline: none;
-  box-shadow: 0 0 0 1px $cyan;
-}
-
-.watchlist-bucket__input:disabled {
-  opacity: 0.6;
-}
-
-.watchlist-bucket__error {
-  margin: 0;
-  color: $red;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.watchlist-bucket__import-log {
-  width: 100%;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid rgba($cyan, 0.45);
-  border-radius: 0.35rem;
-  background: rgba($bg, 0.9);
-  color: $text-muted;
-  font-family: $font-system;
-  font-size: 0.8rem;
-  line-height: 1.5;
-}
-
-.watchlist-bucket__import-log > div:last-child {
-  color: $cyan;
-}
-
-.watchlist-bucket__preview-toggle {
-  padding: 0.35rem 0.7rem;
-  border: 1px dashed $text-muted;
-  border-radius: 0.3rem;
-  background: transparent;
-  color: $text-muted;
-  font-family: $font-body;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-
-.watchlist-bucket__preview-toggle[data-active="true"] {
-  border-color: $cyan;
-  color: $cyan;
+.public-home__list-count {
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
 }

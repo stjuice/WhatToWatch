@@ -18,4 +18,8 @@ public interface IWatchlistRepository
     Task SaveAsync(
         Watchlist watchlist,
         CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteAsync(
+        string id,
+        CancellationToken cancellationToken = default);
 }

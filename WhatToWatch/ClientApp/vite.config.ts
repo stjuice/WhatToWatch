@@ -48,7 +48,12 @@ export default defineConfig({
           {
             urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
             handler: "NetworkOnly",
-            method: "POST",
+            method: "PUT",
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
+            handler: "NetworkOnly",
+            method: "DELETE",
           },
         ],
       },

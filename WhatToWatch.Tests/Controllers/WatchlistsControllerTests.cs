@@ -116,6 +116,81 @@ public class WatchlistsControllerTests
         Assert.IsType<NotFoundResult>(result.Result);
     }
 
+    [Fact]
+    public async Task ImportImdbWatchlistAsync_ReturnsOk()
+    {
+        _service
+            .Setup(s => s.ImportFromImdbPayloadAsync(
+                It.IsAny<ImportImdbWatchlistRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateWatchlist("ls1"));
+
+        var result = await CreateSut().ImportImdbWatchlistAsync(
+            new ImportImdbWatchlistRequest
+            {
+                ListId = "ls1",
+                Title = "Sci-Fi",
+                Movies =
+                [
+                    new ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt1",
+                        Title = "Film",
+                        Year = 2000,
+                        ImageUrl = null,
+                    },
+                ],
+            },
+            CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<WatchlistDto>(ok.Value);
+        Assert.Equal("ls1", dto.Id);
+    }
+
+    [Fact]
+    public async Task UpdateWatchlistAsync_ReturnsOk_WhenExists()
+    {
+        _service
+            .Setup(s => s.UpdateWatchlistAsync(
+                "ls1",
+                It.IsAny<UpdateWatchlistRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateWatchlist("ls1") with { Name = "Renamed" });
+
+        var result = await CreateSut().UpdateWatchlistAsync(
+            "ls1",
+            new UpdateWatchlistRequest { Name = "Renamed" },
+            CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal("Renamed", Assert.IsType<WatchlistDto>(ok.Value).Name);
+    }
+
+    [Fact]
+    public async Task DeleteWatchlistAsync_ReturnsNoContent_WhenDeleted()
+    {
+        _service
+            .Setup(s => s.DeleteWatchlistAsync("ls1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await CreateSut().DeleteWatchlistAsync("ls1", CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteWatchlistAsync_ReturnsNotFound_WhenMissing()
+    {
+        _service
+            .Setup(s => s.DeleteWatchlistAsync("missing", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await CreateSut().DeleteWatchlistAsync("missing", CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
     private static Watchlist CreateWatchlist(string id) =>
         new()
         {

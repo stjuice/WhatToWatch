@@ -138,6 +138,39 @@ public class MovieServiceTests
     }
 
     [Fact]
+    public async Task GetRandomMovieAsync_PicksAcrossAllWatchlists_WhenWatchlistIdOmitted()
+    {
+        _repository
+            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                CreateWatchlist(),
+                CreateWatchlist() with
+                {
+                    Id = "ls2",
+                    Movies =
+                    [
+                        new Movie
+                        {
+                            Id = "tt9",
+                            Title = "Other",
+                            Year = 2020,
+                            Genres = ["Drama"],
+                        },
+                    ],
+                },
+            ]);
+
+        var movie = await CreateSut().GetRandomMovieAsync(new MovieFilter());
+
+        Assert.NotNull(movie);
+        _repository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _repository.Verify(
+            r => r.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task GetMovieAsync_RefreshesFromImdb_WhenStoredWatchlistHasNoMovies()
     {
         _repository

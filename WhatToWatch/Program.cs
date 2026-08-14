@@ -11,6 +11,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    // Capacitor Android WebView calls the Render API cross-origin (https://localhost).
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 builder.Services.Configure<WhatToWatchOptions>(
     builder.Configuration.GetSection(WhatToWatchOptions.SectionName));
 
@@ -51,6 +59,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseCors();
 app.UseAuthorization();
 
 app.MapGet("/health", async (WhatToWatchDbContext db) =>

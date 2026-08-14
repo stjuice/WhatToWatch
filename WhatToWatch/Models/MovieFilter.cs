@@ -2,7 +2,7 @@ namespace WhatToWatch.Models;
 
 public record MovieFilter
 {
-    public required string WatchlistId { get; init; }
+    public string? WatchlistId { get; init; }
 
     public string? Query { get; init; }
 

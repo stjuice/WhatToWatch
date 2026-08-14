@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace WhatToWatch.DTOs;
 
 public record MovieFilterRequest
 {
-    [Required]
-    public required string WatchlistId { get; init; }
+    /// <summary>
+    /// When omitted or empty, movie queries run across every stored watchlist.
+    /// </summary>
+    public string? WatchlistId { get; init; }
 
     public string? Query { get; init; }
 
