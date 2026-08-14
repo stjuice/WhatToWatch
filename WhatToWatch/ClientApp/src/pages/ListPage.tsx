@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getWatchlist } from "../api/moviesApi";
 import popcornFull from "../assets/popcorn-full.svg";
 import { text } from "../i18n/text";
@@ -65,10 +65,6 @@ export const ListPage = () => {
 
   return (
     <div className="list-page">
-      <Link className="list-page__back" to={routePaths.home}>
-        {text("list.back")}
-      </Link>
-
       {loading ? <p className="list-page__status">{text("list.loading")}</p> : null}
       {error ? (
         <p className="list-page__error" role="alert">

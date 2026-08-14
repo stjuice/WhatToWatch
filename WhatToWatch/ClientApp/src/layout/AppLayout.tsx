@@ -1,13 +1,22 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, matchPath, useLocation } from "react-router-dom";
 import logo from "../assets/logo.svg";
+import { useGestureBack } from "../hooks/useGestureBack";
 import { text } from "../i18n/text";
 import { AppRoutes } from "../routes/AppRoutes";
 import { routePaths } from "../routes/routePaths";
+import { useAppState } from "../state/AppStateContext";
 
 export const AppLayout = () => {
   const { pathname } = useLocation();
+  const { watchlistId } = useAppState();
   const isMovieScreen = pathname === routePaths.movie;
+  const isListScreen = Boolean(matchPath(routePaths.listPattern, pathname));
   const isStudio = pathname.startsWith(routePaths.studio);
+
+  useGestureBack({
+    enabled: isListScreen || isMovieScreen,
+    fallbackTo: isMovieScreen && watchlistId ? routePaths.list(watchlistId) : routePaths.home,
+  });
 
   return (
     <div className="app">
