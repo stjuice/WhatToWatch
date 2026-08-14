@@ -23,13 +23,25 @@
   overflow: hidden;
 }
 
+.movie-detail__poster-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.movie-detail__poster-link:focus-visible {
+  outline: 2px solid $cyan;
+  outline-offset: 2px;
+}
+
 .movie-detail__poster {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .movie-detail__poster-stack[data-loading="true"] .movie-detail__poster {
   opacity: 0.5;
   transition: opacity 0.2s ease;

@@ -4,6 +4,7 @@ import {
   formatGenres,
   formatRating,
   formatRuntime,
+  getImdbTitleUrl,
   getMovieCoreFields,
 } from "./movieCoreFields";
 import type { MovieDto } from "../types/movie";
@@ -21,6 +22,10 @@ const fullMovie: MovieDto = {
 };
 
 describe("movie core fields", () => {
+  it("builds the IMDb title URL from the movie id", () => {
+    expect(getImdbTitleUrl("tt0133093")).toBe("https://www.imdb.com/title/tt0133093/");
+  });
+
   it("joins genres with a pipe separator", () => {
     expect(formatGenres(["Action", "Sci-Fi"])).toBe(`Action${GENRE_SEPARATOR}Sci-Fi`);
     expect(GENRE_SEPARATOR).toBe(" | ");

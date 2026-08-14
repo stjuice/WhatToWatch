@@ -2,6 +2,9 @@ import type { MovieDto } from "../types/movie";
 
 export const GENRE_SEPARATOR = " | ";
 
+export const getImdbTitleUrl = (id: string): string =>
+  `https://www.imdb.com/title/${id}/`;
+
 export type MovieCoreFields = {
   title: string | null;
   genres: string | null;
