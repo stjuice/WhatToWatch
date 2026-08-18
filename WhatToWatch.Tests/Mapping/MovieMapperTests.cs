@@ -1,13 +1,13 @@
 using ImdbWatchlists.Models;
 using WhatToWatch.Mapping;
-using Movie = WhatToWatch.Models.Movie;
+using MovieModel = WhatToWatch.Models.Movie;
 
 namespace WhatToWatch.Tests.Mapping;
 
 public class MovieMapperTests
 {
     [Fact]
-    public void ToApp_Movie_MapsImdbMovieToAppMovie()
+    public void ToApp_Movie_MapsImdbMovieToMovieModel()
     {
         var imdb = new ImdbWatchlists.Models.Movie
         {
@@ -38,9 +38,9 @@ public class MovieMapperTests
     }
 
     [Fact]
-    public void ToDto_Movie_MapsAppMovieToDto()
+    public void ToDto_Movie_MapsMovieModelToDto()
     {
-        var movie = new Movie
+        var movie = new MovieModel
         {
             Id = "tt1",
             Title = "Test",
@@ -123,7 +123,7 @@ public class MovieMapperTests
     [Fact]
     public void ToDto_Movie_DoesNotExposeMediaCategory()
     {
-        var movie = new Movie
+        var movie = new MovieModel
         {
             Id = "tt1",
             Title = "Test",
