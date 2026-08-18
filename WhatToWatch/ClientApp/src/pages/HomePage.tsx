@@ -1,5 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import popcornFull from "../assets/popcorn-full.svg";
+import { WatchlistBucket } from "../components/WatchlistBucket";
+import { useViewportZoom } from "../hooks/useViewportZoom";
 import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
@@ -16,6 +18,7 @@ export const HomePage = () => {
     pickRandomMovie,
   } = useAppState();
   const navigate = useNavigate();
+  const zoomedIn = useViewportZoom();
 
   const handleRandomAll = async () => {
     const picked = await pickRandomMovie(null);
@@ -57,13 +60,14 @@ export const HomePage = () => {
         <p className="public-home__status">{text("home.empty")}</p>
       ) : null}
 
-      <ul className="public-home__lists">
+      <ul className={`public-home__lists${zoomedIn ? " public-home__lists--large" : ""}`}>
         {watchlists.map((list) => (
-          <li key={list.id}>
-            <Link className="public-home__list-link" to={routePaths.list(list.id)}>
-              <span className="public-home__list-name">{list.name}</span>
-              <span className="public-home__list-count">{list.movies.length}</span>
-            </Link>
+          <li key={list.id} className="public-home__list-item">
+            <WatchlistBucket
+              id={list.id}
+              name={list.name}
+              size={zoomedIn ? "large" : "compact"}
+            />
           </li>
         ))}
       </ul>

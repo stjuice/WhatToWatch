@@ -37,28 +37,19 @@
   margin: 1.5rem 0 0;
   padding: 0;
   width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 0.75rem;
+  justify-items: center;
+}
+
+.public-home__lists--large {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+}
+
+.public-home__list-item {
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.public-home__list-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid rgba($text, 0.18);
-}
-
-.public-home__list-name {
-  font-family: $font-display;
-  font-size: 1.15rem;
-}
-
-.public-home__list-count {
-  opacity: 0.65;
-  font-variant-numeric: tabular-nums;
+  justify-content: center;
+  width: 100%;
 }

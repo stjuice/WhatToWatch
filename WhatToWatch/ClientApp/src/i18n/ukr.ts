@@ -9,6 +9,7 @@ export const ukr = {
   "home.randomAllAria": "Випадковий фільм з усіх списків",
   "home.loading": "Завантаження…",
   "home.empty": "Поки немає жодного списку.",
+  "home.openList": "Відкрити список {name}",
 
   "list.loading": "Завантаження…",
   "list.notFound": "Список не знайдено",
