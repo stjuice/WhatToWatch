@@ -38,4 +38,7 @@ public record ImportImdbMovieRequest
     public string? Director { get; init; }
 
     public IReadOnlyCollection<string>? Genres { get; init; }
+
+    /// <summary>Optional IMDb titleType.id (e.g. movie, tvSeries). Omitted values are treated as unknown.</summary>
+    public string? TitleType { get; init; }
 }

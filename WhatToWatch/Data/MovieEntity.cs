@@ -22,5 +22,7 @@ public class MovieEntity
 
     public List<string> Genres { get; set; } = [];
 
+    public int MediaCategory { get; set; }
+
     public WatchlistEntity? Watchlist { get; set; }
 }

@@ -1,7 +1,10 @@
+﻿using ImdbWatchlists.Models;
 using Moq;
 using WhatToWatch.Models;
 using WhatToWatch.Repositories;
 using WhatToWatch.Services;
+using Movie = WhatToWatch.Models.Movie;
+using Watchlist = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Tests.Services;
 
@@ -43,6 +46,28 @@ public class MovieServiceTests
     }
 
     [Fact]
+    public async Task GetMovieAsync_ReturnsNull_WhenTitleIsTvShow()
+    {
+        _repository
+            .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateWatchlist() with
+            {
+                Movies =
+                [
+                    new Movie
+                    {
+                        Id = "tt99",
+                        Title = "Breaking Bad",
+                        MediaCategory = MediaCategory.TvShow,
+                        Genres = ["Drama"],
+                    },
+                ],
+            });
+
+        Assert.Null(await CreateSut().GetMovieAsync(WatchlistId, "tt99"));
+    }
+
+    [Fact]
     public async Task GetMoviesAsync_FiltersMoviesByRequest()
     {
         _repository
@@ -58,6 +83,54 @@ public class MovieServiceTests
         Assert.NotNull(movies);
         Assert.Single(movies);
         Assert.Equal("tt3", movies.First().Id);
+    }
+
+    [Fact]
+    public async Task GetMoviesAsync_ExcludesTvAndUnknownTitles()
+    {
+        _repository
+            .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateWatchlist() with
+            {
+                Movies =
+                [
+                    new Movie
+                    {
+                        Id = "tt1",
+                        Title = "The Matrix",
+                        Year = 1999,
+                        Rating = 8.7,
+                        Genres = ["Action"],
+                        MediaCategory = MediaCategory.Movie,
+                    },
+                    new Movie
+                    {
+                        Id = "tt2",
+                        Title = "Breaking Bad",
+                        Year = 2008,
+                        Rating = 9.5,
+                        Genres = ["Drama"],
+                        MediaCategory = MediaCategory.TvShow,
+                    },
+                    new Movie
+                    {
+                        Id = "tt3",
+                        Title = "Legacy",
+                        Year = 2000,
+                        Rating = 7.0,
+                        Genres = ["Drama"],
+                        MediaCategory = MediaCategory.Unknown,
+                    },
+                ],
+            });
+
+        var movies = await CreateSut().GetMoviesAsync(new MovieFilter
+        {
+            WatchlistId = WatchlistId,
+        });
+
+        var movie = Assert.Single(movies!);
+        Assert.Equal("tt1", movie.Id);
     }
 
     [Fact]
@@ -156,6 +229,7 @@ public class MovieServiceTests
                             Title = "Other",
                             Year = 2020,
                             Genres = ["Drama"],
+                            MediaCategory = MediaCategory.Movie,
                         },
                     ],
                 },
@@ -209,6 +283,7 @@ public class MovieServiceTests
                     Year = 1999,
                     Rating = 8.7,
                     Genres = ["Action", "Sci-Fi"],
+                    MediaCategory = MediaCategory.Movie,
                 },
                 new Movie
                 {
@@ -217,6 +292,7 @@ public class MovieServiceTests
                     Year = 2010,
                     Rating = 8.8,
                     Genres = ["Action", "Sci-Fi"],
+                    MediaCategory = MediaCategory.Movie,
                 },
                 new Movie
                 {
@@ -225,6 +301,7 @@ public class MovieServiceTests
                     Year = 2001,
                     Rating = 8.3,
                     Genres = ["Comedy", "Romance"],
+                    MediaCategory = MediaCategory.Movie,
                 },
             ],
         };

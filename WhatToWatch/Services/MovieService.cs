@@ -1,3 +1,4 @@
+using WhatToWatch.Media;
 using WhatToWatch.Models;
 using WhatToWatch.Repositories;
 
@@ -21,6 +22,7 @@ public class MovieService(
             cancellationToken).ConfigureAwait(false);
 
         return watchlist?.Movies.FirstOrDefault(movie =>
+            MediaCategoryRules.IsMovie(movie) &&
             movie.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -61,14 +63,17 @@ public class MovieService(
                 .GetAllAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            return [.. watchlists.SelectMany(watchlist => watchlist.Movies)];
+            return MediaCategoryRules.MoviesOnly(
+                watchlists.SelectMany(watchlist => watchlist.Movies));
         }
 
         var watchlist = await GetPopulatedWatchlistAsync(
             filter.WatchlistId,
             cancellationToken).ConfigureAwait(false);
 
-        return watchlist?.Movies;
+        return watchlist is null
+            ? null
+            : MediaCategoryRules.MoviesOnly(watchlist.Movies);
     }
 
     private async Task<Watchlist?> GetPopulatedWatchlistAsync(

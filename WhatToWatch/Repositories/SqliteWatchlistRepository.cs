@@ -1,13 +1,15 @@
+using ImdbWatchlists.Models;
 using Microsoft.EntityFrameworkCore;
 using WhatToWatch.Data;
-using WhatToWatch.Models;
+using AppMovie = WhatToWatch.Models.Movie;
+using AppWatchlist = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Repositories;
 
 public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
     : IWatchlistRepository
 {
-    public async Task<Watchlist?> GetAsync(
+    public async Task<AppWatchlist?> GetAsync(
         string id,
         CancellationToken cancellationToken = default)
     {
@@ -22,7 +24,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
         return entity is null ? null : ToModel(entity);
     }
 
-    public async Task<Watchlist?> GetByUrlAsync(
+    public async Task<AppWatchlist?> GetByUrlAsync(
         string url,
         CancellationToken cancellationToken = default)
     {
@@ -45,7 +47,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
             : await GetAsync(match.Id, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyCollection<Watchlist>> GetAllAsync(
+    public async Task<IReadOnlyCollection<AppWatchlist>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
         var entities = await db.Watchlists
@@ -59,7 +61,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
     }
 
     public async Task SaveAsync(
-        Watchlist watchlist,
+        AppWatchlist watchlist,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(watchlist);
@@ -109,6 +111,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
                 RuntimeMinutes = movie.RuntimeMinutes,
                 Director = movie.Director,
                 Genres = [.. movie.Genres],
+                MediaCategory = (int)movie.MediaCategory,
             });
         }
 
@@ -137,14 +140,14 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
     private static string NormalizeUrl(string url) =>
         url.Trim().TrimEnd('/').ToLowerInvariant();
 
-    private static Watchlist ToModel(WatchlistEntity entity) => new()
+    private static AppWatchlist ToModel(WatchlistEntity entity) => new()
     {
         Id = entity.Id,
         Name = entity.Name,
         Url = entity.Url,
         LastRefreshedAt = entity.LastRefreshedAt,
         Movies = [.. entity.Movies
-            .Select(movie => new Movie
+            .Select(movie => new AppMovie
             {
                 Id = movie.Id,
                 Title = movie.Title,
@@ -155,6 +158,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
                 RuntimeMinutes = movie.RuntimeMinutes,
                 Director = movie.Director,
                 Genres = [.. movie.Genres],
+                MediaCategory = (MediaCategory)movie.MediaCategory,
             })],
     };
 }

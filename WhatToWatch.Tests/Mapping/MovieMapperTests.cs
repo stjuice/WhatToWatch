@@ -1,5 +1,6 @@
+using ImdbWatchlists.Models;
 using WhatToWatch.Mapping;
-using WhatToWatch.Models;
+using Movie = WhatToWatch.Models.Movie;
 
 namespace WhatToWatch.Tests.Mapping;
 
@@ -19,6 +20,7 @@ public class MovieMapperTests
             RuntimeMinutes = 136,
             Director = "Test Director",
             Genres = ["Drama"],
+            MediaCategory = MediaCategory.Movie,
         };
 
         var app = MovieMapper.ToApp(imdb);
@@ -32,6 +34,7 @@ public class MovieMapperTests
         Assert.Equal(imdb.RuntimeMinutes, app.RuntimeMinutes);
         Assert.Equal(imdb.Director, app.Director);
         Assert.Equal(imdb.Genres, app.Genres);
+        Assert.Equal(MediaCategory.Movie, app.MediaCategory);
     }
 
     [Fact]
@@ -100,6 +103,37 @@ public class MovieMapperTests
         Assert.Equal(request.YearTo, filter.YearTo);
         Assert.Equal(request.MinRating, filter.MinRating);
         Assert.Equal(request.Genres, filter.Genres);
+    }
+
+    [Fact]
+    public void ToApp_Movie_MapsMediaCategory()
+    {
+        var imdb = new ImdbWatchlists.Models.Movie
+        {
+            Id = "tt3",
+            Title = "Series",
+            MediaCategory = MediaCategory.TvShow,
+        };
+
+        var app = MovieMapper.ToApp(imdb);
+
+        Assert.Equal(MediaCategory.TvShow, app.MediaCategory);
+    }
+
+    [Fact]
+    public void ToDto_Movie_DoesNotExposeMediaCategory()
+    {
+        var movie = new Movie
+        {
+            Id = "tt1",
+            Title = "Test",
+            MediaCategory = MediaCategory.Movie,
+        };
+
+        var dto = MovieMapper.ToDto(movie);
+
+        Assert.Null(typeof(DTOs.MovieDto).GetProperty("MediaCategory"));
+        Assert.Equal(movie.Id, dto.Id);
     }
 
     [Fact]

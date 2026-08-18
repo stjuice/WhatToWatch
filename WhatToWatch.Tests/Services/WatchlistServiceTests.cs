@@ -29,10 +29,54 @@ public class WatchlistServiceTests
 
         var result = await CreateSut().GetWatchlistAsync(ListId);
 
-        Assert.Same(expected, result);
+        Assert.NotNull(result);
+        Assert.Equal(expected.Id, result.Id);
+        Assert.Equal(expected.Name, result.Name);
+        Assert.Single(result.Movies);
+        Assert.Equal("tt1", result.Movies.First().Id);
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task GetWatchlistAsync_ReturnsMoviesOnly_WhenWatchlistContainsMixedTypes()
+    {
+        var mixed = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow) with
+        {
+            Movies =
+            [
+                new AppMovie
+                {
+                    Id = "tt1",
+                    Title = "Movie",
+                    MediaCategory = MediaCategory.Movie,
+                    Genres = ["Drama"],
+                },
+                new AppMovie
+                {
+                    Id = "tt2",
+                    Title = "Series",
+                    MediaCategory = MediaCategory.TvShow,
+                    Genres = ["Drama"],
+                },
+                new AppMovie
+                {
+                    Id = "tt3",
+                    Title = "Legacy",
+                    MediaCategory = MediaCategory.Unknown,
+                    Genres = ["Drama"],
+                },
+            ],
+        };
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mixed);
+
+        var result = await CreateSut().GetWatchlistAsync(ListId);
+
+        var movie = Assert.Single(result!.Movies);
+        Assert.Equal("tt1", movie.Id);
     }
 
     [Fact]
@@ -50,6 +94,7 @@ public class WatchlistServiceTests
         var result = await CreateSut().GetWatchlistsAsync();
 
         Assert.Equal(2, result.Count);
+        Assert.All(result, watchlist => Assert.Single(watchlist.Movies));
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -65,7 +110,8 @@ public class WatchlistServiceTests
 
         var result = await CreateSut().ImportAsync(ListUrl);
 
-        Assert.Same(cached, result);
+        Assert.Equal(cached.Id, result.Id);
+        Assert.Single(result.Movies);
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -90,11 +136,57 @@ public class WatchlistServiceTests
 
         Assert.Equal(ListId, result.Id);
         Assert.Equal("Favourites", result.Name);
+        Assert.Single(result.Movies);
         _repository.Verify(
             r => r.SaveAsync(
                 It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task ImportAsync_PersistsAllTypes_ButReturnsMoviesOnly()
+    {
+        _repository
+            .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppWatchlist?)null);
+        _imdb
+            .Setup(i => i.GetListAsync(
+                It.IsAny<WatchlistRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateImdbWatchlist(ListId) with
+            {
+                Movies =
+                [
+                    new Movie
+                    {
+                        Id = "tt0133093",
+                        Title = "The Matrix",
+                        MediaCategory = MediaCategory.Movie,
+                        Genres = ["Action"],
+                    },
+                    new Movie
+                    {
+                        Id = "tt0903747",
+                        Title = "Breaking Bad",
+                        MediaCategory = MediaCategory.TvShow,
+                        Genres = ["Drama"],
+                    },
+                ],
+            });
+
+        AppWatchlist? saved = null;
+        _repository
+            .Setup(r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()))
+            .Callback<AppWatchlist, CancellationToken>((watchlist, _) => saved = watchlist)
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut().ImportAsync(ListUrl);
+
+        Assert.NotNull(saved);
+        Assert.Equal(2, saved.Movies.Count);
+        var returned = Assert.Single(result.Movies);
+        Assert.Equal("tt0133093", returned.Id);
     }
 
     [Fact]
@@ -109,7 +201,7 @@ public class WatchlistServiceTests
 
         var result = await CreateSut().ImportAsync(ListUrl);
 
-        Assert.Same(old, result);
+        Assert.Equal(old.Id, result.Id);
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -206,6 +298,7 @@ public class WatchlistServiceTests
                         RuntimeMinutes = 136,
                         Director = "Lana Wachowski",
                         Genres = ["Action", "Sci-Fi"],
+                        TitleType = "movie",
                     },
                     new WhatToWatch.DTOs.ImportImdbMovieRequest
                     {
@@ -213,6 +306,7 @@ public class WatchlistServiceTests
                         Title = "The Matrix Duplicate",
                         Year = 1999,
                         ImageUrl = null,
+                        TitleType = "movie",
                     },
                 ],
             });
@@ -232,6 +326,39 @@ public class WatchlistServiceTests
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task ImportFromImdbPayloadAsync_HidesTypelessTitles_UntilClassified()
+    {
+        AppWatchlist? saved = null;
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppWatchlist?)null);
+        _repository
+            .Setup(r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()))
+            .Callback<AppWatchlist, CancellationToken>((watchlist, _) => saved = watchlist)
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut().ImportFromImdbPayloadAsync(
+            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
+            {
+                ListId = ListId,
+                Title = "Sci-Fi",
+                Movies =
+                [
+                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt0133093",
+                        Title = "The Matrix",
+                    },
+                ],
+            });
+
+        Assert.NotNull(saved);
+        Assert.Single(saved.Movies);
+        Assert.Equal(MediaCategory.Unknown, saved.Movies.First().MediaCategory);
+        Assert.Empty(result.Movies);
     }
 
     [Fact]
@@ -285,6 +412,7 @@ public class WatchlistServiceTests
                     Title = "Cached Movie",
                     Year = 2000,
                     Genres = ["Drama"],
+                    MediaCategory = MediaCategory.Movie,
                 },
             ],
         };
@@ -308,6 +436,7 @@ public class WatchlistServiceTests
                     RuntimeMinutes = 136,
                     Director = "Lana Wachowski",
                     Genres = ["Action", "Sci-Fi"],
+                    MediaCategory = MediaCategory.Movie,
                 },
             ],
         };

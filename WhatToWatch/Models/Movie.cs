@@ -1,3 +1,5 @@
+using ImdbWatchlists.Models;
+
 namespace WhatToWatch.Models;
 
 public record Movie
@@ -19,4 +21,6 @@ public record Movie
     public string? Director { get; init; }
 
     public IReadOnlyCollection<string> Genres { get; init; } = [];
+
+    public MediaCategory MediaCategory { get; init; } = MediaCategory.Unknown;
 }
