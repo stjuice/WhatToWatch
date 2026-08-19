@@ -36,10 +36,13 @@ export default defineConfig({
           },
         ],
       },
+      // Workbox skips files over the size cap and (since 0.20.2) that warning fails the build.
+      // Keep oversized marquee art in dist for Capacitor; don't precache it in the SW.
+      showMaximumFileSizeToCacheInBytesWarning: true,
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
-        // list-frame-long.svg is ~4.5 MB (Workbox default precache cap is 2 MiB).
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        globIgnores: ["**/node_modules/**/*", "**/*list-frame-long*"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
