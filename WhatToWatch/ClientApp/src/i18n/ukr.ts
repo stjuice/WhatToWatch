@@ -15,6 +15,8 @@ export const ukr = {
   "list.notFound": "Список не знайдено",
   "list.loadFailed": "Не вдалося завантажити список",
   "list.movieCount": "{count} фільмів",
+  "list.expandAria": "Показати список фільмів",
+  "list.collapseAria": "Згорнути список фільмів",
   "list.randomAria": "Випадковий фільм зі списку {name}",
 
   "movie.posterAlt": "Постер: {title}",

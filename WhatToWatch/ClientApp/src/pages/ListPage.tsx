@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getWatchlist } from "../api/moviesApi";
+import listFrameLong from "../assets/list-frame-long.svg";
+import listFrameShort from "../assets/list-frame-short.svg";
 import popcornFull from "../assets/popcorn-full.svg";
 import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import type { WatchlistDto } from "../types/movie";
+import { LIST_VISIBLE_ROWS, splitWatchlistHeadline } from "./listMarquee";
 import "./ListPage.scss";
 
 export const ListPage = () => {
@@ -16,8 +19,11 @@ export const ListPage = () => {
   const [watchlist, setWatchlist] = useState<WatchlistDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
+    setExpanded(false);
+
     if (!id) {
       setError(text("list.notFound"));
       setLoading(false);
@@ -63,8 +69,11 @@ export const ListPage = () => {
     }
   };
 
+  const headline = watchlist ? splitWatchlistHeadline(watchlist.name) : null;
+  const movieCount = watchlist?.movies.length ?? 0;
+
   return (
-    <div className="list-page">
+    <div className={`list-page${expanded ? " list-page--expanded" : ""}`}>
       {loading ? <p className="list-page__status">{text("list.loading")}</p> : null}
       {error ? (
         <p className="list-page__error" role="alert">
@@ -72,12 +81,46 @@ export const ListPage = () => {
         </p>
       ) : null}
 
-      {watchlist ? (
+      {watchlist && headline ? (
         <>
-          <h1 className="list-page__title">{watchlist.name}</h1>
-          <p className="list-page__meta">
-            {text("list.movieCount", { count: watchlist.movies.length })}
-          </p>
+          <div
+            className={`list-page__marquee list-page__marquee--${expanded ? "long" : "short"}`}
+            style={{ ["--list-visible-rows" as string]: String(LIST_VISIBLE_ROWS) }}
+          >
+            <img
+              className="list-page__marquee-art"
+              src={expanded ? listFrameLong : listFrameShort}
+              alt=""
+              draggable={false}
+            />
+            <div className="list-page__marquee-window">
+              <h1 className="list-page__title">{headline.title}</h1>
+              {headline.subtitle ? (
+                <p className="list-page__subtitle">{headline.subtitle}</p>
+              ) : null}
+              <button
+                type="button"
+                className="list-page__count"
+                onClick={() => {
+                  setExpanded((open) => !open);
+                }}
+                aria-expanded={expanded}
+                aria-label={text(expanded ? "list.collapseAria" : "list.expandAria")}
+              >
+                {text("list.movieCount", { count: movieCount })}
+              </button>
+
+              {expanded ? (
+                <ul className="list-page__movies">
+                  {watchlist.movies.map((movie) => (
+                    <li key={movie.id} className="list-page__movie">
+                      <span className="list-page__movie-title">{movie.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </div>
 
           <Button
             variant="icon"
@@ -85,7 +128,7 @@ export const ListPage = () => {
             onClick={() => {
               void handleRandom();
             }}
-            disabled={isPicking || watchlist.movies.length === 0}
+            disabled={isPicking || movieCount === 0}
             aria-busy={isPicking}
             aria-label={text("list.randomAria", { name: watchlist.name })}
           >
@@ -97,17 +140,6 @@ export const ListPage = () => {
               {pickError}
             </p>
           ) : null}
-
-          <ul className="list-page__movies">
-            {watchlist.movies.map((movie) => (
-              <li key={movie.id} className="list-page__movie">
-                <span className="list-page__movie-title">{movie.title}</span>
-                {movie.year != null ? (
-                  <span className="list-page__movie-year">{movie.year}</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
         </>
       ) : null}
     </div>
