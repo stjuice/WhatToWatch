@@ -3,8 +3,8 @@ using ImdbWatchlists.Models;
 using Moq;
 using WhatToWatch.Repositories;
 using WhatToWatch.Services;
-using AppMovie = WhatToWatch.Models.Movie;
-using AppWatchlist = WhatToWatch.Models.Watchlist;
+using MovieModel = WhatToWatch.Models.Movie;
+using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Tests.Services;
 
@@ -22,26 +22,70 @@ public class WatchlistServiceTests
     [Fact]
     public async Task GetWatchlistAsync_ReturnsWatchlist_WhenIdExists()
     {
-        var expected = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var expected = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateSut().GetWatchlistAsync(ListId);
 
-        Assert.Same(expected, result);
+        Assert.NotNull(result);
+        Assert.Equal(expected.Id, result.Id);
+        Assert.Equal(expected.Name, result.Name);
+        Assert.Single(result.Movies);
+        Assert.Equal("tt1", result.Movies.First().Id);
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
+    public async Task GetWatchlistAsync_ReturnsMoviesOnly_WhenWatchlistContainsMixedTypes()
+    {
+        var mixed = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow) with
+        {
+            Movies =
+            [
+                new MovieModel
+                {
+                    Id = "tt1",
+                    Title = "Movie",
+                    MediaCategory = MediaCategory.Movie,
+                    Genres = ["Drama"],
+                },
+                new MovieModel
+                {
+                    Id = "tt2",
+                    Title = "Series",
+                    MediaCategory = MediaCategory.TvShow,
+                    Genres = ["Drama"],
+                },
+                new MovieModel
+                {
+                    Id = "tt3",
+                    Title = "Legacy",
+                    MediaCategory = MediaCategory.Unknown,
+                    Genres = ["Drama"],
+                },
+            ],
+        };
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mixed);
+
+        var result = await CreateSut().GetWatchlistAsync(ListId);
+
+        var movie = Assert.Single(result!.Movies);
+        Assert.Equal("tt1", movie.Id);
+    }
+
+    [Fact]
     public async Task GetWatchlistsAsync_ReturnsAllWatchlists()
     {
-        IReadOnlyCollection<AppWatchlist> expected =
+        IReadOnlyCollection<WatchlistModel> expected =
         [
-            CreateAppWatchlist("ls1", refreshedAt: DateTimeOffset.UtcNow),
-            CreateAppWatchlist("ls2", refreshedAt: DateTimeOffset.UtcNow),
+            CreateWatchlistModel("ls1", refreshedAt: DateTimeOffset.UtcNow),
+            CreateWatchlistModel("ls2", refreshedAt: DateTimeOffset.UtcNow),
         ];
         _repository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -50,6 +94,7 @@ public class WatchlistServiceTests
         var result = await CreateSut().GetWatchlistsAsync();
 
         Assert.Equal(2, result.Count);
+        Assert.All(result, watchlist => Assert.Single(watchlist.Movies));
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -58,19 +103,20 @@ public class WatchlistServiceTests
     [Fact]
     public async Task ImportAsync_ReturnsCached_WhenAlreadyStored()
     {
-        var cached = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var cached = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
             .ReturnsAsync(cached);
 
         var result = await CreateSut().ImportAsync(ListUrl);
 
-        Assert.Same(cached, result);
+        Assert.Equal(cached.Id, result.Id);
+        Assert.Single(result.Movies);
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -79,7 +125,7 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppWatchlist?)null);
+            .ReturnsAsync((WatchlistModel?)null);
         _imdb
             .Setup(i => i.GetListAsync(
                 It.Is<WatchlistRequest>(r => r.Url == ListUrl),
@@ -90,17 +136,63 @@ public class WatchlistServiceTests
 
         Assert.Equal(ListId, result.Id);
         Assert.Equal("Favourites", result.Name);
+        Assert.Single(result.Movies);
         _repository.Verify(
             r => r.SaveAsync(
-                It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
+                It.Is<WatchlistModel>(w => w.Id == ListId && w.Movies.Count == 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
+    public async Task ImportAsync_PersistsAllTypes_ButReturnsMoviesOnly()
+    {
+        _repository
+            .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WatchlistModel?)null);
+        _imdb
+            .Setup(i => i.GetListAsync(
+                It.IsAny<WatchlistRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateImdbWatchlist(ListId) with
+            {
+                Movies =
+                [
+                    new Movie
+                    {
+                        Id = "tt0133093",
+                        Title = "The Matrix",
+                        MediaCategory = MediaCategory.Movie,
+                        Genres = ["Action"],
+                    },
+                    new Movie
+                    {
+                        Id = "tt0903747",
+                        Title = "Breaking Bad",
+                        MediaCategory = MediaCategory.TvShow,
+                        Genres = ["Drama"],
+                    },
+                ],
+            });
+
+        WatchlistModel? saved = null;
+        _repository
+            .Setup(r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()))
+            .Callback<WatchlistModel, CancellationToken>((watchlist, _) => saved = watchlist)
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut().ImportAsync(ListUrl);
+
+        Assert.NotNull(saved);
+        Assert.Equal(2, saved.Movies.Count);
+        var returned = Assert.Single(result.Movies);
+        Assert.Equal("tt0133093", returned.Id);
+    }
+
+    [Fact]
     public async Task ImportAsync_ReturnsCachedWithoutScraping_WhenStoredCopyIsOld()
     {
-        var old = CreateAppWatchlist(
+        var old = CreateWatchlistModel(
             ListId,
             refreshedAt: DateTimeOffset.UtcNow - TimeSpan.FromDays(400));
         _repository
@@ -109,19 +201,19 @@ public class WatchlistServiceTests
 
         var result = await CreateSut().ImportAsync(ListUrl);
 
-        Assert.Same(old, result);
+        Assert.Equal(old.Id, result.Id);
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
     public async Task RefreshWatchlistAsync_CallsImdbWatchlistsAndPersistsResult()
     {
-        var existing = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var existing = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -139,14 +231,14 @@ public class WatchlistServiceTests
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<AppWatchlist>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
     public async Task RefreshWatchlistAsync_UsesPublicAccess_ForMvp()
     {
-        var existing = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var existing = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -170,7 +262,7 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppWatchlist?)null);
+            .ReturnsAsync((WatchlistModel?)null);
 
         var result = await CreateSut().RefreshWatchlistAsync(ListId);
 
@@ -185,7 +277,7 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AppWatchlist?)null);
+            .ReturnsAsync((WatchlistModel?)null);
 
         var result = await CreateSut().ImportFromImdbPayloadAsync(
             new WhatToWatch.DTOs.ImportImdbWatchlistRequest
@@ -206,6 +298,7 @@ public class WatchlistServiceTests
                         RuntimeMinutes = 136,
                         Director = "Lana Wachowski",
                         Genres = ["Action", "Sci-Fi"],
+                        TitleType = "movie",
                     },
                     new WhatToWatch.DTOs.ImportImdbMovieRequest
                     {
@@ -213,6 +306,7 @@ public class WatchlistServiceTests
                         Title = "The Matrix Duplicate",
                         Year = 1999,
                         ImageUrl = null,
+                        TitleType = "movie",
                     },
                 ],
             });
@@ -226,7 +320,7 @@ public class WatchlistServiceTests
         Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
         _repository.Verify(
             r => r.SaveAsync(
-                It.Is<AppWatchlist>(w => w.Id == ListId && w.Movies.Count == 1),
+                It.Is<WatchlistModel>(w => w.Id == ListId && w.Movies.Count == 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         _imdb.Verify(
@@ -235,9 +329,42 @@ public class WatchlistServiceTests
     }
 
     [Fact]
+    public async Task ImportFromImdbPayloadAsync_HidesTypelessTitles_UntilClassified()
+    {
+        WatchlistModel? saved = null;
+        _repository
+            .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WatchlistModel?)null);
+        _repository
+            .Setup(r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()))
+            .Callback<WatchlistModel, CancellationToken>((watchlist, _) => saved = watchlist)
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateSut().ImportFromImdbPayloadAsync(
+            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
+            {
+                ListId = ListId,
+                Title = "Sci-Fi",
+                Movies =
+                [
+                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    {
+                        ImdbId = "tt0133093",
+                        Title = "The Matrix",
+                    },
+                ],
+            });
+
+        Assert.NotNull(saved);
+        Assert.Single(saved.Movies);
+        Assert.Equal(MediaCategory.Unknown, saved.Movies.First().MediaCategory);
+        Assert.Empty(result.Movies);
+    }
+
+    [Fact]
     public async Task UpdateWatchlistAsync_RenamesExistingWatchlist()
     {
-        var existing = CreateAppWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var existing = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -250,7 +377,7 @@ public class WatchlistServiceTests
         Assert.Equal("Renamed", result.Name);
         _repository.Verify(
             r => r.SaveAsync(
-                It.Is<AppWatchlist>(w => w.Id == ListId && w.Name == "Renamed"),
+                It.Is<WatchlistModel>(w => w.Id == ListId && w.Name == "Renamed"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -268,7 +395,7 @@ public class WatchlistServiceTests
             Times.Once);
     }
 
-    private static AppWatchlist CreateAppWatchlist(
+    private static WatchlistModel CreateWatchlistModel(
         string id,
         DateTimeOffset? refreshedAt) =>
         new()
@@ -279,12 +406,13 @@ public class WatchlistServiceTests
             LastRefreshedAt = refreshedAt,
             Movies =
             [
-                new AppMovie
+                new MovieModel
                 {
                     Id = "tt1",
                     Title = "Cached Movie",
                     Year = 2000,
                     Genres = ["Drama"],
+                    MediaCategory = MediaCategory.Movie,
                 },
             ],
         };
@@ -308,6 +436,7 @@ public class WatchlistServiceTests
                     RuntimeMinutes = 136,
                     Director = "Lana Wachowski",
                     Genres = ["Action", "Sci-Fi"],
+                    MediaCategory = MediaCategory.Movie,
                 },
             ],
         };

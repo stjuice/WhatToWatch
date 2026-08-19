@@ -173,6 +173,7 @@ public static partial class ImdbListHtmlParser
             RuntimeMinutes = ReadRuntimeMinutes(element),
             Director = ReadDirector(element),
             Genres = ReadGenres(element),
+            MediaCategory = ImdbTitleType.FromId(ReadString(element, "titleType", "id")),
         };
 
         return true;

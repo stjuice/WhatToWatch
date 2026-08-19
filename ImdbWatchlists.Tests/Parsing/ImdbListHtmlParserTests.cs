@@ -35,6 +35,72 @@ public class ImdbListHtmlParserTests
             movie.Plot);
         Assert.Equal(136, movie.RuntimeMinutes);
         Assert.Equal("Lana Wachowski", movie.Director);
+        Assert.Equal(ImdbWatchlists.Models.MediaCategory.Unknown, movie.MediaCategory);
+    }
+
+    [Theory]
+    [InlineData("movie", ImdbWatchlists.Models.MediaCategory.Movie)]
+    [InlineData("tvMovie", ImdbWatchlists.Models.MediaCategory.Movie)]
+    [InlineData("short", ImdbWatchlists.Models.MediaCategory.Movie)]
+    [InlineData("video", ImdbWatchlists.Models.MediaCategory.Movie)]
+    [InlineData("tvSeries", ImdbWatchlists.Models.MediaCategory.TvShow)]
+    [InlineData("tvMiniSeries", ImdbWatchlists.Models.MediaCategory.TvShow)]
+    [InlineData("tvEpisode", ImdbWatchlists.Models.MediaCategory.TvShow)]
+    [InlineData("podcastSeries", ImdbWatchlists.Models.MediaCategory.Unknown)]
+    public void Parse_MapsTitleTypeId_ToMediaCategory(
+        string titleTypeId,
+        ImdbWatchlists.Models.MediaCategory expected)
+    {
+        var html =
+            $$"""
+            <html><body>
+            <script id="__NEXT_DATA__" type="application/json">
+            {
+              "props": { "pageProps": { "mainColumnData": { "list": {
+                "name": { "originalText": "Typed" },
+                "titleListItemSearch": { "edges": [
+                  { "listItem": {
+                      "id": "tt1111111",
+                      "titleText": { "text": "Typed Title" },
+                      "titleType": { "id": "{{titleTypeId}}" }
+                  } }
+                ] }
+              } } } }
+            }
+            </script>
+            </body></html>
+            """;
+
+        var movie = Assert.Single(ImdbListHtmlParser.Parse(html, ListUrl).Movies);
+
+        Assert.Equal(expected, movie.MediaCategory);
+    }
+
+    [Fact]
+    public void Parse_MarksMediaCategoryUnknown_WhenTitleTypeMissing()
+    {
+        var movie = Assert.Single(
+            ImdbListHtmlParser.Parse(
+                """
+                <html><body>
+                <script id="__NEXT_DATA__" type="application/json">
+                {
+                  "props": { "pageProps": { "mainColumnData": { "list": {
+                    "name": { "originalText": "No Type" },
+                    "titleListItemSearch": { "edges": [
+                      { "listItem": {
+                          "id": "tt2222222",
+                          "titleText": { "text": "No Type Title" }
+                      } }
+                    ] }
+                  } } } }
+                }
+                </script>
+                </body></html>
+                """,
+                ListUrl).Movies);
+
+        Assert.Equal(ImdbWatchlists.Models.MediaCategory.Unknown, movie.MediaCategory);
     }
 
     [Fact]

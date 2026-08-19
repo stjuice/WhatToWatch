@@ -3,9 +3,10 @@ using ImdbWatchlists.Models;
 using ImdbWatchlists.Parsing;
 using WhatToWatch.DTOs;
 using WhatToWatch.Mapping;
+using WhatToWatch.Media;
 using WhatToWatch.Repositories;
-using Watchlist = WhatToWatch.Models.Watchlist;
-using AppMovie = WhatToWatch.Models.Movie;
+using MovieModel = WhatToWatch.Models.Movie;
+using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Services;
 
@@ -13,7 +14,7 @@ public class WatchlistService(
     IWatchlistRepository repository,
     IImdbWatchlists imdbWatchlists) : IWatchlistService
 {
-    public async Task<Watchlist> ImportAsync(
+    public async Task<WatchlistModel> ImportAsync(
         string url,
         CancellationToken cancellationToken = default)
     {
@@ -26,12 +27,13 @@ public class WatchlistService(
             .ConfigureAwait(false);
 
         if (cached is not null)
-            return cached;
+            return MediaCategoryRules.WithMoviesOnly(cached);
 
-        return await FetchAndSaveAsync(listUrl, cancellationToken).ConfigureAwait(false);
+        return MediaCategoryRules.WithMoviesOnly(
+            await FetchAndSaveAsync(listUrl, cancellationToken).ConfigureAwait(false));
     }
 
-    public async Task<Watchlist> ImportFromImdbPayloadAsync(
+    public async Task<WatchlistModel> ImportFromImdbPayloadAsync(
         ImportImdbWatchlistRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -47,7 +49,7 @@ public class WatchlistService(
             .GetAsync(listId, cancellationToken)
             .ConfigureAwait(false);
 
-        var watchlist = new Watchlist
+        var watchlist = new WatchlistModel
         {
             Id = listId,
             Name = request.Title.Trim(),
@@ -61,22 +63,35 @@ public class WatchlistService(
         };
 
         await repository.SaveAsync(watchlist, cancellationToken).ConfigureAwait(false);
-        return watchlist;
+        return MediaCategoryRules.WithMoviesOnly(watchlist);
     }
 
-    public Task<Watchlist?> GetWatchlistAsync(
+    public async Task<WatchlistModel?> GetWatchlistAsync(
         string id,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        return repository.GetAsync(id, cancellationToken);
+
+        var watchlist = await repository
+            .GetAsync(id, cancellationToken)
+            .ConfigureAwait(false);
+
+        return watchlist is null
+            ? null
+            : MediaCategoryRules.WithMoviesOnly(watchlist);
     }
 
-    public Task<IReadOnlyCollection<Watchlist>> GetWatchlistsAsync(
-        CancellationToken cancellationToken = default) =>
-        repository.GetAllAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<WatchlistModel>> GetWatchlistsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var watchlists = await repository
+            .GetAllAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-    public async Task<Watchlist?> UpdateWatchlistAsync(
+        return [.. watchlists.Select(MediaCategoryRules.WithMoviesOnly)];
+    }
+
+    public async Task<WatchlistModel?> UpdateWatchlistAsync(
         string id,
         UpdateWatchlistRequest request,
         CancellationToken cancellationToken = default)
@@ -94,7 +109,7 @@ public class WatchlistService(
 
         var updated = existing with { Name = request.Name.Trim() };
         await repository.SaveAsync(updated, cancellationToken).ConfigureAwait(false);
-        return updated;
+        return MediaCategoryRules.WithMoviesOnly(updated);
     }
 
     public Task<bool> DeleteWatchlistAsync(
@@ -105,7 +120,7 @@ public class WatchlistService(
         return repository.DeleteAsync(id, cancellationToken);
     }
 
-    public async Task<Watchlist?> RefreshWatchlistAsync(
+    public async Task<WatchlistModel?> RefreshWatchlistAsync(
         string id,
         CancellationToken cancellationToken = default)
     {
@@ -122,10 +137,11 @@ public class WatchlistService(
             throw new InvalidOperationException(
                 $"Watchlist '{id}' has no URL to refresh from.");
 
-        return await FetchAndSaveAsync(existing.Url, cancellationToken).ConfigureAwait(false);
+        return MediaCategoryRules.WithMoviesOnly(
+            await FetchAndSaveAsync(existing.Url, cancellationToken).ConfigureAwait(false));
     }
 
-    private async Task<Watchlist> FetchAndSaveAsync(
+    private async Task<WatchlistModel> FetchAndSaveAsync(
         string url,
         CancellationToken cancellationToken)
     {
@@ -146,11 +162,11 @@ public class WatchlistService(
         return $"https://www.imdb.com/list/{listId}/";
     }
 
-    private static IReadOnlyCollection<AppMovie> DeduplicateMovies(
+    private static IReadOnlyCollection<MovieModel> DeduplicateMovies(
         IReadOnlyCollection<ImportImdbMovieRequest> movies)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var result = new List<AppMovie>(movies.Count);
+        var result = new List<MovieModel>(movies.Count);
 
         foreach (var movie in movies)
         {
@@ -161,7 +177,7 @@ public class WatchlistService(
             if (!seen.Add(id))
                 continue;
 
-            result.Add(new AppMovie
+            result.Add(new MovieModel
             {
                 Id = id,
                 Title = movie.Title.Trim(),
@@ -172,6 +188,7 @@ public class WatchlistService(
                 RuntimeMinutes = movie.RuntimeMinutes,
                 Director = string.IsNullOrWhiteSpace(movie.Director) ? null : movie.Director.Trim(),
                 Genres = NormalizeGenres(movie.Genres),
+                MediaCategory = ImdbTitleType.FromId(movie.TitleType),
             });
         }
 

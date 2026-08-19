@@ -1,8 +1,10 @@
+﻿using ImdbWatchlists.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using WhatToWatch.Data;
-using WhatToWatch.Models;
 using WhatToWatch.Repositories;
+using MovieModel = WhatToWatch.Models.Movie;
+using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Tests.Repositories;
 
@@ -41,13 +43,112 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         Assert.Equal(watchlist.Url, loaded.Url);
         Assert.Equal(watchlist.LastRefreshedAt, loaded.LastRefreshedAt);
         Assert.Single(loaded.Movies);
-        
+
         var movie = loaded.Movies.First();
         Assert.Equal("The Matrix", movie.Title);
         Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
         Assert.Equal("A computer hacker learns about the true nature of reality.", movie.Plot);
         Assert.Equal(136, movie.RuntimeMinutes);
         Assert.Equal("Lana Wachowski", movie.Director);
+        Assert.Equal(MediaCategory.Movie, movie.MediaCategory);
+    }
+
+    [Fact]
+    public async Task SaveAsync_ThenGetAsync_RoundTripsMediaCategory()
+    {
+        var watchlist = CreateWatchlist("ls1", "Mixed") with
+        {
+            Movies =
+            [
+                new MovieModel
+                {
+                    Id = "tt1",
+                    Title = "Film",
+                    Genres = ["Drama"],
+                    MediaCategory = MediaCategory.Movie,
+                },
+                new MovieModel
+                {
+                    Id = "tt2",
+                    Title = "Series",
+                    Genres = ["Drama"],
+                    MediaCategory = MediaCategory.TvShow,
+                },
+                new MovieModel
+                {
+                    Id = "tt3",
+                    Title = "Unknown",
+                    Genres = ["Drama"],
+                    MediaCategory = MediaCategory.Unknown,
+                },
+            ],
+        };
+
+        await _repository.SaveAsync(watchlist);
+        var loaded = await _repository.GetAsync("ls1");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(3, loaded.Movies.Count);
+        Assert.Equal(
+            MediaCategory.Movie,
+            loaded.Movies.Single(movie => movie.Id == "tt1").MediaCategory);
+        Assert.Equal(
+            MediaCategory.TvShow,
+            loaded.Movies.Single(movie => movie.Id == "tt2").MediaCategory);
+        Assert.Equal(
+            MediaCategory.Unknown,
+            loaded.Movies.Single(movie => movie.Id == "tt3").MediaCategory);
+    }
+
+    [Fact]
+    public async Task EnsureMediaCategoryColumnAsync_IsIdempotent_AndDefaultsExistingRows()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        await using (var create = connection.CreateCommand())
+        {
+            create.CommandText =
+                """
+                CREATE TABLE "Watchlists" (
+                    "Id" TEXT NOT NULL CONSTRAINT "PK_Watchlists" PRIMARY KEY,
+                    "Name" TEXT NOT NULL,
+                    "Url" TEXT NULL,
+                    "LastRefreshedAt" TEXT NULL
+                );
+                CREATE TABLE "Movies" (
+                    "WatchlistId" TEXT NOT NULL,
+                    "Id" TEXT NOT NULL,
+                    "Title" TEXT NOT NULL,
+                    "Year" INTEGER NULL,
+                    "PosterUrl" TEXT NULL,
+                    "Rating" REAL NULL,
+                    "Plot" TEXT NULL,
+                    "RuntimeMinutes" INTEGER NULL,
+                    "Director" TEXT NULL,
+                    "GenresJson" TEXT NOT NULL,
+                    CONSTRAINT "PK_Movies" PRIMARY KEY ("WatchlistId", "Id")
+                );
+                INSERT INTO "Watchlists" ("Id", "Name") VALUES ('ls1', 'Legacy');
+                INSERT INTO "Movies" ("WatchlistId", "Id", "Title", "GenresJson")
+                VALUES ('ls1', 'tt1', 'Legacy Title', '[]');
+                """;
+            await create.ExecuteNonQueryAsync();
+        }
+
+        var options = new DbContextOptionsBuilder<WhatToWatchDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using var db = new WhatToWatchDbContext(options);
+        await SqliteSchemaUpgrades.EnsureMediaCategoryColumnAsync(db);
+        await SqliteSchemaUpgrades.EnsureMediaCategoryColumnAsync(db);
+
+        var repository = new SqliteWatchlistRepository(db);
+        var loaded = await repository.GetAsync("ls1");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(MediaCategory.Unknown, loaded.Movies.Single().MediaCategory);
     }
 
     [Fact]
@@ -132,7 +233,7 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         _connection.Dispose();
     }
 
-    private static Watchlist CreateWatchlist(
+    private static WatchlistModel CreateWatchlist(
         string id,
         string name,
         string movieTitle = "The Matrix") =>
@@ -144,7 +245,7 @@ public class SqliteWatchlistRepositoryTests : IDisposable
             LastRefreshedAt = DateTimeOffset.Parse("2024-01-15T12:00:00Z"),
             Movies =
             [
-                new Movie
+                new MovieModel
                 {
                     Id = "tt0133093",
                     Title = movieTitle,
@@ -155,6 +256,7 @@ public class SqliteWatchlistRepositoryTests : IDisposable
                     RuntimeMinutes = 136,
                     Director = "Lana Wachowski",
                     Genres = ["Action", "Sci-Fi"],
+                    MediaCategory = MediaCategory.Movie,
                 },
             ],
         };

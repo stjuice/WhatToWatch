@@ -62,6 +62,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<WhatToWatchDbContext>();
     await db.Database.EnsureCreatedAsync();
+    await SqliteSchemaUpgrades.EnsureMediaCategoryColumnAsync(db);
 }
 
 if (app.Environment.IsDevelopment())

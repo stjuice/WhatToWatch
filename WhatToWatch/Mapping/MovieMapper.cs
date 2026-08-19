@@ -18,6 +18,7 @@ public static class MovieMapper
         RuntimeMinutes = movie.RuntimeMinutes,
         Director = movie.Director,
         Genres = movie.Genres,
+        MediaCategory = movie.MediaCategory,
     };
 
     public static Watchlist ToApp(ImdbWatchlist watchlist) => new()
