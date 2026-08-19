@@ -74,6 +74,10 @@ export const ListPage = () => {
 
   return (
     <div className={`list-page${expanded ? " list-page--expanded" : ""}`}>
+      <div className="list-page__frame-preload" aria-hidden="true">
+        <img src={listFrameShort} alt="" />
+        <img src={listFrameLong} alt="" />
+      </div>
       {loading ? <p className="list-page__status">{text("list.loading")}</p> : null}
       {error ? (
         <p className="list-page__error" role="alert">
@@ -88,10 +92,18 @@ export const ListPage = () => {
             style={{ ["--list-visible-rows" as string]: String(LIST_VISIBLE_ROWS) }}
           >
             <img
-              className="list-page__marquee-art"
-              src={expanded ? listFrameLong : listFrameShort}
+              className={`list-page__marquee-art${expanded ? "" : " list-page__marquee-art--visible"}`}
+              src={listFrameShort}
               alt=""
               draggable={false}
+              decoding="async"
+            />
+            <img
+              className={`list-page__marquee-art${expanded ? " list-page__marquee-art--visible" : ""}`}
+              src={listFrameLong}
+              alt=""
+              draggable={false}
+              decoding="async"
             />
             <div className="list-page__marquee-window">
               <h1 className="list-page__title">{headline.title}</h1>

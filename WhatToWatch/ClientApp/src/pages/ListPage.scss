@@ -37,6 +37,14 @@
   aspect-ratio: 681.75 / 938.25;
 }
 
+.list-page__frame-preload {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .list-page__marquee-art {
   position: absolute;
   inset: 0;
@@ -44,30 +52,29 @@
   height: 100%;
   object-fit: fill;
   pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.list-page__marquee-art--visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 .list-page__marquee-window {
   position: absolute;
   z-index: 1;
+  inset: 0 12%;
+  margin: 3rem 0;
+  padding-block: 12%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem;
   text-align: center;
   overflow: hidden;
-}
-
-.list-page__marquee--short .list-page__marquee-window {
-  // Inner black of list-frame-short.svg, plus room for concave gold corners.
-  inset: 18% 12%;
-  justify-content: center;
-  gap: 0.3rem;
-}
-
-.list-page__marquee--long .list-page__marquee-window {
-  // Same chrome as the short frame, scaled to the taller long-frame viewBox.
-  inset: 8.2% 12%;
-  justify-content: flex-start;
-  gap: 0.2rem;
 }
 
 .list-page__title,
@@ -102,17 +109,14 @@
 }
 
 .list-page__movies {
-  --list-row-height: 1.7rem;
   list-style: none;
-  display: flex;
-  flex-direction: column;
   margin: 0.35rem 0 0;
   padding: 0;
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  height: calc(var(--list-visible-rows, 8) * var(--list-row-height));
-  max-height: calc(var(--list-visible-rows, 8) * var(--list-row-height));
+  // Definite height so each row can be 1/8 of the visible viewport.
+  height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
@@ -130,8 +134,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 var(--list-row-height);
-  height: var(--list-row-height);
+  height: calc(100% / var(--list-visible-rows, 8));
   width: 100%;
   padding: 0 0.35rem;
   box-sizing: border-box;
@@ -139,7 +142,7 @@
 
 .list-page__movie-title {
   overflow: hidden;
-  font-size: clamp(0.82rem, 3.2vw, 1rem);
+  font-size: clamp(0.95rem, 3.6vw, 1.2rem);
   line-height: 1.25;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -147,7 +150,8 @@
 
 .list-page__random {
   width: min(100%, 14rem);
-  margin: 0.25rem 0 0;
+  margin: -5rem 0 0;
+  z-index: 1;
 }
 
 .list-page__random img {
