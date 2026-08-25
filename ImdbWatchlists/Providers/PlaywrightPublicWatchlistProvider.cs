@@ -31,8 +31,7 @@ public sealed class PlaywrightPublicWatchlistProvider(
 
         var listUrl = ImdbListUrl.Normalize(request.Url);
 
-        var context = await browserManager.GetContextAsync(cancellationToken);
-        var page = await context.NewPageAsync().WaitAsync(cancellationToken);
+        var page = await OpenPageAsync(request.Url, cancellationToken);
 
         try
         {
@@ -77,8 +76,58 @@ public sealed class PlaywrightPublicWatchlistProvider(
         }
         finally
         {
+            await ClosePageAsync(page);
+        }
+    }
+
+    private async Task ClosePageAsync(IPage page)
+    {
+        try
+        {
             await page.CloseAsync();
         }
+        catch (PlaywrightException exception)
+        {
+            logger.LogDebug(exception, "Failed to close the Playwright page.");
+        }
+    }
+
+    private async Task<IPage> OpenPageAsync(string url, CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            IBrowserContext context;
+
+            try
+            {
+                context = await browserManager.GetContextAsync(cancellationToken);
+            }
+            catch (PlaywrightException exception)
+            {
+                throw new ImdbWatchlistException(
+                    $"Playwright could not launch a browser to load '{url}'.", exception);
+            }
+
+            try
+            {
+                return await context.NewPageAsync().WaitAsync(cancellationToken);
+            }
+            catch (PlaywrightException exception) when (attempt == 1)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Playwright browser was closed. Relaunching it for {Url}.",
+                    url);
+            }
+            catch (PlaywrightException exception)
+            {
+                throw new ImdbWatchlistException(
+                    $"Playwright could not open a browser page for '{url}'.", exception);
+            }
+        }
+
+        throw new ImdbWatchlistException(
+            $"Playwright could not open a browser page for '{url}' after relaunching the browser.");
     }
 
     private async Task<string> LoadAsync(
@@ -86,12 +135,9 @@ public sealed class PlaywrightPublicWatchlistProvider(
         string url,
         CancellationToken cancellationToken)
     {
-        IResponse? response = null;
-        string html = string.Empty;
-
         for (var attempt = 1; attempt <= 3; attempt++)
         {
-            response = await page.GotoAsync(url, new PageGotoOptions
+            var response = await page.GotoAsync(url, new PageGotoOptions
             {
                 Timeout = 60_000,
                 WaitUntil = WaitUntilState.DOMContentLoaded,
@@ -101,9 +147,11 @@ public sealed class PlaywrightPublicWatchlistProvider(
                 throw new ImdbWatchlistException(
                     $"IMDb navigation to '{page.Url ?? url}' returned no HTTP response.");
 
-            html = await page.ContentAsync().WaitAsync(cancellationToken);
             if (response.Ok)
-                break;
+            {
+                await WaitForListDataAsync(page, url, response.Status, cancellationToken);
+                return await page.ContentAsync().WaitAsync(cancellationToken);
+            }
 
             if (response.Status == 403 && attempt < 3)
             {
@@ -119,7 +167,7 @@ public sealed class PlaywrightPublicWatchlistProvider(
             var finalUrl = string.IsNullOrWhiteSpace(response.Url)
                 ? page.Url ?? url
                 : response.Url;
-            var preview = GetBodyPreview(html);
+            var preview = GetBodyPreview(await page.ContentAsync().WaitAsync(cancellationToken));
             var headers = await response.AllHeadersAsync().WaitAsync(cancellationToken);
 
             logger.LogWarning(
@@ -137,9 +185,8 @@ public sealed class PlaywrightPublicWatchlistProvider(
             throw new ImdbWatchlistException(FormatHttpError(response.Status, finalUrl, preview));
         }
 
-        await WaitForListDataAsync(page, url, response!.Status, cancellationToken);
-
-        return html;
+        throw new ImdbWatchlistException(
+            $"IMDb did not return a usable response for '{url}' after 3 attempts.");
     }
 
     private static string FormatHttpError(int status, string url, string preview)

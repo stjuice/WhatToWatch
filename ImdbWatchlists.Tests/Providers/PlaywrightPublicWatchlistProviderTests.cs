@@ -145,6 +145,56 @@ public class PlaywrightPublicWatchlistProviderTests
     }
 
     [Fact]
+    public async Task GetWatchlistAsync_ReadsPage_AfterBotChallengeIsReplacedByListData()
+    {
+        var fixture = new PlaywrightFixture(Html)
+        {
+            ChallengeHtml = "<html><body>Verifying you are human</body></html>",
+        };
+        var provider = fixture.CreateProvider();
+
+        var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
+
+        Assert.Equal("The Matrix", Assert.Single(watchlist.Movies).Title);
+    }
+
+    [Fact]
+    public async Task GetWatchlistAsync_RelaunchesBrowser_WhenCachedContextIsClosed()
+    {
+        var fixture = new PlaywrightFixture(Html);
+        var closedContext = new Mock<IBrowserContext>();
+        closedContext.Setup(item => item.NewPageAsync())
+            .ThrowsAsync(new PlaywrightException(
+                "Target page, context or browser has been closed"));
+
+        fixture.BrowserManager
+            .SetupSequence(manager => manager.GetContextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(closedContext.Object)
+            .ReturnsAsync(fixture.Context.Object);
+
+        var provider = fixture.CreateProvider();
+
+        var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
+
+        Assert.Equal("The Matrix", Assert.Single(watchlist.Movies).Title);
+    }
+
+    [Fact]
+    public async Task GetWatchlistAsync_ReportsBrowserFailure_WhenPageCannotBeOpened()
+    {
+        var fixture = new PlaywrightFixture(Html);
+        fixture.Context.Setup(item => item.NewPageAsync())
+            .ThrowsAsync(new PlaywrightException("Browser closed unexpectedly"));
+
+        var provider = fixture.CreateProvider();
+
+        var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
+            provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl }));
+
+        Assert.Contains("could not open a browser page", exception.Message);
+    }
+
+    [Fact]
     public void Access_IsPublic()
     {
         var fixture = new PlaywrightFixture(Html);
@@ -198,6 +248,7 @@ public class PlaywrightPublicWatchlistProviderTests
     private sealed class PlaywrightFixture
     {
         private readonly Queue<string> _pages;
+        private bool _listDataReady;
 
         public PlaywrightFixture(params string[] pages)
             : this(200, pages)
@@ -238,6 +289,7 @@ public class PlaywrightPublicWatchlistProviderTests
                 .ReturnsAsync((string url, PageGotoOptions _) =>
                 {
                     RequestedUrls.Add(url);
+                    _listDataReady = false;
                     return response.Object;
                 });
 
@@ -248,7 +300,11 @@ public class PlaywrightPublicWatchlistProviderTests
 
             if (listDataAvailable)
             {
-                waitSetup.ReturnsAsync(element.Object);
+                waitSetup.ReturnsAsync(() =>
+                {
+                    _listDataReady = true;
+                    return element.Object;
+                });
             }
             else
             {
@@ -256,8 +312,12 @@ public class PlaywrightPublicWatchlistProviderTests
             }
 
             Page.Setup(item => item.ContentAsync())
-                .ReturnsAsync(() => _pages.Count > 1 ? _pages.Dequeue() : _pages.Peek());
+                .ReturnsAsync(() => ChallengeHtml is not null && !_listDataReady
+                    ? ChallengeHtml
+                    : _pages.Count > 1 ? _pages.Dequeue() : _pages.Peek());
         }
+
+        public string? ChallengeHtml { get; init; }
 
         public List<string> RequestedUrls { get; } = [];
 

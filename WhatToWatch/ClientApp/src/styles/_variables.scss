@@ -1,13 +1,17 @@
 $bg: #242221;
 $cyan: #5ce1e6;
 $red: #c80000;
+$frame-red: #e73c41;
 $text: #f5f2eb;
 $text-muted: rgba(245, 242, 235, 0.72);
 
 $font-display: "Syne", "Trebuchet MS", sans-serif;
 $font-body: "Figtree", "Segoe UI", sans-serif;
+$font-label: "Lobster", "Comic Sans MS", cursive;
 $font-system: Roboto, Ubuntu, "Segoe UI", system-ui, sans-serif;
 
 $bucket-max-width: 22rem;
+// Vertical centre of the bucket body on popcorn-full.svg, below the kernels.
+$bucket-label-center: 58%;
 $content-max-width: 26rem;
 $tap-min: 2.75rem;

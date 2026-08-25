@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using ImdbWatchlists.Options;
 using Microsoft.Extensions.Logging;
@@ -32,14 +33,16 @@ public sealed class PlaywrightBrowserManager(
 
     public async Task<IBrowserContext> GetContextAsync(CancellationToken cancellationToken = default)
     {
-        if (_context is not null)
+        if (IsAlive(_context))
             return _context;
 
         await _contextLock.WaitAsync(cancellationToken);
         try
         {
-            if (_context is null)
+            if (!IsAlive(_context))
             {
+                _context = null;
+
                 Directory.CreateDirectory(_options.BrowserProfileDirectory);
 
                 var context = await playwright.Chromium.LaunchPersistentContextAsync(
@@ -70,6 +73,7 @@ public sealed class PlaywrightBrowserManager(
 
                 await SeedSessionCookiesAsync(context, cancellationToken);
 
+                context.Close += OnContextClosed;
                 _context = context;
             }
 
@@ -81,10 +85,21 @@ public sealed class PlaywrightBrowserManager(
         }
     }
 
+    private void OnContextClosed(object? sender, IBrowserContext context)
+    {
+        Interlocked.CompareExchange<IBrowserContext?>(ref _context, null, context);
+
+        logger.LogWarning(
+            "Playwright browser context closed. A new browser will be launched on next use.");
+    }
+
+    private static bool IsAlive([NotNullWhen(true)] IBrowserContext? context) =>
+        context is not null && context.Browser is not { IsConnected: false };
+
     public async Task PersistStorageStateAsync(CancellationToken cancellationToken = default)
     {
         var context = _context;
-        if (context is null || string.IsNullOrWhiteSpace(_options.StorageStatePath))
+        if (!IsAlive(context) || string.IsNullOrWhiteSpace(_options.StorageStatePath))
             return;
 
         try
@@ -111,11 +126,14 @@ public sealed class PlaywrightBrowserManager(
     {
         await PersistStorageStateAsync(CancellationToken.None);
 
-        if (_context is not null)
+        var context = Interlocked.Exchange(ref _context, null);
+        if (context is not null)
         {
+            context.Close -= OnContextClosed;
+
             try
             {
-                await _context.CloseAsync().WaitAsync(SessionFileTimeout);
+                await context.CloseAsync().WaitAsync(SessionFileTimeout);
             }
             catch (Exception ex)
             {

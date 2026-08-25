@@ -9,11 +9,14 @@ export const ukr = {
   "home.randomAllAria": "Випадковий фільм з усіх списків",
   "home.loading": "Завантаження…",
   "home.empty": "Поки немає жодного списку.",
+  "home.openList": "Відкрити список {name}",
 
   "list.loading": "Завантаження…",
   "list.notFound": "Список не знайдено",
   "list.loadFailed": "Не вдалося завантажити список",
   "list.movieCount": "{count} фільмів",
+  "list.expandAria": "Показати список фільмів",
+  "list.collapseAria": "Згорнути список фільмів",
   "list.randomAria": "Випадковий фільм зі списку {name}",
 
   "movie.posterAlt": "Постер: {title}",

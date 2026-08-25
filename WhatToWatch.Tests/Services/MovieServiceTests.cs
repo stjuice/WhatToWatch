@@ -86,7 +86,7 @@ public class MovieServiceTests
     }
 
     [Fact]
-    public async Task GetMoviesAsync_ExcludesTvAndUnknownTitles()
+    public async Task GetMoviesAsync_ExcludesTvTitles()
     {
         _repository
             .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
@@ -129,8 +129,7 @@ public class MovieServiceTests
             WatchlistId = WatchlistId,
         });
 
-        var movie = Assert.Single(movies!);
-        Assert.Equal("tt1", movie.Id);
+        Assert.Equal(["tt1", "tt3"], movies!.Select(movie => movie.Id));
     }
 
     [Fact]

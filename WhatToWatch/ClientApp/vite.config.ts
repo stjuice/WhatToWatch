@@ -36,8 +36,11 @@ export default defineConfig({
           },
         ],
       },
+      showMaximumFileSizeToCacheInBytesWarning: true,
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
+        globIgnores: ["**/node_modules/**/*", "**/*list-frame-long*"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {

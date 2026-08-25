@@ -7,7 +7,7 @@ namespace WhatToWatch.Media;
 public static class MediaCategoryRules
 {
     public static bool IsMovie(MediaCategory category) =>
-        category == MediaCategory.Movie;
+        category is MediaCategory.Movie or MediaCategory.Unknown;
 
     public static bool IsMovie(MovieModel movie) =>
         IsMovie(movie.MediaCategory);
