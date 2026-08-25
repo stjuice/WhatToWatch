@@ -75,8 +75,7 @@ public class WatchlistServiceTests
 
         var result = await CreateSut().GetWatchlistAsync(ListId);
 
-        var movie = Assert.Single(result!.Movies);
-        Assert.Equal("tt1", movie.Id);
+        Assert.Equal(["tt1", "tt3"], result!.Movies.Select(movie => movie.Id));
     }
 
     [Fact]
@@ -329,7 +328,7 @@ public class WatchlistServiceTests
     }
 
     [Fact]
-    public async Task ImportFromImdbPayloadAsync_HidesTypelessTitles_UntilClassified()
+    public async Task ImportFromImdbPayloadAsync_TreatsTypelessTitlesAsMovies()
     {
         WatchlistModel? saved = null;
         _repository
@@ -358,7 +357,8 @@ public class WatchlistServiceTests
         Assert.NotNull(saved);
         Assert.Single(saved.Movies);
         Assert.Equal(MediaCategory.Unknown, saved.Movies.First().MediaCategory);
-        Assert.Empty(result.Movies);
+        var returned = Assert.Single(result.Movies);
+        Assert.Equal("tt0133093", returned.Id);
     }
 
     [Fact]

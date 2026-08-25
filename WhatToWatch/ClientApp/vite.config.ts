@@ -36,8 +36,6 @@ export default defineConfig({
           },
         ],
       },
-      // Workbox skips files over the size cap and (since 0.20.2) that warning fails the build.
-      // Keep oversized marquee art in dist for Capacitor; don't precache it in the SW.
       showMaximumFileSizeToCacheInBytesWarning: true,
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],

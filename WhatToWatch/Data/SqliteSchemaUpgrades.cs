@@ -29,13 +29,22 @@ public static class SqliteSchemaUpgrades
             }
         }
 
-        if (hasMediaCategory)
+        if (!hasMediaCategory)
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                ALTER TABLE "Movies"
+                ADD COLUMN "MediaCategory" INTEGER NOT NULL DEFAULT 1;
+                """,
+                cancellationToken).ConfigureAwait(false);
             return;
+        }
 
         await db.Database.ExecuteSqlRawAsync(
             """
-            ALTER TABLE "Movies"
-            ADD COLUMN "MediaCategory" INTEGER NOT NULL DEFAULT 0;
+            UPDATE "Movies"
+            SET "MediaCategory" = 1
+            WHERE "MediaCategory" = 0;
             """,
             cancellationToken).ConfigureAwait(false);
     }
