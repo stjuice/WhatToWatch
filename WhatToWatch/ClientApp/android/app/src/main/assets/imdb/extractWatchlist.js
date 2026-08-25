@@ -17,6 +17,11 @@
     return null;
   }
 
+  function readTitleType(node) {
+    var id = node.titleType && node.titleType.id;
+    return typeof id === "string" && id ? id : null;
+  }
+
   function readRating(node) {
     var rating = node.ratingsSummary && node.ratingsSummary.aggregateRating;
     return typeof rating === "number" ? rating : null;
@@ -128,6 +133,7 @@
           runtimeMinutes: readRuntimeMinutes(node),
           director: readDirector(node),
           genres: readGenres(node),
+          titleType: readTitleType(node),
         });
       }
 

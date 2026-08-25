@@ -82,12 +82,23 @@ function visit(node: unknown, movies: ImportedMovie[], seen: Set<string>): void 
       runtimeMinutes: readRuntimeMinutes(record),
       director: readDirector(record),
       genres: readGenres(record),
+      titleType: readTitleType(record),
     });
   }
 
   for (const value of Object.values(record)) {
     visit(value, movies, seen);
   }
+}
+
+function readTitleType(record: Record<string, unknown>): string | null {
+  const titleType = record.titleType;
+  if (!titleType || typeof titleType !== "object") {
+    return null;
+  }
+
+  const id = (titleType as { id?: unknown }).id;
+  return typeof id === "string" && id ? id : null;
 }
 
 function readRating(record: Record<string, unknown>): number | null {

@@ -10,6 +10,7 @@ export interface ImportedMovie {
   runtimeMinutes: number | null;
   director: string | null;
   genres: string[];
+  titleType: string | null;
 }
 
 export interface ImportedWatchlist {

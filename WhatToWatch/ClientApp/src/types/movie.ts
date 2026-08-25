@@ -45,6 +45,7 @@ export interface ImportImdbMovieRequest {
   runtimeMinutes?: number | null;
   director?: string | null;
   genres?: string[];
+  titleType?: string | null;
 }
 
 export interface ImportImdbWatchlistRequest {

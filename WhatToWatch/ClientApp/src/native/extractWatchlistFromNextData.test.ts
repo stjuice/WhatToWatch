@@ -26,6 +26,7 @@ const listPageNextData = {
                 listItem: {
                   id: "tt0133093",
                   titleText: { text: "The Matrix" },
+                  titleType: { id: "movie", text: "Movie" },
                   releaseYear: { year: 1999 },
                   primaryImage: { url: "https://example.com/matrix.jpg" },
                   ratingsSummary: { aggregateRating: 8.7 },
@@ -63,6 +64,14 @@ const listPageNextData = {
                   id: "tt1375666",
                   titleText: { text: "Inception" },
                   releaseYear: { year: 2010 },
+                },
+              },
+              {
+                listItem: {
+                  id: "tt0903747",
+                  titleText: { text: "Breaking Bad" },
+                  titleType: { id: "tvSeries", text: "TV Series" },
+                  releaseYear: { year: 2008 },
                 },
               },
             ],
@@ -142,7 +151,19 @@ describe("extractWatchlistFromNextData", () => {
     expect(watchlist).not.toBeNull();
     expect(watchlist?.listId).toBe("ls055592025");
     expect(watchlist?.title).toBe("My Favourites");
-    expect(watchlist?.movies).toHaveLength(2);
+    expect(watchlist?.movies).toHaveLength(3);
+  });
+
+  it("reads titleType so the server can filter out TV shows", () => {
+    const watchlist = extractWatchlistFromNextData(listPageNextData, listOptions);
+
+    expect(
+      watchlist?.movies.map((movie) => [movie.imdbId, movie.titleType])
+    ).toEqual([
+      ["tt0133093", "movie"],
+      ["tt1375666", null],
+      ["tt0903747", "tvSeries"],
+    ]);
   });
 
   it("maps title fields and skips duplicates", () => {
@@ -159,6 +180,7 @@ describe("extractWatchlistFromNextData", () => {
       runtimeMinutes: 136,
       director: "Lana Wachowski",
       genres: ["Action", "Sci-Fi"],
+      titleType: "movie",
     });
     expect(watchlist?.movies.filter((movie) => movie.imdbId === "tt0133093")).toHaveLength(1);
   });
@@ -199,6 +221,7 @@ describe("extractWatchlistFromNextData", () => {
       runtimeMinutes: null,
       director: null,
       genres: [],
+      titleType: null,
     });
   });
 
