@@ -1,4 +1,5 @@
 using ImdbWatchlists.Browser;
+using ImdbWatchlists.Extraction;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Providers;
 using ImdbWatchlists.Repositories;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddSingleton(_ => Playwright.CreateAsync().GetAwaiter().GetResult());
         services.AddSingleton<IBrowserManager, PlaywrightBrowserManager>();
+        services.AddSingleton<IImdbPageExtractor, PlaywrightJsImdbPageExtractor>();
         services.AddSingleton<PlaywrightPublicWatchlistProvider>();
         services.AddSingleton<IWatchlistProvider>(sp =>
             sp.GetRequiredService<PlaywrightPublicWatchlistProvider>());
