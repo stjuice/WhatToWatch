@@ -1,9 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-/**
- * Capacitor config for the isolated IMDb WebView POC.
- * Not wired into the existing React import flow.
- */
+/** Capacitor config for the Android APK (native IMDb WebView import + Studio). */
 const config: CapacitorConfig = {
   appId: 'com.whattowatch.app',
   appName: 'WhatToWatch',
