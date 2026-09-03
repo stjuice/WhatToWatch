@@ -7,11 +7,8 @@ import {
 } from "../api/http";
 import {
   deleteWatchlist,
-  importWatchlistByUrl,
-  refreshWatchlist,
   updateWatchlist,
 } from "../api/moviesApi";
-import { ImportFromImdbButton } from "../components/ImportFromImdbButton";
 import { ImdbImportService } from "../services/imdbImportService";
 import { useAppState } from "../state/AppStateContext";
 import type { WatchlistDto } from "../types/movie";
@@ -70,70 +67,67 @@ export const StudioPage = () => {
     setMessage(null);
   };
 
-  const handleServerImport = () =>
-    runAction(async () => {
-      const trimmed = url.trim();
-      if (!trimmed) {
-        throw new Error("Enter an IMDb list URL");
-      }
-      const watchlist = await importWatchlistByUrl(trimmed);
-      setMessage(`Imported “${watchlist.name}” (${watchlist.movies.length})`);
-      setUrl("");
-    });
-
-  const handleNativeImport = () =>
+  const handleImport = () =>
     runAction(async () => {
       const trimmed = url.trim();
       if (!trimmed) {
         throw new Error("Enter an IMDb list URL");
       }
 
-      setImportLog([
-        "Opening IMDb in a secure window…",
-        "Waiting for the list to load or for IMDb verification.",
-      ]);
+      if (hasNativeImporter) {
+        setImportLog([
+          "Opening IMDb in a secure window…",
+          "Waiting for the list to load or for IMDb verification.",
+        ]);
+      }
 
       try {
         const watchlist = await ImdbImportService.importFromImdb(trimmed, {
-          onStatus: (entry) => setImportLog((current) => [...current.slice(-4), entry]),
+          onStatus: hasNativeImporter
+            ? (entry) => setImportLog((current) => [...current.slice(-4), entry])
+            : undefined,
         });
-        setImportLog([
-          `List “${watchlist.name}” saved on the server.`,
-          `Movies: ${watchlist.movies.length}.`,
-        ]);
-        setMessage(`Imported “${watchlist.name}”`);
+
+        if (hasNativeImporter) {
+          setImportLog([
+            `List “${watchlist.name}” saved on the server.`,
+            `Movies: ${watchlist.movies.length}.`,
+          ]);
+        }
+
+        setMessage(`Imported “${watchlist.name}” (${watchlist.movies.length})`);
         setUrl("");
       } catch (err) {
+        if (!hasNativeImporter)
+          throw err;
+
         const text = err instanceof Error ? err.message : "Import failed";
         if (text === "cancelled") {
           setImportLog(["Import cancelled."]);
+
           return;
         }
         setImportLog([`Import error: ${text}`]);
+
         throw err;
       }
     });
 
   const handleRefresh = (list: WatchlistDto) =>
     runAction(async () => {
-      const listUrl = list.url?.trim();
-      if (hasNativeImporter && listUrl) {
-        const updated = await ImdbImportService.importFromImdb(listUrl, {
-          onStatus: (entry) => setImportLog((current) => [...current.slice(-4), entry]),
-        });
-        setMessage(`Refreshed “${updated.name}” (${updated.movies.length})`);
-        return;
-      }
-
-      const updated = await refreshWatchlist(list.id);
+      const updated = await ImdbImportService.refreshFromImdb(list, {
+        onStatus: hasNativeImporter
+          ? (entry) => setImportLog((current) => [...current.slice(-4), entry])
+          : undefined,
+      });
       setMessage(`Refreshed “${updated.name}” (${updated.movies.length})`);
     });
 
   const handleDelete = (list: WatchlistDto) =>
     runAction(async () => {
-      if (!window.confirm(`Delete “${list.name}”?`)) {
+      if (!window.confirm(`Delete “${list.name}”?`))
         return;
-      }
+      
       await deleteWatchlist(list.id);
       setMessage(`Deleted “${list.name}”`);
     });
@@ -141,9 +135,10 @@ export const StudioPage = () => {
   const handleSaveName = (id: string) =>
     runAction(async () => {
       const name = editingName.trim();
-      if (!name) {
+
+      if (!name)
         throw new Error("Name cannot be empty");
-      }
+      
       const updated = await updateWatchlist(id, { name });
       setEditingId(null);
       setMessage(`Saved “${updated.name}”`);
@@ -203,25 +198,16 @@ export const StudioPage = () => {
           aria-label="IMDb list URL"
         />
         <div className="studio__actions">
-          {hasNativeImporter ? (
-            <ImportFromImdbButton
-              disabled={isBusy || !url.trim()}
-              onImport={() => {
-                void handleNativeImport();
-              }}
-            />
-          ) : (
-            <button
-              className="studio__button"
-              type="button"
-              disabled={isBusy || !url.trim()}
-              onClick={() => {
-                void handleServerImport();
-              }}
-            >
-              Import (server)
-            </button>
-          )}
+          <button
+            className="studio__button"
+            type="button"
+            disabled={isBusy || !url.trim()}
+            onClick={() => {
+              void handleImport();
+            }}
+          >
+            {hasNativeImporter ? "Import from IMDb" : "Import (server)"}
+          </button>
         </div>
         {importLog.length > 0 ? (
           <div className="studio__log" role="status" aria-live="polite">

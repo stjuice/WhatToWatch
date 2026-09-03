@@ -1,6 +1,7 @@
 import { registerPlugin } from "@capacitor/core";
 
-export interface ImportedMovie {
+/** Wire format shared by the JS extractor, native import, and POST /api/watchlists/import-imdb. */
+export interface ExtractedMoviePage {
   imdbId: string;
   title: string;
   year: number | null;
@@ -13,10 +14,13 @@ export interface ImportedMovie {
   titleType: string | null;
 }
 
-export interface ImportedWatchlist {
+export interface ExtractedWatchlistPage {
   listId: string;
   title: string;
-  movies: ImportedMovie[];
+  movies: ExtractedMoviePage[];
+  hasNextPage: boolean;
+  nextPageUrl: string | null;
+  url?: string;
 }
 
 export interface ImdbImporterPlugin {
@@ -24,7 +28,7 @@ export interface ImdbImporterPlugin {
    * Opens the list inside the app's WebView so the user can log in or pass verification,
    * then resolves with the normalized watchlist and closes the screen.
    */
-  importList(options: { url: string }): Promise<ImportedWatchlist>;
+  importList(options: { url: string }): Promise<ExtractedWatchlistPage>;
 }
 
 export const ImdbImporter = registerPlugin<ImdbImporterPlugin>("ImdbImporter");

@@ -1,4 +1,5 @@
 using ImdbWatchlists.Browser;
+using ImdbWatchlists.Extraction;
 using ImdbWatchlists.Models;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Providers;
@@ -15,7 +16,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_LoadsAndScrapesPage()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         var provider = fixture.CreateProvider();
 
         var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
@@ -32,8 +33,8 @@ public class PlaywrightPublicWatchlistProviderTests
     public async Task GetWatchlistAsync_FollowsPages_UntilNoNextPage()
     {
         var fixture = new PlaywrightFixture(
-            BuildHtml("tt0000001", "First", hasNextPage: true),
-            BuildHtml("tt0000002", "Second", hasNextPage: false));
+            BuildPage("tt0000001", "First", hasNextPage: true),
+            BuildPage("tt0000002", "Second", hasNextPage: false));
         var provider = fixture.CreateProvider();
 
         var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
@@ -47,7 +48,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_StopsAtFirstPage_WhenNoNextPage()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         var provider = fixture.CreateProvider();
 
         await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
@@ -58,7 +59,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_ReusesSharedContext_AcrossRequests()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         var provider = fixture.CreateProvider();
 
         await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
@@ -78,7 +79,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_ThrowsBeforeUsingBrowser_WhenUrlIsNotAList()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         var provider = fixture.CreateProvider();
 
         await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
@@ -92,7 +93,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_Throws_WhenImdbReturnsError()
     {
-        var fixture = new PlaywrightFixture(404, Html);
+        var fixture = new PlaywrightFixture(404, SinglePage);
         var provider = fixture.CreateProvider();
 
         var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
@@ -104,7 +105,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_IncludesBodyPreview_WhenResponseIsNotSuccessful()
     {
-        var fixture = new PlaywrightFixture(405, Html);
+        var fixture = new PlaywrightFixture(405, SinglePage);
         var provider = fixture.CreateProvider();
 
         var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
@@ -117,7 +118,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_ExplainsServerBlock_WhenImdbReturns403()
     {
-        var fixture = new PlaywrightFixture(403, Html);
+        var fixture = new PlaywrightFixture(403, SinglePage);
         var provider = fixture.CreateProvider();
 
         var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
@@ -134,7 +135,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_ExplainsHumanVerification_WhenListDataNeverAppears()
     {
-        var fixture = new PlaywrightFixture(200, listDataAvailable: false, Html);
+        var fixture = new PlaywrightFixture(200, listDataAvailable: false, SinglePage);
         var provider = fixture.CreateProvider();
 
         var exception = await Assert.ThrowsAsync<ImdbWatchlistException>(() =>
@@ -147,10 +148,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_ReadsPage_AfterBotChallengeIsReplacedByListData()
     {
-        var fixture = new PlaywrightFixture(Html)
-        {
-            ChallengeHtml = "<html><body>Verifying you are human</body></html>",
-        };
+        var fixture = new PlaywrightFixture(SinglePage);
         var provider = fixture.CreateProvider();
 
         var watchlist = await provider.GetWatchlistAsync(new WatchlistRequest { Url = ListUrl });
@@ -161,7 +159,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_RelaunchesBrowser_WhenCachedContextIsClosed()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         var closedContext = new Mock<IBrowserContext>();
         closedContext.Setup(item => item.NewPageAsync())
             .ThrowsAsync(new PlaywrightException(
@@ -182,7 +180,7 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public async Task GetWatchlistAsync_ReportsBrowserFailure_WhenPageCannotBeOpened()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         fixture.Context.Setup(item => item.NewPageAsync())
             .ThrowsAsync(new PlaywrightException("Browser closed unexpectedly"));
 
@@ -197,72 +195,57 @@ public class PlaywrightPublicWatchlistProviderTests
     [Fact]
     public void Access_IsPublic()
     {
-        var fixture = new PlaywrightFixture(Html);
+        var fixture = new PlaywrightFixture(SinglePage);
         var provider = fixture.CreateProvider();
 
         Assert.Equal(WatchlistAccess.Public, provider.Access);
     }
 
-    private const string Html =
-        """
-        <html><body>
-        <script id="__NEXT_DATA__" type="application/json">
-        {
-          "props": { "pageProps": { "mainColumnData": { "list": {
-            "name": { "originalText": "My Favourites" },
-            "titleListItemSearch": { "edges": [
-              { "listItem": {
-                  "id": "tt0133093",
-                  "titleText": { "text": "The Matrix" },
-                  "releaseYear": { "year": 1999 }
-              } }
-            ] }
-          } } } }
-        }
-        </script>
-        </body></html>
-        """;
+    private static readonly ExtractedWatchlistPage SinglePage = BuildPage(
+        "tt0133093",
+        "The Matrix",
+        hasNextPage: false,
+        year: 1999);
 
-    private static string BuildHtml(string movieId, string title, bool hasNextPage) =>
-        $$"""
-        <html><body>
-        <script id="__NEXT_DATA__" type="application/json">
+    private static ExtractedWatchlistPage BuildPage(
+        string movieId,
+        string title,
+        bool hasNextPage,
+        int? year = null) =>
+        new()
         {
-          "props": { "pageProps": { "mainColumnData": { "list": {
-            "name": { "originalText": "My Favourites" },
-            "titleListItemSearch": {
-              "pageInfo": { "hasNextPage": {{(hasNextPage ? "true" : "false")}} },
-              "edges": [
-                { "listItem": {
-                    "id": "{{movieId}}",
-                    "titleText": { "text": "{{title}}" }
-                } }
-              ]
-            }
-          } } } }
-        }
-        </script>
-        </body></html>
-        """;
+            ListId = "ls055592025",
+            Title = "My Favourites",
+            Movies =
+            [
+                new ExtractedMoviePage
+                {
+                    ImdbId = movieId,
+                    Title = title,
+                    Year = year,
+                },
+            ],
+            HasNextPage = hasNextPage,
+            NextPageUrl = hasNextPage ? $"{ListUrl}?page=2" : null,
+        };
 
     private sealed class PlaywrightFixture
     {
-        private readonly Queue<string> _pages;
-        private bool _listDataReady;
+        private readonly Queue<ExtractedWatchlistPage> _pages;
 
-        public PlaywrightFixture(params string[] pages)
+        public PlaywrightFixture(params ExtractedWatchlistPage[] pages)
             : this(200, pages)
         {
         }
 
-        public PlaywrightFixture(int status, params string[] pages)
+        public PlaywrightFixture(int status, params ExtractedWatchlistPage[] pages)
             : this(status, listDataAvailable: true, pages)
         {
         }
 
-        public PlaywrightFixture(int status, bool listDataAvailable, params string[] pages)
+        public PlaywrightFixture(int status, bool listDataAvailable, params ExtractedWatchlistPage[] pages)
         {
-            _pages = new Queue<string>(pages);
+            _pages = new Queue<ExtractedWatchlistPage>(pages);
 
             var response = new Mock<IResponse>();
             response.SetupGet(item => item.Status).Returns(status);
@@ -289,7 +272,6 @@ public class PlaywrightPublicWatchlistProviderTests
                 .ReturnsAsync((string url, PageGotoOptions _) =>
                 {
                     RequestedUrls.Add(url);
-                    _listDataReady = false;
                     return response.Object;
                 });
 
@@ -300,11 +282,7 @@ public class PlaywrightPublicWatchlistProviderTests
 
             if (listDataAvailable)
             {
-                waitSetup.ReturnsAsync(() =>
-                {
-                    _listDataReady = true;
-                    return element.Object;
-                });
+                waitSetup.ReturnsAsync(element.Object);
             }
             else
             {
@@ -312,12 +290,15 @@ public class PlaywrightPublicWatchlistProviderTests
             }
 
             Page.Setup(item => item.ContentAsync())
-                .ReturnsAsync(() => ChallengeHtml is not null && !_listDataReady
-                    ? ChallengeHtml
-                    : _pages.Count > 1 ? _pages.Dequeue() : _pages.Peek());
-        }
+                .ReturnsAsync("<html><body>preview</body></html>");
 
-        public string? ChallengeHtml { get; init; }
+            PageExtractor
+                .Setup(extractor => extractor.ExtractCurrentPageAsync(
+                    It.IsAny<IPage>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                    _pages.Count > 1 ? _pages.Dequeue() : _pages.Peek());
+        }
 
         public List<string> RequestedUrls { get; } = [];
 
@@ -327,6 +308,8 @@ public class PlaywrightPublicWatchlistProviderTests
 
         public Mock<IPage> Page { get; } = new();
 
+        public Mock<IImdbPageExtractor> PageExtractor { get; } = new();
+
         public ImdbWatchlistsOptions Options { get; } = new()
         {
             BrowserHeadless = true,
@@ -335,6 +318,7 @@ public class PlaywrightPublicWatchlistProviderTests
         public PlaywrightPublicWatchlistProvider CreateProvider() =>
             new(
                 BrowserManager.Object,
+                PageExtractor.Object,
                 Microsoft.Extensions.Options.Options.Create(Options),
                 NullLogger<PlaywrightPublicWatchlistProvider>.Instance);
     }

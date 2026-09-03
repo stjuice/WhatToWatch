@@ -1,4 +1,5 @@
 using ImdbWatchlists;
+using ImdbWatchlists.Extraction;
 using Microsoft.AspNetCore.Mvc;
 using WhatToWatch.Auth;
 using WhatToWatch.DTOs;
@@ -34,7 +35,7 @@ public class WatchlistsController(IWatchlistService watchlistService) : Controll
     [HttpPost("import-imdb")]
     [AdminAuthorize]
     public async Task<ActionResult<WatchlistDto>> ImportImdbWatchlistAsync(
-        [FromBody] ImportImdbWatchlistRequest request,
+        [FromBody] ExtractedWatchlistPage request,
         CancellationToken cancellationToken)
     {
         try

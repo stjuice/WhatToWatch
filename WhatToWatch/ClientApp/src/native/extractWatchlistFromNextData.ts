@@ -1,4 +1,4 @@
-import type { ExtractedWatchlistPage, ImportedMovie } from "./imdbImporter";
+import type { ExtractedWatchlistPage, ExtractedMoviePage } from "./imdbImporter";
 
 export type ExtractOptions = {
   pathname?: string;
@@ -10,7 +10,7 @@ export function extractWatchlistFromNextData(
   data: unknown,
   options: ExtractOptions = {}
 ): ExtractedWatchlistPage | null {
-  const movies: ImportedMovie[] = [];
+  const movies: ExtractedMoviePage[] = [];
   const seen = new Set<string>();
 
   visit(data, movies, seen);
@@ -89,7 +89,7 @@ function readHasNextPage(node: unknown): boolean {
   return Object.values(record).some((value) => readHasNextPage(value));
 }
 
-function visit(node: unknown, movies: ImportedMovie[], seen: Set<string>): void {
+function visit(node: unknown, movies: ExtractedMoviePage[], seen: Set<string>): void {
   if (node == null || typeof node !== "object") {
     return;
   }

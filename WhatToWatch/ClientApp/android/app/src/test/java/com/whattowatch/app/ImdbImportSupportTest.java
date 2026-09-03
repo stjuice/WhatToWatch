@@ -67,4 +67,42 @@ public class ImdbImportSupportTest {
     public void shouldBlockNavigation_allowsNullUri() {
         assertFalse(ImdbImportSupport.shouldBlockNavigation(null));
     }
+
+    @Test
+    public void parsePage_readsPaginationFields() throws Exception {
+        String json =
+            "{\"listId\":\"ls1\",\"title\":\"Paged\",\"movies\":[{\"imdbId\":\"tt1\"}],"
+                + "\"hasNextPage\":true,\"nextPageUrl\":\"https://www.imdb.com/list/ls1/?page=2\"}";
+
+        ImdbImportSupport.PageData page = ImdbImportSupport.parsePage(json);
+
+        assertTrue(page.hasNextPage);
+        assertEquals("https://www.imdb.com/list/ls1/?page=2", page.nextPageUrl);
+    }
+
+    @Test
+    public void appendUniqueMovies_mergesAcrossPages() throws Exception {
+        ImdbImportSupport.PageData first = ImdbImportSupport.parsePage(
+            "{\"listId\":\"ls1\",\"title\":\"X\",\"movies\":[{\"imdbId\":\"tt1\"}],\"hasNextPage\":true}"
+        );
+        ImdbImportSupport.PageData second = ImdbImportSupport.parsePage(
+            "{\"listId\":\"ls1\",\"title\":\"X\",\"movies\":[{\"imdbId\":\"tt1\"},{\"imdbId\":\"tt2\"}]}"
+        );
+
+        JSONObject aggregate = ImdbImportSupport.createAggregate(first);
+        java.util.HashSet<String> seen = new java.util.HashSet<>();
+
+        assertEquals(1, ImdbImportSupport.appendUniqueMovies(first, aggregate, seen));
+        assertEquals(1, ImdbImportSupport.appendUniqueMovies(second, aggregate, seen));
+        assertEquals(2, ImdbImportSupport.countMovies(aggregate.toString()));
+    }
+
+    @Test
+    public void isAllowedNextPageUrl_acceptsImdbHttpsOnly() {
+        assertTrue(ImdbImportSupport.isAllowedNextPageUrl(
+            "https://www.imdb.com/list/ls1/?page=2"
+        ));
+        assertFalse(ImdbImportSupport.isAllowedNextPageUrl("http://www.imdb.com/list/ls1/"));
+        assertFalse(ImdbImportSupport.isAllowedNextPageUrl("https://example.com/list/ls1/"));
+    }
 }

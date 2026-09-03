@@ -20,15 +20,14 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * Internal IMDb import screen, opened only by {@link ImdbImporterPlugin}.
- *
- * Loads the list in a WebView so the user can log in or pass human verification, extracts and
- * normalizes the list from __NEXT_DATA__, then closes itself and hands the result to the plugin.
- */
 public class ImdbImportActivity extends AppCompatActivity {
     public static final String TAG = "ImdbImport";
 
@@ -38,11 +37,9 @@ public class ImdbImportActivity extends AppCompatActivity {
 
     public static final String ERROR_CANCELLED = "cancelled";
 
-    /** Next.js needs a moment to hydrate after onPageFinished. */
     private static final long FIRST_ATTEMPT_DELAY_MS = 1200L;
-
-    /** While the user logs in or solves a challenge the list data is not on the page yet. */
     private static final long RETRY_DELAY_MS = 2000L;
+    private static final int MAX_PAGES = 40;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -54,6 +51,9 @@ public class ImdbImportActivity extends AppCompatActivity {
     private boolean isResultDelivered;
     private String extractScript;
     private int extractAttempt;
+    private int pagesLoaded;
+    private JSONObject aggregate;
+    private final Set<String> seenMovieIds = new HashSet<>();
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -72,6 +72,7 @@ public class ImdbImportActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.e(TAG, "Could not load extract script: " + e.getMessage());
             finishWithError("Could not load the IMDb extract script");
+
             return;
         }
 
@@ -79,6 +80,7 @@ public class ImdbImportActivity extends AppCompatActivity {
         if (url == null || url.trim().isEmpty()) {
             Log.e(TAG, "No list url passed to ImdbImportActivity");
             finishWithError("No IMDb list url was provided");
+
             return;
         }
 
@@ -94,7 +96,6 @@ public class ImdbImportActivity extends AppCompatActivity {
         settings.setUseWideViewPort(true);
         settings.setBuiltInZoomControls(true);
         settings.setDisplayZoomControls(false);
-        // Use a normal mobile Chrome UA so IMDb serves a real page, not a bot shell.
         settings.setUserAgentString(
             "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 "
                 + "(KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
@@ -149,9 +150,8 @@ public class ImdbImportActivity extends AppCompatActivity {
     }
 
     private void extract() {
-        if (webView == null || isResultDelivered || extractScript == null) {
+        if (webView == null || isResultDelivered || extractScript == null)
             return;
-        }
 
         extractAttempt++;
         appendVisualLog("Спроба читання №" + extractAttempt + "…");
@@ -160,25 +160,51 @@ public class ImdbImportActivity extends AppCompatActivity {
             int movieCount = ImdbImportSupport.countMovies(json);
 
             if (movieCount <= 0) {
-                // Most likely a login page or a bot challenge: keep polling while the user acts.
                 Log.i(TAG, "List data not available yet; retrying in " + RETRY_DELAY_MS + "ms");
                 setStatus("Очікуємо список. За потреби увійдіть в IMDb…");
                 appendVisualLog("Дані ще недоступні. Очікуємо вхід або перевірку IMDb.");
                 scheduleExtract(RETRY_DELAY_MS);
+
                 return;
             }
 
-            Log.i(TAG, "Extracted " + movieCount + " movies (" + json.length() + " chars)");
-            setStatus("Знайдено фільмів: " + movieCount);
-            appendVisualLog("Готово. Отримано фільмів: " + movieCount + ".");
-            finishWithWatchlist(json);
+            try {
+                ImdbImportSupport.PageData page = ImdbImportSupport.parsePage(json);
+                if (aggregate == null) {
+                    aggregate = ImdbImportSupport.createAggregate(page);
+                }
+
+                int added = ImdbImportSupport.appendUniqueMovies(page, aggregate, seenMovieIds);
+                pagesLoaded++;
+                int total = ImdbImportSupport.countMovies(aggregate.toString());
+
+                Log.i(
+                    TAG,
+                    "Extracted page " + pagesLoaded + ": +" + added + " movies, total=" + total
+                );
+                setStatus("Знайдено фільмів: " + total);
+                appendVisualLog("Сторінка " + pagesLoaded + ": +" + added + " (усього " + total + ").");
+
+                if (page.hasNextPage
+                    && pagesLoaded < MAX_PAGES
+                    && ImdbImportSupport.isAllowedNextPageUrl(page.nextPageUrl)) {
+                    appendVisualLog("Завантажуємо наступну сторінку…");
+                    webView.loadUrl(page.nextPageUrl);
+
+                    return;
+                }
+
+                finishWithWatchlist(aggregate.toString());
+            } catch (JSONException e) {
+                Log.e(TAG, "Could not parse extracted page", e);
+                finishWithError("Could not parse the imported watchlist");
+            }
         });
     }
 
     private void finishWithWatchlist(String json) {
-        if (isResultDelivered) {
+        if (isResultDelivered)
             return;
-        }
 
         isResultDelivered = true;
         mainHandler.removeCallbacksAndMessages(null);
@@ -190,33 +216,32 @@ public class ImdbImportActivity extends AppCompatActivity {
     }
 
     private void finishWithError(String error) {
-        if (isResultDelivered) {
+        if (isResultDelivered)
             return;
-        }
 
         isResultDelivered = true;
         mainHandler.removeCallbacksAndMessages(null);
 
         Log.i(TAG, "Import finished without data: " + error);
         Intent result = new Intent();
+
         result.putExtra(EXTRA_ERROR, error);
         setResult(Activity.RESULT_CANCELED, result);
         finish();
     }
 
     private void setStatus(String status) {
-        if (statusView != null) {
+        if (statusView != null)
             statusView.setText(status);
-        }
     }
 
     private void appendVisualLog(String message) {
-        if (logView == null) {
+        if (logView == null)
             return;
-        }
-        if (visualLog.size() == 5) {
+
+        if (visualLog.size() == 5)
             visualLog.removeFirst();
-        }
+
         visualLog.addLast("• " + message);
 
         StringBuilder visibleText = new StringBuilder();
@@ -235,6 +260,7 @@ public class ImdbImportActivity extends AppCompatActivity {
             webView.goBack();
             return;
         }
+
         finishWithError(ERROR_CANCELLED);
     }
 

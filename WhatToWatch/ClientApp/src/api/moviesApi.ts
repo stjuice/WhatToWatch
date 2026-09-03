@@ -1,11 +1,11 @@
 import type {
   CreateWatchlistRequest,
-  ImportImdbWatchlistRequest,
   MovieDto,
   MovieFilterRequest,
   UpdateWatchlistRequest,
   WatchlistDto,
 } from "../types/movie";
+import type { ExtractedWatchlistPage } from "../native/imdbImporter";
 import { requestJson } from "./http";
 
 const WATCHLIST_ID_KEY = "watchlistId";
@@ -72,7 +72,7 @@ export const importWatchlistByUrl = async (url: string): Promise<WatchlistDto> =
 };
 
 export const importImdbWatchlist = async (
-  payload: ImportImdbWatchlistRequest
+  payload: ExtractedWatchlistPage
 ): Promise<WatchlistDto> => {
   return requestJson<WatchlistDto>("/api/watchlists/import-imdb", {
     method: "POST",

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using WhatToWatch.Controllers;
 using WhatToWatch.DTOs;
+using ImdbWatchlists.Models;
 using WhatToWatch.Models;
 using WhatToWatch.Services;
 
