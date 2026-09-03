@@ -49,12 +49,14 @@ EnsureDirectoryForPath(imdbOptions.CacheDirectory);
 builder.Services.AddDbContext<WhatToWatchDbContext>(options =>
     options.UseSqlite(whatToWatchOptions.ConnectionString));
 builder.Services.AddScoped<IWatchlistRepository, SqliteWatchlistRepository>();
+builder.Services.AddScoped<IPartyRepository, SqlitePartyRepository>();
 builder.Services.AddImdbWatchlists(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<JoinCodeGenerator>();
 builder.Services.AddSingleton<IRandomizationService, RandomizationService>();
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IWatchlistService, WatchlistService>();
+builder.Services.AddScoped<IPartyService, PartyService>();
 
 var app = builder.Build();
 

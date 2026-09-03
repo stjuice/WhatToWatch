@@ -1,0 +1,300 @@
+using ImdbWatchlists.Models;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Moq;
+using WhatToWatch.Data;
+using WhatToWatch.DTOs;
+using WhatToWatch.Options;
+using WhatToWatch.Repositories;
+using WhatToWatch.Services;
+
+namespace WhatToWatch.Tests.Services;
+
+public sealed class PartyServiceTests : IDisposable
+{
+    private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly WhatToWatchDbContext _db;
+    private readonly Mock<IMovieService> _movies = new();
+    private readonly MutableTimeProvider _time = new(new DateTimeOffset(2026, 9, 3, 12, 0, 0, TimeSpan.Zero));
+    private readonly PartyOptions _options = new();
+    private readonly PartyService _sut;
+    private readonly Dictionary<(string WatchlistId, string MovieId), Movie> _movieLookup = [];
+
+    public PartyServiceTests()
+    {
+        _connection.Open();
+        _db = new WhatToWatchDbContext(
+            new DbContextOptionsBuilder<WhatToWatchDbContext>().UseSqlite(_connection).Options);
+        _db.Database.EnsureCreated();
+
+        _movies.Setup(service => service.GetMovieAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string watchlistId, string movieId, CancellationToken _) =>
+                _movieLookup.GetValueOrDefault((watchlistId, movieId)));
+
+        _sut = new PartyService(
+            new SqlitePartyRepository(_db),
+            _movies.Object,
+            new RandomizationService(new Random(7)),
+            new JoinCodeGenerator(new Random(3)),
+            _time,
+            Microsoft.Extensions.Options.Options.Create(_options));
+    }
+
+    [Fact]
+    public async Task Create_IsImmediatelyPlayable_FreezesDeduplicatedSet()
+    {
+        SetupMovieSet(
+            ("list/a", Movie("tt1", "First")),
+            ("other|list", Movie("tt1", "Duplicate")),
+            ("other|list", Movie("tt2", "Second")));
+
+        var result = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "0042" });
+
+        Assert.Equal("Playing", result.Status);
+        Assert.Equal("0042", result.JoinCode);
+        Assert.NotEmpty(result.PlayerToken);
+        Assert.NotNull(result.CurrentMovie);
+        Assert.Equal(1, result.PlayerCount);
+        Assert.False(result.OpponentPresent);
+
+        var stored = await _db.Parties.Include(party => party.Players).SingleAsync();
+        Assert.Equal(2, stored.MovieSet.Count);
+        Assert.Equal(2, stored.Players[0].MovieOrder.Count);
+        Assert.All(stored.MovieSet, value => Assert.StartsWith("{", value));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("123")]
+    [InlineData("12345")]
+    [InlineData("12a4")]
+    public async Task Create_RejectsInvalidExplicitCode(string code)
+    {
+        var exception = await Assert.ThrowsAsync<PartyException>(
+            () => _sut.CreateAsync(new CreatePartyRequest { JoinCode = code }));
+
+        Assert.Equal("InvalidCode", exception.Code);
+    }
+
+    [Fact]
+    public async Task Create_RejectsEmptyMovieSet()
+    {
+        SetupMovieSet();
+
+        var exception = await Assert.ThrowsAsync<PartyException>(
+            () => _sut.CreateAsync(new CreatePartyRequest()));
+
+        Assert.Equal("NoMovies", exception.Code);
+    }
+
+    [Fact]
+    public async Task Create_RejectsTakenExplicitCode()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+
+        var exception = await Assert.ThrowsAsync<PartyException>(
+            () => _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" }));
+
+        Assert.Equal("CodeTaken", exception.Code);
+    }
+
+    [Fact]
+    public async Task Join_CreatesSecondIndependentPlayer_AndRejectsThird()
+    {
+        SetupMovieSet(
+            ("list", Movie("tt1", "One")),
+            ("list", Movie("tt2", "Two")),
+            ("list", Movie("tt3", "Three")));
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+
+        var guest = await _sut.JoinAsync("1234");
+
+        Assert.NotEqual(owner.PlayerToken, guest.PlayerToken);
+        Assert.Equal(2, guest.PlayerCount);
+        Assert.True(guest.OpponentPresent);
+        var players = await _db.PartyPlayers.OrderBy(player => player.Slot).ToListAsync();
+        Assert.Equal([1, 2], players.Select(player => player.Slot));
+        Assert.NotSame(players[0].MovieOrder, players[1].MovieOrder);
+
+        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.JoinAsync("1234"));
+        Assert.Equal("PartyFull", exception.Code);
+    }
+
+    [Fact]
+    public async Task Vote_No_AdvancesOnlyCaller()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")), ("list", Movie("tt2", "Two")));
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var currentId = session.CurrentMovie!.Id;
+
+        var state = await _sut.VoteAsync(
+            session.PartyId,
+            session.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = currentId, Liked = false });
+
+        Assert.Equal(1, state.Progress.CurrentIndex);
+        Assert.Empty(await _db.PartyLikes.ToListAsync());
+    }
+
+    [Fact]
+    public async Task State_RejectsInvalidPlayerToken()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+
+        var exception = await Assert.ThrowsAsync<PartyException>(
+            () => _sut.GetStateAsync(session.PartyId, "wrong-token"));
+
+        Assert.Equal("InvalidPlayerToken", exception.Code);
+    }
+
+    [Fact]
+    public async Task Vote_RejectsMovieOtherThanCurrent()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+
+        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.VoteAsync(
+            session.PartyId,
+            session.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt999", Liked = true }));
+
+        Assert.Equal("NotYourCurrentMovie", exception.Code);
+        Assert.Equal(0, (await _db.PartyPlayers.SingleAsync()).CurrentIndex);
+    }
+
+    [Fact]
+    public async Task Vote_TwoYesVotes_ProduceMatch_AndRejectFurtherVotes()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var guest = await _sut.JoinAsync("1234");
+
+        var first = await _sut.VoteAsync(
+            owner.PartyId, owner.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = true });
+        Assert.Equal("Playing", first.Status);
+
+        var matched = await _sut.VoteAsync(
+            guest.PartyId, guest.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = true });
+
+        Assert.Equal("Matched", matched.Status);
+        Assert.Equal("tt1", matched.MatchedMovie!.Id);
+        Assert.Null(matched.CurrentMovie);
+        Assert.Equal(2, await _db.PartyLikes.CountAsync());
+
+        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.VoteAsync(
+            owner.PartyId, owner.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = true }));
+        Assert.Equal("AlreadyFinished", exception.Code);
+    }
+
+    [Fact]
+    public async Task Exhaustion_FinishesOnlyAfterBothPlayersExhausted()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var guest = await _sut.JoinAsync("1234");
+
+        var ownerState = await _sut.VoteAsync(
+            owner.PartyId, owner.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = false });
+        Assert.Equal("Playing", ownerState.Status);
+        Assert.True(ownerState.Progress.IsExhausted);
+
+        var guestState = await _sut.VoteAsync(
+            guest.PartyId, guest.PlayerToken,
+            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = false });
+        Assert.Equal("Finished", guestState.Status);
+    }
+
+    [Fact]
+    public async Task State_SkipsVanishedMovies_AndRefreshesPresence()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")), ("list", Movie("tt2", "Two")));
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var player = await _db.PartyPlayers.SingleAsync();
+        var first = PartyMovieReference.Decode(player.MovieOrder[0]);
+        _movieLookup.Remove((first.WatchlistId, first.MovieId));
+        _time.Advance(TimeSpan.FromMinutes(1));
+
+        var state = await _sut.GetStateAsync(owner.PartyId, owner.PlayerToken);
+
+        Assert.Equal(1, state.Progress.CurrentIndex);
+        Assert.NotNull(state.CurrentMovie);
+        Assert.Equal(_time.GetUtcNow(), (await _db.PartyPlayers.SingleAsync()).LastSeenAt);
+    }
+
+    [Fact]
+    public async Task LazyCleanup_ExpiresParty_WhenAllPlayersAreStale()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        _time.Advance(TimeSpan.FromMinutes(121));
+
+        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.JoinAsync("1234"));
+
+        Assert.Equal("PartyExpired", exception.Code);
+        Assert.Equal(PartyStatus.Expired, (await _db.Parties.SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task State_DoesNotExposeOpponentSecrets()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var guest = await _sut.JoinAsync("1234");
+
+        var state = await _sut.GetStateAsync(owner.PartyId, owner.PlayerToken);
+        var json = System.Text.Json.JsonSerializer.Serialize(state);
+
+        Assert.DoesNotContain(guest.PlayerToken, json);
+        Assert.DoesNotContain("MovieOrder", json);
+        Assert.DoesNotContain("Likes", json);
+    }
+
+    [Fact]
+    public async Task Preview_IsPublicAndReportsCapacity()
+    {
+        SetupMovieSet(("list", Movie("tt1", "One")));
+        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        await _sut.JoinAsync("1234");
+
+        var preview = await _sut.GetPreviewAsync("1234");
+
+        Assert.Equal(2, preview.PlayerCount);
+        Assert.True(preview.IsFull);
+        Assert.Equal("Playing", preview.Status);
+    }
+
+    private void SetupMovieSet(params (string WatchlistId, Movie Movie)[] entries)
+    {
+        _movieLookup.Clear();
+        foreach (var entry in entries)
+            _movieLookup.TryAdd((entry.WatchlistId, entry.Movie.Id), entry.Movie);
+        _movies.Setup(service => service.GetMovieSetAsync(
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(entries
+                .Select(entry => new MovieReference(entry.WatchlistId, entry.Movie))
+                .ToArray());
+    }
+
+    private static Movie Movie(string id, string title) =>
+        new() { Id = id, Title = title, Genres = ["Drama"] };
+
+    public void Dispose()
+    {
+        _db.Dispose();
+        _connection.Dispose();
+    }
+
+    private sealed class MutableTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+        public void Advance(TimeSpan amount) => now += amount;
+    }
+}
