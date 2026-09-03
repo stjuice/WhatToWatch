@@ -1,7 +1,5 @@
 using ImdbWatchlists.Models;
 using WhatToWatch.Media;
-using MovieModel = WhatToWatch.Models.Movie;
-
 namespace WhatToWatch.Tests.Media;
 
 public class MediaCategoryRulesTests
@@ -15,7 +13,7 @@ public class MediaCategoryRulesTests
         Assert.Equal(expected, MediaCategoryRules.IsMovie(category));
         Assert.Equal(
             expected,
-            MediaCategoryRules.IsMovie(new MovieModel
+            MediaCategoryRules.IsMovie(new Movie
             {
                 Id = "tt1",
                 Title = "Title",
@@ -26,15 +24,15 @@ public class MediaCategoryRulesTests
     [Fact]
     public void WithMoviesOnly_KeepsUnknownLegacyRows()
     {
-        var filtered = MediaCategoryRules.WithMoviesOnly(new WhatToWatch.Models.Watchlist
+        var filtered = MediaCategoryRules.WithMoviesOnly(new Watchlist
         {
             Id = "ls1",
             Name = "Mixed",
             Movies =
             [
-                new MovieModel { Id = "tt1", Title = "Film", MediaCategory = MediaCategory.Movie },
-                new MovieModel { Id = "tt2", Title = "Show", MediaCategory = MediaCategory.TvShow },
-                new MovieModel { Id = "tt3", Title = "Legacy", MediaCategory = MediaCategory.Unknown },
+                new Movie { Id = "tt1", Title = "Film", MediaCategory = MediaCategory.Movie },
+                new Movie { Id = "tt2", Title = "Show", MediaCategory = MediaCategory.TvShow },
+                new Movie { Id = "tt3", Title = "Legacy", MediaCategory = MediaCategory.Unknown },
             ],
         });
 

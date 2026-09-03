@@ -1,5 +1,6 @@
+using ImdbWatchlists.Extraction;
+using ImdbWatchlists.Models;
 using WhatToWatch.DTOs;
-using WhatToWatch.Models;
 
 namespace WhatToWatch.Services;
 
@@ -10,7 +11,7 @@ public interface IWatchlistService
         CancellationToken cancellationToken = default);
 
     Task<Watchlist> ImportFromImdbPayloadAsync(
-        ImportImdbWatchlistRequest request,
+        ExtractedWatchlistPage request,
         CancellationToken cancellationToken = default);
 
     Task<Watchlist?> GetWatchlistAsync(

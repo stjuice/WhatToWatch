@@ -1,3 +1,4 @@
+using ImdbWatchlists.Models;
 using WhatToWatch.Models;
 
 namespace WhatToWatch.Services;

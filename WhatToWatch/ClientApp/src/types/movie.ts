@@ -34,23 +34,3 @@ export interface CreateWatchlistRequest {
 export interface UpdateWatchlistRequest {
   name: string;
 }
-
-export interface ImportImdbMovieRequest {
-  imdbId: string;
-  title: string;
-  year: number | null;
-  imageUrl: string | null;
-  rating?: number | null;
-  plot?: string | null;
-  runtimeMinutes?: number | null;
-  director?: string | null;
-  genres?: string[];
-  titleType?: string | null;
-}
-
-export interface ImportImdbWatchlistRequest {
-  listId: string;
-  title: string;
-  url?: string;
-  movies: ImportImdbMovieRequest[];
-}

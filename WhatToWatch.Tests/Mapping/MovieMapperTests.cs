@@ -1,46 +1,14 @@
 using ImdbWatchlists.Models;
 using WhatToWatch.Mapping;
-using MovieModel = WhatToWatch.Models.Movie;
 
 namespace WhatToWatch.Tests.Mapping;
 
 public class MovieMapperTests
 {
     [Fact]
-    public void ToApp_Movie_MapsImdbMovieToMovieModel()
+    public void ToDto_Movie_MapsMovieToDto()
     {
-        var imdb = new ImdbWatchlists.Models.Movie
-        {
-            Id = "tt1",
-            Title = "Test",
-            Year = 2020,
-            PosterUrl = "https://example.com/p.jpg",
-            Rating = 8.1,
-            Plot = "A test plot.",
-            RuntimeMinutes = 136,
-            Director = "Test Director",
-            Genres = ["Drama"],
-            MediaCategory = MediaCategory.Movie,
-        };
-
-        var app = MovieMapper.ToApp(imdb);
-
-        Assert.Equal(imdb.Id, app.Id);
-        Assert.Equal(imdb.Title, app.Title);
-        Assert.Equal(imdb.Year, app.Year);
-        Assert.Equal(imdb.PosterUrl, app.PosterUrl);
-        Assert.Equal(imdb.Rating, app.Rating);
-        Assert.Equal(imdb.Plot, app.Plot);
-        Assert.Equal(imdb.RuntimeMinutes, app.RuntimeMinutes);
-        Assert.Equal(imdb.Director, app.Director);
-        Assert.Equal(imdb.Genres, app.Genres);
-        Assert.Equal(MediaCategory.Movie, app.MediaCategory);
-    }
-
-    [Fact]
-    public void ToDto_Movie_MapsMovieModelToDto()
-    {
-        var movie = new MovieModel
+        var movie = new Movie
         {
             Id = "tt1",
             Title = "Test",
@@ -67,22 +35,6 @@ public class MovieMapperTests
     }
 
     [Fact]
-    public void ToApp_Movie_MapsNullOptionalDetailFields()
-    {
-        var imdb = new ImdbWatchlists.Models.Movie
-        {
-            Id = "tt2",
-            Title = "Sparse",
-        };
-
-        var app = MovieMapper.ToApp(imdb);
-
-        Assert.Null(app.Plot);
-        Assert.Null(app.RuntimeMinutes);
-        Assert.Null(app.Director);
-    }
-
-    [Fact]
     public void ToFilter_MapsRequestFieldsToDomainFilter()
     {
         var request = new DTOs.MovieFilterRequest
@@ -106,24 +58,9 @@ public class MovieMapperTests
     }
 
     [Fact]
-    public void ToApp_Movie_MapsMediaCategory()
-    {
-        var imdb = new ImdbWatchlists.Models.Movie
-        {
-            Id = "tt3",
-            Title = "Series",
-            MediaCategory = MediaCategory.TvShow,
-        };
-
-        var app = MovieMapper.ToApp(imdb);
-
-        Assert.Equal(MediaCategory.TvShow, app.MediaCategory);
-    }
-
-    [Fact]
     public void ToDto_Movie_DoesNotExposeMediaCategory()
     {
-        var movie = new MovieModel
+        var movie = new Movie
         {
             Id = "tt1",
             Title = "Test",

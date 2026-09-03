@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 import { extractWatchlistFromNextData } from "./extractWatchlistFromNextData";
-import type { ImportedWatchlist } from "./imdbImporter";
+import type { ExtractedWatchlistPage } from "./imdbImporter";
 
 const listPath = "/list/ls055592025/";
 const listOptions = {
@@ -12,7 +12,7 @@ const listOptions = {
   documentTitle: "Ignored when JSON has a name - IMDb",
 };
 
-/** Same shape the C# ImdbListHtmlParserTests use for a normal list page. */
+/** Shared fixture shape for a normal list page. */
 const listPageNextData = {
   props: {
     pageProps: {
@@ -124,8 +124,8 @@ const androidExtractScriptPath = resolve(
  */
 function runAndroidExtractScript(
   nextData: unknown,
-  options: { pathname: string; documentTitle: string }
-): ImportedWatchlist | null {
+  options: { pathname: string; documentTitle: string; currentUrl?: string }
+): ExtractedWatchlistPage | null {
   const script = readFileSync(androidExtractScriptPath, "utf8");
   const nextDataJson = JSON.stringify(nextData);
 
@@ -134,14 +134,19 @@ function runAndroidExtractScript(
     getElementById: (id: string) =>
       id === "__NEXT_DATA__" ? { textContent: nextDataJson } : null,
   };
-  const fakeLocation = { pathname: options.pathname };
+  const fakeLocation = {
+    pathname: options.pathname,
+    href:
+      options.currentUrl ??
+      `https://www.imdb.com${options.pathname}${options.pathname.endsWith("/") ? "" : "/"}`,
+  };
 
   const json = vm.runInNewContext(script, {
     document: fakeDocument,
     location: fakeLocation,
   }) as string | null;
 
-  return json ? (JSON.parse(json) as ImportedWatchlist) : null;
+  return json ? (JSON.parse(json) as ExtractedWatchlistPage) : null;
 }
 
 describe("extractWatchlistFromNextData", () => {
@@ -262,6 +267,41 @@ describe("extractWatchlistFromNextData", () => {
     };
 
     expect(extractWatchlistFromNextData(nextData, listOptions)).toBeNull();
+  });
+
+  it("reports pagination metadata", () => {
+    const nextData = {
+      props: {
+        pageProps: {
+          mainColumnData: {
+            list: {
+              name: { originalText: "Paged" },
+              titleListItemSearch: {
+                pageInfo: { hasNextPage: true },
+                edges: [
+                  {
+                    listItem: {
+                      id: "tt0133093",
+                      titleText: { text: "The Matrix" },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const watchlist = extractWatchlistFromNextData(nextData, {
+      ...listOptions,
+      currentUrl: "https://www.imdb.com/list/ls055592025/?ref_=fn_all",
+    });
+
+    expect(watchlist?.hasNextPage).toBe(true);
+    expect(watchlist?.nextPageUrl).toBe(
+      "https://www.imdb.com/list/ls055592025/?ref_=fn_all&page=2"
+    );
   });
 });
 

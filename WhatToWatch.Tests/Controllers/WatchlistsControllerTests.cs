@@ -1,9 +1,10 @@
 using ImdbWatchlists;
+using ImdbWatchlists.Extraction;
+using ImdbWatchlists.Models;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using WhatToWatch.Controllers;
 using WhatToWatch.DTOs;
-using WhatToWatch.Models;
 using WhatToWatch.Services;
 
 namespace WhatToWatch.Tests.Controllers;
@@ -121,18 +122,19 @@ public class WatchlistsControllerTests
     {
         _service
             .Setup(s => s.ImportFromImdbPayloadAsync(
-                It.IsAny<ImportImdbWatchlistRequest>(),
+                It.IsAny<ExtractedWatchlistPage>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateWatchlist("ls1"));
 
         var result = await CreateSut().ImportImdbWatchlistAsync(
-            new ImportImdbWatchlistRequest
+            new ExtractedWatchlistPage
             {
                 ListId = "ls1",
                 Title = "Sci-Fi",
+                HasNextPage = false,
                 Movies =
                 [
-                    new ImportImdbMovieRequest
+                    new ExtractedMoviePage
                     {
                         ImdbId = "tt1",
                         Title = "Film",

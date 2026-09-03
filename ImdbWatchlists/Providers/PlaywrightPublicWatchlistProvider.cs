@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ImdbWatchlists.Browser;
+using ImdbWatchlists.Extraction;
 using ImdbWatchlists.Models;
 using ImdbWatchlists.Options;
 using ImdbWatchlists.Parsing;
@@ -11,6 +12,7 @@ namespace ImdbWatchlists.Providers;
 
 public sealed class PlaywrightPublicWatchlistProvider(
     IBrowserManager browserManager,
+    IImdbPageExtractor pageExtractor,
     IOptions<ImdbWatchlistsOptions> options,
     ILogger<PlaywrightPublicWatchlistProvider> logger)
     : IWatchlistProvider
@@ -51,8 +53,12 @@ public sealed class PlaywrightPublicWatchlistProvider(
             for (var pageNumber = 1; pageNumber <= MaxPages; pageNumber++)
             {
                 var pageUrl = ImdbListUrl.WithPage(listUrl, pageNumber);
-                var html = await LoadAsync(page, pageUrl, cancellationToken);
-                var listPage = ImdbListHtmlParser.ParsePage(html, listUrl);
+                await NavigateAsync(page, pageUrl, cancellationToken);
+
+                var extracted = await pageExtractor
+                    .ExtractCurrentPageAsync(page, cancellationToken)
+                    .ConfigureAwait(false);
+                var listPage = ImdbExtractedPageMapper.ToListPage(extracted, listUrl, pageUrl);
 
                 watchlist ??= listPage.Watchlist;
 
@@ -130,7 +136,7 @@ public sealed class PlaywrightPublicWatchlistProvider(
             $"Playwright could not open a browser page for '{url}' after relaunching the browser.");
     }
 
-    private async Task<string> LoadAsync(
+    private async Task NavigateAsync(
         IPage page,
         string url,
         CancellationToken cancellationToken)
@@ -150,7 +156,7 @@ public sealed class PlaywrightPublicWatchlistProvider(
             if (response.Ok)
             {
                 await WaitForListDataAsync(page, url, response.Status, cancellationToken);
-                return await page.ContentAsync().WaitAsync(cancellationToken);
+                return;
             }
 
             if (response.Status == 403 && attempt < 3)

@@ -1,25 +1,16 @@
-import type { ImportedMovie, ImportedWatchlist } from "./imdbImporter";
+import type { ExtractedWatchlistPage, ExtractedMoviePage } from "./imdbImporter";
 
 export type ExtractOptions = {
   pathname?: string;
   documentTitle?: string;
+  currentUrl?: string;
 };
 
-/**
- * Normalizes IMDb `__NEXT_DATA__` into the app watchlist shape.
- *
- * Walks the whole tree (same strategy as ImdbListHtmlParser) instead of relying on a fixed path,
- * because IMDb nests list items differently across list / chart / watchlist renderers.
- *
- * Kept in TypeScript so it can be unit-tested. The WebView loads the matching IIFE from
- * `android/app/src/main/assets/imdb/extractWatchlist.js` — keep those two in sync
- * (the Vitest suite asserts they agree on the same fixtures).
- */
 export function extractWatchlistFromNextData(
   data: unknown,
   options: ExtractOptions = {}
-): ImportedWatchlist | null {
-  const movies: ImportedMovie[] = [];
+): ExtractedWatchlistPage | null {
+  const movies: ExtractedMoviePage[] = [];
   const seen = new Set<string>();
 
   visit(data, movies, seen);
@@ -28,17 +19,77 @@ export function extractWatchlistFromNextData(
     return null;
   }
 
-  const listId = options.pathname?.match(/(ls\d+)/)?.[1] ?? null;
+  const listId = extractListId(options.pathname);
   const title = findListName(data) ?? options.documentTitle ?? listId ?? "IMDb list";
+  const hasNextPage = readHasNextPage(data);
 
   return {
     listId: listId ?? title,
     title,
     movies,
+    hasNextPage,
+    nextPageUrl: hasNextPage ? buildNextPageUrl(options.currentUrl) : null,
   };
 }
 
-function visit(node: unknown, movies: ImportedMovie[], seen: Set<string>): void {
+function extractListId(pathname: string | undefined): string | null {
+  const list = pathname?.match(/\/list\/(ls\d+)/i);
+  if (list?.[1]) return list[1];
+
+  const watchlist = pathname?.match(
+    /\/user\/((?:ur\d+|p\.[a-z0-9]+))\/watchlist/i
+  );
+  if (watchlist?.[1]) return watchlist[1];
+
+  const chart = pathname?.match(/\/chart\/([a-z0-9][a-z0-9-]*)/i);
+  return chart?.[1] ? `chart-${chart[1].toLowerCase()}` : null;
+}
+
+function buildNextPageUrl(currentUrl: string | undefined): string | null {
+  if (!currentUrl) return null;
+
+  try {
+    const url = new URL(currentUrl);
+    if (url.protocol !== "https:" || !/(^|\.)imdb\.com$/i.test(url.hostname)) {
+      return null;
+    }
+
+    const current = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+    url.searchParams.set(
+      "page",
+      String(Number.isFinite(current) && current > 0 ? current + 1 : 2)
+    );
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function readHasNextPage(node: unknown): boolean {
+  if (node == null || typeof node !== "object") return false;
+
+  if (Array.isArray(node)) {
+    return node.some((item) => readHasNextPage(item));
+  }
+
+  const record = node as Record<string, unknown>;
+
+  if (
+    record.titleListItemSearch &&
+    typeof record.titleListItemSearch === "object" &&
+    record.titleListItemSearch !== null
+  ) {
+    const search = record.titleListItemSearch as Record<string, unknown>;
+    const pageInfo = search.pageInfo;
+    if (pageInfo && typeof pageInfo === "object" && pageInfo !== null) {
+      return (pageInfo as { hasNextPage?: unknown }).hasNextPage === true;
+    }
+  }
+
+  return Object.values(record).some((value) => readHasNextPage(value));
+}
+
+function visit(node: unknown, movies: ExtractedMoviePage[], seen: Set<string>): void {
   if (node == null || typeof node !== "object") {
     return;
   }

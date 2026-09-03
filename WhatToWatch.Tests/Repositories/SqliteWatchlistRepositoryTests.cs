@@ -3,8 +3,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using WhatToWatch.Data;
 using WhatToWatch.Repositories;
-using MovieModel = WhatToWatch.Models.Movie;
-using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Tests.Repositories;
 
@@ -60,21 +58,21 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         {
             Movies =
             [
-                new MovieModel
+                new Movie
                 {
                     Id = "tt1",
                     Title = "Film",
                     Genres = ["Drama"],
                     MediaCategory = MediaCategory.Movie,
                 },
-                new MovieModel
+                new Movie
                 {
                     Id = "tt2",
                     Title = "Series",
                     Genres = ["Drama"],
                     MediaCategory = MediaCategory.TvShow,
                 },
-                new MovieModel
+                new Movie
                 {
                     Id = "tt3",
                     Title = "Unknown",
@@ -148,7 +146,7 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         var loaded = await repository.GetAsync("ls1");
 
         Assert.NotNull(loaded);
-        Assert.Equal(MediaCategory.Unknown, loaded.Movies.Single().MediaCategory);
+        Assert.Equal(MediaCategory.Movie, loaded.Movies.Single().MediaCategory);
     }
 
     [Fact]
@@ -233,7 +231,7 @@ public class SqliteWatchlistRepositoryTests : IDisposable
         _connection.Dispose();
     }
 
-    private static WatchlistModel CreateWatchlist(
+    private static Watchlist CreateWatchlist(
         string id,
         string name,
         string movieTitle = "The Matrix") =>
@@ -245,7 +243,7 @@ public class SqliteWatchlistRepositoryTests : IDisposable
             LastRefreshedAt = DateTimeOffset.Parse("2024-01-15T12:00:00Z"),
             Movies =
             [
-                new MovieModel
+                new Movie
                 {
                     Id = "tt0133093",
                     Title = movieTitle,

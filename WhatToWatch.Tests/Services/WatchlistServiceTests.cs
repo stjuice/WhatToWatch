@@ -1,10 +1,9 @@
 using ImdbWatchlists;
+using ImdbWatchlists.Extraction;
 using ImdbWatchlists.Models;
 using Moq;
 using WhatToWatch.Repositories;
 using WhatToWatch.Services;
-using MovieModel = WhatToWatch.Models.Movie;
-using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Tests.Services;
 
@@ -22,7 +21,7 @@ public class WatchlistServiceTests
     [Fact]
     public async Task GetWatchlistAsync_ReturnsWatchlist_WhenIdExists()
     {
-        var expected = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var expected = CreateWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
@@ -42,25 +41,25 @@ public class WatchlistServiceTests
     [Fact]
     public async Task GetWatchlistAsync_ReturnsMoviesOnly_WhenWatchlistContainsMixedTypes()
     {
-        var mixed = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow) with
+        var mixed = CreateWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow) with
         {
             Movies =
             [
-                new MovieModel
+                new Movie
                 {
                     Id = "tt1",
                     Title = "Movie",
                     MediaCategory = MediaCategory.Movie,
                     Genres = ["Drama"],
                 },
-                new MovieModel
+                new Movie
                 {
                     Id = "tt2",
                     Title = "Series",
                     MediaCategory = MediaCategory.TvShow,
                     Genres = ["Drama"],
                 },
-                new MovieModel
+                new Movie
                 {
                     Id = "tt3",
                     Title = "Legacy",
@@ -81,10 +80,10 @@ public class WatchlistServiceTests
     [Fact]
     public async Task GetWatchlistsAsync_ReturnsAllWatchlists()
     {
-        IReadOnlyCollection<WatchlistModel> expected =
+        IReadOnlyCollection<Watchlist> expected =
         [
-            CreateWatchlistModel("ls1", refreshedAt: DateTimeOffset.UtcNow),
-            CreateWatchlistModel("ls2", refreshedAt: DateTimeOffset.UtcNow),
+            CreateWatchlist("ls1", refreshedAt: DateTimeOffset.UtcNow),
+            CreateWatchlist("ls2", refreshedAt: DateTimeOffset.UtcNow),
         ];
         _repository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -102,7 +101,7 @@ public class WatchlistServiceTests
     [Fact]
     public async Task ImportAsync_ReturnsCached_WhenAlreadyStored()
     {
-        var cached = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var cached = CreateWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
             .ReturnsAsync(cached);
@@ -115,7 +114,7 @@ public class WatchlistServiceTests
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<Watchlist>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -124,7 +123,7 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WatchlistModel?)null);
+            .ReturnsAsync((Watchlist?)null);
         _imdb
             .Setup(i => i.GetListAsync(
                 It.Is<WatchlistRequest>(r => r.Url == ListUrl),
@@ -138,7 +137,7 @@ public class WatchlistServiceTests
         Assert.Single(result.Movies);
         _repository.Verify(
             r => r.SaveAsync(
-                It.Is<WatchlistModel>(w => w.Id == ListId && w.Movies.Count == 1),
+                It.Is<Watchlist>(w => w.Id == ListId && w.Movies.Count == 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -148,7 +147,7 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetByUrlAsync(ListUrl, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WatchlistModel?)null);
+            .ReturnsAsync((Watchlist?)null);
         _imdb
             .Setup(i => i.GetListAsync(
                 It.IsAny<WatchlistRequest>(),
@@ -174,10 +173,10 @@ public class WatchlistServiceTests
                 ],
             });
 
-        WatchlistModel? saved = null;
+        Watchlist? saved = null;
         _repository
-            .Setup(r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()))
-            .Callback<WatchlistModel, CancellationToken>((watchlist, _) => saved = watchlist)
+            .Setup(r => r.SaveAsync(It.IsAny<Watchlist>(), It.IsAny<CancellationToken>()))
+            .Callback<Watchlist, CancellationToken>((watchlist, _) => saved = watchlist)
             .Returns(Task.CompletedTask);
 
         var result = await CreateSut().ImportAsync(ListUrl);
@@ -191,7 +190,7 @@ public class WatchlistServiceTests
     [Fact]
     public async Task ImportAsync_ReturnsCachedWithoutScraping_WhenStoredCopyIsOld()
     {
-        var old = CreateWatchlistModel(
+        var old = CreateWatchlist(
             ListId,
             refreshedAt: DateTimeOffset.UtcNow - TimeSpan.FromDays(400));
         _repository
@@ -205,14 +204,14 @@ public class WatchlistServiceTests
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<Watchlist>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
     public async Task RefreshWatchlistAsync_CallsImdbWatchlistsAndPersistsResult()
     {
-        var existing = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var existing = CreateWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -230,14 +229,14 @@ public class WatchlistServiceTests
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _repository.Verify(
-            r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<Watchlist>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
     public async Task RefreshWatchlistAsync_UsesPublicAccess_ForMvp()
     {
-        var existing = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var existing = CreateWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -261,7 +260,7 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WatchlistModel?)null);
+            .ReturnsAsync((Watchlist?)null);
 
         var result = await CreateSut().RefreshWatchlistAsync(ListId);
 
@@ -276,17 +275,18 @@ public class WatchlistServiceTests
     {
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WatchlistModel?)null);
+            .ReturnsAsync((Watchlist?)null);
 
         var result = await CreateSut().ImportFromImdbPayloadAsync(
-            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
+            new ExtractedWatchlistPage
             {
                 ListId = ListId,
                 Title = "Sci-Fi",
                 Url = ListUrl,
+                HasNextPage = false,
                 Movies =
                 [
-                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    new ExtractedMoviePage
                     {
                         ImdbId = "tt0133093",
                         Title = "The Matrix",
@@ -299,7 +299,7 @@ public class WatchlistServiceTests
                         Genres = ["Action", "Sci-Fi"],
                         TitleType = "movie",
                     },
-                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    new ExtractedMoviePage
                     {
                         ImdbId = "tt0133093",
                         Title = "The Matrix Duplicate",
@@ -319,7 +319,7 @@ public class WatchlistServiceTests
         Assert.Equal(["Action", "Sci-Fi"], movie.Genres);
         _repository.Verify(
             r => r.SaveAsync(
-                It.Is<WatchlistModel>(w => w.Id == ListId && w.Movies.Count == 1),
+                It.Is<Watchlist>(w => w.Id == ListId && w.Movies.Count == 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         _imdb.Verify(
@@ -330,23 +330,24 @@ public class WatchlistServiceTests
     [Fact]
     public async Task ImportFromImdbPayloadAsync_TreatsTypelessTitlesAsMovies()
     {
-        WatchlistModel? saved = null;
+        Watchlist? saved = null;
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WatchlistModel?)null);
+            .ReturnsAsync((Watchlist?)null);
         _repository
-            .Setup(r => r.SaveAsync(It.IsAny<WatchlistModel>(), It.IsAny<CancellationToken>()))
-            .Callback<WatchlistModel, CancellationToken>((watchlist, _) => saved = watchlist)
+            .Setup(r => r.SaveAsync(It.IsAny<Watchlist>(), It.IsAny<CancellationToken>()))
+            .Callback<Watchlist, CancellationToken>((watchlist, _) => saved = watchlist)
             .Returns(Task.CompletedTask);
 
         var result = await CreateSut().ImportFromImdbPayloadAsync(
-            new WhatToWatch.DTOs.ImportImdbWatchlistRequest
+            new ExtractedWatchlistPage
             {
                 ListId = ListId,
                 Title = "Sci-Fi",
+                HasNextPage = false,
                 Movies =
                 [
-                    new WhatToWatch.DTOs.ImportImdbMovieRequest
+                    new ExtractedMoviePage
                     {
                         ImdbId = "tt0133093",
                         Title = "The Matrix",
@@ -364,7 +365,7 @@ public class WatchlistServiceTests
     [Fact]
     public async Task UpdateWatchlistAsync_RenamesExistingWatchlist()
     {
-        var existing = CreateWatchlistModel(ListId, refreshedAt: DateTimeOffset.UtcNow);
+        var existing = CreateWatchlist(ListId, refreshedAt: DateTimeOffset.UtcNow);
         _repository
             .Setup(r => r.GetAsync(ListId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -377,7 +378,7 @@ public class WatchlistServiceTests
         Assert.Equal("Renamed", result.Name);
         _repository.Verify(
             r => r.SaveAsync(
-                It.Is<WatchlistModel>(w => w.Id == ListId && w.Name == "Renamed"),
+                It.Is<Watchlist>(w => w.Id == ListId && w.Name == "Renamed"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -395,7 +396,7 @@ public class WatchlistServiceTests
             Times.Once);
     }
 
-    private static WatchlistModel CreateWatchlistModel(
+    private static Watchlist CreateWatchlist(
         string id,
         DateTimeOffset? refreshedAt) =>
         new()
@@ -406,7 +407,7 @@ public class WatchlistServiceTests
             LastRefreshedAt = refreshedAt,
             Movies =
             [
-                new MovieModel
+                new Movie
                 {
                     Id = "tt1",
                     Title = "Cached Movie",

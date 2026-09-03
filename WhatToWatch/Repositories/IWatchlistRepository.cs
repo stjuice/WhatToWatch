@@ -1,4 +1,5 @@
-using WhatToWatch.Models;
+using ImdbWatchlists.Models;
+using WhatToWatch.Repositories;
 
 namespace WhatToWatch.Repositories;
 

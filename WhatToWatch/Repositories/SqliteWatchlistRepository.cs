@@ -1,15 +1,13 @@
 using ImdbWatchlists.Models;
 using Microsoft.EntityFrameworkCore;
 using WhatToWatch.Data;
-using MovieModel = WhatToWatch.Models.Movie;
-using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Repositories;
 
 public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
     : IWatchlistRepository
 {
-    public async Task<WatchlistModel?> GetAsync(
+    public async Task<Watchlist?> GetAsync(
         string id,
         CancellationToken cancellationToken = default)
     {
@@ -24,7 +22,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
         return entity is null ? null : ToModel(entity);
     }
 
-    public async Task<WatchlistModel?> GetByUrlAsync(
+    public async Task<Watchlist?> GetByUrlAsync(
         string url,
         CancellationToken cancellationToken = default)
     {
@@ -47,7 +45,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
             : await GetAsync(match.Id, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyCollection<WatchlistModel>> GetAllAsync(
+    public async Task<IReadOnlyCollection<Watchlist>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
         var entities = await db.Watchlists
@@ -61,7 +59,7 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
     }
 
     public async Task SaveAsync(
-        WatchlistModel watchlist,
+        Watchlist watchlist,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(watchlist);
@@ -140,14 +138,14 @@ public sealed class SqliteWatchlistRepository(WhatToWatchDbContext db)
     private static string NormalizeUrl(string url) =>
         url.Trim().TrimEnd('/').ToLowerInvariant();
 
-    private static WatchlistModel ToModel(WatchlistEntity entity) => new()
+    private static Watchlist ToModel(WatchlistEntity entity) => new()
     {
         Id = entity.Id,
         Name = entity.Name,
         Url = entity.Url,
         LastRefreshedAt = entity.LastRefreshedAt,
         Movies = [.. entity.Movies
-            .Select(movie => new MovieModel
+            .Select(movie => new Movie
             {
                 Id = movie.Id,
                 Title = movie.Title,

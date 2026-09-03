@@ -1,3 +1,4 @@
+using ImdbWatchlists.Models;
 using WhatToWatch.Media;
 using WhatToWatch.Models;
 using WhatToWatch.Repositories;

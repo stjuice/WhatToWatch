@@ -3,8 +3,6 @@ using Moq;
 using WhatToWatch.Models;
 using WhatToWatch.Repositories;
 using WhatToWatch.Services;
-using MovieModel = WhatToWatch.Models.Movie;
-using WatchlistModel = WhatToWatch.Models.Watchlist;
 
 namespace WhatToWatch.Tests.Services;
 
@@ -54,7 +52,7 @@ public class MovieServiceTests
             {
                 Movies =
                 [
-                    new MovieModel
+                    new Movie
                     {
                         Id = "tt99",
                         Title = "Breaking Bad",
@@ -94,7 +92,7 @@ public class MovieServiceTests
             {
                 Movies =
                 [
-                    new MovieModel
+                    new Movie
                     {
                         Id = "tt1",
                         Title = "The Matrix",
@@ -103,7 +101,7 @@ public class MovieServiceTests
                         Genres = ["Action"],
                         MediaCategory = MediaCategory.Movie,
                     },
-                    new MovieModel
+                    new Movie
                     {
                         Id = "tt2",
                         Title = "Breaking Bad",
@@ -112,7 +110,7 @@ public class MovieServiceTests
                         Genres = ["Drama"],
                         MediaCategory = MediaCategory.TvShow,
                     },
-                    new MovieModel
+                    new Movie
                     {
                         Id = "tt3",
                         Title = "Legacy",
@@ -137,7 +135,7 @@ public class MovieServiceTests
     {
         _repository
             .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((WatchlistModel?)null);
+            .ReturnsAsync((Watchlist?)null);
 
         Assert.Null(await CreateSut().GetMoviesAsync(new MovieFilter
         {
@@ -222,7 +220,7 @@ public class MovieServiceTests
                     Id = "ls2",
                     Movies =
                     [
-                        new MovieModel
+                        new Movie
                         {
                             Id = "tt9",
                             Title = "Other",
@@ -266,7 +264,7 @@ public class MovieServiceTests
             Times.Once);
     }
 
-    private static WatchlistModel CreateWatchlist() =>
+    private static Watchlist CreateWatchlist() =>
         new()
         {
             Id = WatchlistId,
@@ -275,7 +273,7 @@ public class MovieServiceTests
             LastRefreshedAt = DateTimeOffset.UtcNow,
             Movies =
             [
-                new MovieModel
+                new Movie
                 {
                     Id = "tt1",
                     Title = "The Matrix",
@@ -284,7 +282,7 @@ public class MovieServiceTests
                     Genres = ["Action", "Sci-Fi"],
                     MediaCategory = MediaCategory.Movie,
                 },
-                new MovieModel
+                new Movie
                 {
                     Id = "tt2",
                     Title = "Inception",
@@ -293,7 +291,7 @@ public class MovieServiceTests
                     Genres = ["Action", "Sci-Fi"],
                     MediaCategory = MediaCategory.Movie,
                 },
-                new MovieModel
+                new Movie
                 {
                     Id = "tt3",
                     Title = "Amelie",

@@ -1,6 +1,6 @@
+using ImdbWatchlists.Extraction;
 using ImdbWatchlists.Models;
 using ImdbWatchlists.Options;
-using ImdbWatchlists.Parsing;
 using ImdbWatchlists.Providers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Playwright;
@@ -22,6 +22,7 @@ public class ImdbWatchlistIntegrationTests(ImdbBrowserFixture fixture, ITestOutp
     {
         var provider = new PlaywrightPublicWatchlistProvider(
             await fixture.GetBrowserManagerAsync(),
+            new PlaywrightJsImdbPageExtractor(),
             Microsoft.Extensions.Options.Options.Create(new ImdbWatchlistsOptions()),
             NullLogger<PlaywrightPublicWatchlistProvider>.Instance);
 
@@ -77,8 +78,9 @@ public class ImdbWatchlistIntegrationTests(ImdbBrowserFixture fixture, ITestOutp
                     Timeout = 30_000,
                 });
 
-            var html = await page.ContentAsync();
-            var listPage = ImdbListHtmlParser.ParsePage(html, listUrl);
+            var extractor = new PlaywrightJsImdbPageExtractor();
+            var extracted = await extractor.ExtractCurrentPageAsync(page);
+            var listPage = ImdbExtractedPageMapper.ToListPage(extracted, listUrl, listUrl);
             var watchlist = listPage.Watchlist;
 
             output.WriteLine($"Name: {watchlist.Name}");
