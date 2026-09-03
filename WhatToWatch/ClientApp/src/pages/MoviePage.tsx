@@ -43,6 +43,7 @@ export const MoviePage = () => {
 
       <div>
         {fields.title && <h1 className="movie-detail__title">{fields.title}</h1>}
+        {fields.year && <p className="movie-detail__year">{fields.year}</p>}
         {fields.director && <p className="movie-detail__director">{fields.director}</p>}
       </div>
 

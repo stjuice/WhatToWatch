@@ -7,6 +7,7 @@ export const getImdbTitleUrl = (id: string): string =>
 
 export type MovieCoreFields = {
   title: string | null;
+  year: string | null;
   genres: string | null;
   duration: string | null;
   director: string | null;
@@ -37,13 +38,22 @@ export const formatRating = (rating?: number): string | null => {
   return rating.toFixed(1);
 };
 
+export const formatYear = (year?: number): string | null => {
+  if (year == null || Number.isNaN(year)) {
+    return null;
+  }
+
+  return String(year);
+};
+
 export const getMovieCoreFields = (
   movie: Pick<
     MovieDto,
-    "title" | "genres" | "runtimeMinutes" | "rating" | "director" | "plot"
+    "title" | "year" | "genres" | "runtimeMinutes" | "rating" | "director" | "plot"
   > | null
 ): MovieCoreFields => ({
   title: movie?.title ? movie.title : null,
+  year: formatYear(movie?.year),
   genres: formatGenres(movie?.genres),
   duration: formatRuntime(movie?.runtimeMinutes),
   director: movie?.director ? movie.director : null,

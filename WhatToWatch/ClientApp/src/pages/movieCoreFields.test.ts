@@ -4,6 +4,7 @@ import {
   formatGenres,
   formatRating,
   formatRuntime,
+  formatYear,
   getImdbTitleUrl,
   getMovieCoreFields,
 } from "./movieCoreFields";
@@ -50,9 +51,16 @@ describe("movie core fields", () => {
     expect(formatRating(undefined)).toBeNull();
   });
 
+  it("formats year as a string", () => {
+    expect(formatYear(1999)).toBe("1999");
+    expect(formatYear(undefined)).toBeNull();
+    expect(formatYear(Number.NaN)).toBeNull();
+  });
+
   it("exposes Title, Genres, duration, director, description, and rating when metadata exists", () => {
     expect(getMovieCoreFields(fullMovie)).toEqual({
       title: "The Matrix",
+      year: "1999",
       genres: "Action | Sci-Fi",
       duration: "2:16",
       director: "Lana Wachowski",
@@ -70,6 +78,7 @@ describe("movie core fields", () => {
       })
     ).toEqual({
       title: "Sparse Title",
+      year: null,
       genres: null,
       duration: null,
       director: null,
