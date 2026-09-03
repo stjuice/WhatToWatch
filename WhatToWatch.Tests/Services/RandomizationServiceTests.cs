@@ -93,4 +93,47 @@ public class RandomizationServiceTests
         Assert.NotNull(picked);
         Assert.Contains(Movies, movie => movie.Id == picked.Id);
     }
+
+    [Fact]
+    public void Shuffle_ReturnsPermutationWithoutChangingInput()
+    {
+        int[] input = [1, 2, 2, 3, 4, 5];
+
+        var result = _sut.Shuffle(input);
+
+        Assert.Equal(input.Order(), result.Order());
+        Assert.Equal([1, 2, 2, 3, 4, 5], input);
+    }
+
+    [Fact]
+    public void Shuffle_IsDeterministicForSeededRandom()
+    {
+        var first = new RandomizationService(new Random(42));
+        var second = new RandomizationService(new Random(42));
+        int[] input = [1, 2, 3, 4, 5, 6, 7, 8];
+
+        Assert.Equal(first.Shuffle(input), second.Shuffle(input));
+    }
+
+    [Fact]
+    public void Shuffle_DifferentSeedsProduceDifferentOrders()
+    {
+        var first = new RandomizationService(new Random(1));
+        var second = new RandomizationService(new Random(2));
+        int[] input = [1, 2, 3, 4, 5, 6, 7, 8];
+
+        Assert.False(first.Shuffle(input).SequenceEqual(second.Shuffle(input)));
+    }
+
+    [Fact]
+    public void Shuffle_ReturnsEmptyList_WhenInputIsEmpty()
+    {
+        Assert.Empty(_sut.Shuffle(Array.Empty<int>()));
+    }
+
+    [Fact]
+    public void Shuffle_ReturnsSingleElement_WhenInputHasOneElement()
+    {
+        Assert.Equal([42], _sut.Shuffle<int>([42]));
+    }
 }

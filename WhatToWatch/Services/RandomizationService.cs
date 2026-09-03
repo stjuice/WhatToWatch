@@ -6,6 +6,7 @@ namespace WhatToWatch.Services;
 public class RandomizationService(Random? random = null) : IRandomizationService
 {
     private readonly Random _random = random ?? Random.Shared;
+    private readonly object _randomLock = new();
 
     public IReadOnlyList<Movie> Filter(
         IEnumerable<Movie> movies,
@@ -58,5 +59,24 @@ public class RandomizationService(Random? random = null) : IRandomizationService
             return null;
 
         return movies[_random.Next(movies.Count)];
+    }
+
+    public IReadOnlyList<T> Shuffle<T>(IReadOnlyList<T> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+
+        var shuffled = items.ToArray();
+
+        lock (_randomLock)
+        {
+            for (var index = shuffled.Length - 1; index > 0; index--)
+            {
+                var swapIndex = _random.Next(index + 1);
+                (shuffled[index], shuffled[swapIndex]) =
+                    (shuffled[swapIndex], shuffled[index]);
+            }
+        }
+
+        return shuffled;
     }
 }

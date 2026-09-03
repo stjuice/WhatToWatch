@@ -10,4 +10,6 @@ public interface IRandomizationService
         MovieFilter filter);
 
     Movie? PickRandom(IReadOnlyList<Movie> movies);
+
+    IReadOnlyList<T> Shuffle<T>(IReadOnlyList<T> items);
 }
