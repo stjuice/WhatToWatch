@@ -10,6 +10,10 @@ public interface IMovieService
         string id,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<MovieReference>?> GetMovieSetAsync(
+        string? watchlistId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<Movie>?> GetMoviesAsync(
         MovieFilter filter,
         CancellationToken cancellationToken = default);

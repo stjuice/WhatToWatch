@@ -1,4 +1,5 @@
 using ImdbWatchlists.Models;
+using System.Threading;
 using WhatToWatch.Media;
 using WhatToWatch.Models;
 using WhatToWatch.Repositories;
@@ -33,12 +34,22 @@ public class MovieService(
     {
         ArgumentNullException.ThrowIfNull(filter);
 
-        var movies = await ResolveMoviesAsync(filter, cancellationToken).ConfigureAwait(false);
-        if (movies is null)
+        var movieSet = await ResolveMoviesAsync(
+            filter.WatchlistId,
+            cancellationToken).ConfigureAwait(false);
+
+        if (movieSet is null)
             return null;
+
+        var movies = movieSet.Select(reference => reference.Movie).ToArray();
 
         return randomizationService.Filter(movies, filter);
     }
+
+    public Task<IReadOnlyCollection<MovieReference>?> GetMovieSetAsync(
+        string? watchlistId,
+        CancellationToken cancellationToken = default) =>
+        ResolveMoviesAsync(watchlistId, cancellationToken);
 
     public async Task<Movie?> GetRandomMovieAsync(
         MovieFilter filter,
@@ -46,35 +57,50 @@ public class MovieService(
     {
         ArgumentNullException.ThrowIfNull(filter);
 
-        var movies = await ResolveMoviesAsync(filter, cancellationToken).ConfigureAwait(false);
-        if (movies is null)
+        var movieSet = await ResolveMoviesAsync(
+            filter.WatchlistId,
+            cancellationToken).ConfigureAwait(false);
+        if (movieSet is null)
             return null;
 
+        var movies = movieSet.Select(reference => reference.Movie).ToArray();
         var filtered = randomizationService.Filter(movies, filter);
+
         return randomizationService.PickRandom(filtered);
     }
 
-    private async Task<IReadOnlyCollection<Movie>?> ResolveMoviesAsync(
-        MovieFilter filter,
+    private async Task<IReadOnlyCollection<MovieReference>?> ResolveMoviesAsync(
+        string? watchlistId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(filter.WatchlistId))
-        {
-            var watchlists = await repository
-                .GetAllAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            return MediaCategoryRules.MoviesOnly(
-                watchlists.SelectMany(watchlist => watchlist.Movies));
-        }
+        if (string.IsNullOrWhiteSpace(watchlistId))
+            return await GetAllMovies(cancellationToken);
 
         var watchlist = await GetPopulatedWatchlistAsync(
-            filter.WatchlistId,
+            watchlistId,
             cancellationToken).ConfigureAwait(false);
 
-        return watchlist is null
-            ? null
-            : MediaCategoryRules.MoviesOnly(watchlist.Movies);
+        if (watchlist is null)
+            return null;
+
+        return
+            [
+                .. MediaCategoryRules.MoviesOnly(watchlist.Movies)
+                    .Select(movie => new MovieReference(watchlist.Id, movie)),
+            ];
+    }
+
+    private async Task<IReadOnlyCollection<MovieReference>?> GetAllMovies(CancellationToken cancellationToken)
+    {
+        var watchlists = await repository
+            .GetAllAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return
+            [
+                .. watchlists.SelectMany(watchlist =>MediaCategoryRules.MoviesOnly(watchlist.Movies)
+                    .Select(movie => new MovieReference(watchlist.Id, movie))),
+            ];
     }
 
     private async Task<Watchlist?> GetPopulatedWatchlistAsync(

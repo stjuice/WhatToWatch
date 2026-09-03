@@ -149,6 +149,99 @@ public class MovieServiceTests
     }
 
     [Fact]
+    public async Task GetMovieSetAsync_CarriesWatchlistIdForEveryMovie()
+    {
+        _repository
+            .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateWatchlist());
+
+        var movieSet = await CreateSut().GetMovieSetAsync(WatchlistId);
+
+        Assert.NotNull(movieSet);
+        Assert.Equal(3, movieSet.Count);
+        Assert.All(movieSet, reference =>
+            Assert.Equal(WatchlistId, reference.WatchlistId));
+    }
+
+    [Fact]
+    public async Task GetMovieSetAsync_SpansAllWatchlists_WhenWatchlistIdIsNull()
+    {
+        _repository
+            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                CreateWatchlist(),
+                CreateWatchlist() with
+                {
+                    Id = "ls2",
+                    Movies =
+                    [
+                        new Movie
+                        {
+                            Id = "tt9",
+                            Title = "Other",
+                            Genres = ["Drama"],
+                            MediaCategory = MediaCategory.Movie,
+                        },
+                    ],
+                },
+            ]);
+
+        var movieSet = await CreateSut().GetMovieSetAsync(null);
+
+        Assert.NotNull(movieSet);
+        Assert.Equal(4, movieSet.Count);
+        Assert.Equal(
+            [WatchlistId, WatchlistId, WatchlistId, "ls2"],
+            movieSet.Select(reference => reference.WatchlistId));
+        _repository.Verify(
+            r => r.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMovieSetAsync_ExcludesTvShows()
+    {
+        _repository
+            .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateWatchlist() with
+            {
+                Movies =
+                [
+                    new Movie
+                    {
+                        Id = "tt1",
+                        Title = "Movie",
+                        Genres = ["Drama"],
+                        MediaCategory = MediaCategory.Movie,
+                    },
+                    new Movie
+                    {
+                        Id = "tt2",
+                        Title = "TV show",
+                        Genres = ["Drama"],
+                        MediaCategory = MediaCategory.TvShow,
+                    },
+                ],
+            });
+
+        var movieSet = await CreateSut().GetMovieSetAsync(WatchlistId);
+
+        var reference = Assert.Single(movieSet!);
+        Assert.Equal("tt1", reference.Movie.Id);
+    }
+
+    [Fact]
+    public async Task GetMovieSetAsync_ReturnsNull_WhenWatchlistMissing()
+    {
+        _repository
+            .Setup(r => r.GetAsync(WatchlistId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Watchlist?)null);
+
+        Assert.Null(await CreateSut().GetMovieSetAsync(WatchlistId));
+    }
+
+    [Fact]
     public async Task GetMoviesAsync_RefreshesFromImdb_WhenStoredWatchlistHasNoMovies()
     {
         _repository
