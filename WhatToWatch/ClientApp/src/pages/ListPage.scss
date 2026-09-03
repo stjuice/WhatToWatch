@@ -9,10 +9,6 @@
   margin-bottom: auto;
 }
 
-.app__main:has(.list-page--expanded) {
-  justify-content: flex-start;
-}
-
 .list-page__status {
   margin: 0;
   color: $text-muted;
