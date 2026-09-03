@@ -1,6 +1,5 @@
 import { registerPlugin } from "@capacitor/core";
 
-/** Wire format shared by the JS extractor, native import, and POST /api/watchlists/import-imdb. */
 export interface ExtractedMoviePage {
   imdbId: string;
   title: string;

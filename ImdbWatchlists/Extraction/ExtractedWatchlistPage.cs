@@ -35,6 +35,5 @@ public sealed record ExtractedWatchlistPage
 
     public string? NextPageUrl { get; init; }
 
-    /// <summary>Optional source URL (native import). Ignored during server-side page extraction.</summary>
     public string? Url { get; init; }
 }

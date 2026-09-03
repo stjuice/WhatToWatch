@@ -17,7 +17,6 @@ export const createImdbImportStrategy = (): IImdbImportStrategy => {
   return cachedStrategy;
 };
 
-/** Test hook to reset the cached strategy between Vitest cases. */
 export const resetImdbImportStrategy = (): void => {
   cachedStrategy = null;
 };

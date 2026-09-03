@@ -135,5 +135,4 @@ export const getMovie = async (id: string, watchlistId: string): Promise<MovieDt
   );
 };
 
-/** Legacy name kept for call sites that still import by URL via the server. */
 export const importWatchlist = importWatchlistByUrl;
