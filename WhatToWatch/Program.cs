@@ -27,6 +27,8 @@ builder.Services.Configure<WhatToWatchOptions>(options =>
     if (!string.IsNullOrWhiteSpace(resolved))
         options.AdminApiKey = resolved;
 });
+builder.Services.Configure<PartyOptions>(
+    builder.Configuration.GetSection($"{WhatToWatchOptions.SectionName}:Party"));
 
 var whatToWatchOptions = builder.Configuration
     .GetSection(WhatToWatchOptions.SectionName)
@@ -48,6 +50,8 @@ builder.Services.AddDbContext<WhatToWatchDbContext>(options =>
     options.UseSqlite(whatToWatchOptions.ConnectionString));
 builder.Services.AddScoped<IWatchlistRepository, SqliteWatchlistRepository>();
 builder.Services.AddImdbWatchlists(builder.Configuration);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<JoinCodeGenerator>();
 builder.Services.AddSingleton<IRandomizationService, RandomizationService>();
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IWatchlistService, WatchlistService>();
