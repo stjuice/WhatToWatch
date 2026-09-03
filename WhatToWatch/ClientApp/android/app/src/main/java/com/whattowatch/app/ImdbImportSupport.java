@@ -14,8 +14,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -140,23 +140,22 @@ final class ImdbImportSupport {
             return false;
         }
 
-        Uri uri = Uri.parse(url.trim());
-        String scheme = uri.getScheme();
-        if (scheme == null) {
+        try {
+            URI uri = new URI(url.trim());
+            String scheme = uri.getScheme();
+            if (scheme == null || !"https".equalsIgnoreCase(scheme)) {
+                return false;
+            }
+
+            String host = uri.getHost();
+            if (host == null) {
+                return false;
+            }
+
+            return host.equalsIgnoreCase("imdb.com") || host.endsWith(".imdb.com");
+        } catch (Exception e) {
             return false;
         }
-
-        String host = uri.getHost();
-        if (host == null) {
-            return false;
-        }
-
-        String normalizedScheme = scheme.toLowerCase(Locale.US);
-        if (!"https".equals(normalizedScheme)) {
-            return false;
-        }
-
-        return host.equalsIgnoreCase("imdb.com") || host.endsWith(".imdb.com");
     }
 
     static final class PageData {
