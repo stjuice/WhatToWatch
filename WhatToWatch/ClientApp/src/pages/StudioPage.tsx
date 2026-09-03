@@ -165,7 +165,7 @@ export const StudioPage = () => {
           </button>
           <p className="studio__status">
             Same key as on the server. If <code>ADMIN_API_KEY</code> is not set on Render,
-            use <code>dev-admin-key</code>.
+            use <code>admin</code>.
           </p>
         </form>
         {error ? (
