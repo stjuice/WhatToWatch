@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import popcornFull from "../assets/popcorn-full.svg";
+import { MainButton } from "../components/MainButton";
 import { WatchlistBucket } from "../components/WatchlistBucket";
 import { useViewportZoom } from "../hooks/useViewportZoom";
 import { text } from "../i18n/text";
-import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import "./HomePage.scss";
@@ -29,18 +28,16 @@ export const HomePage = () => {
 
   return (
     <div className="public-home">
-      <Button
-        variant="icon"
+      <MainButton
+        size="large"
+        label={text("home.randomAllAria")}
         className="public-home__random"
         onClick={() => {
           void handleRandomAll();
         }}
         disabled={isPicking || watchlists.length === 0}
         aria-busy={isPicking}
-        aria-label={text("home.randomAllAria")}
-      >
-        <img src={popcornFull} alt="" draggable={false} />
-      </Button>
+      />
 
       <p className="public-home__hint">{text("home.randomAll")}</p>
 

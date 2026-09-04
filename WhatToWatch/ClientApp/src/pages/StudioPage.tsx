@@ -9,6 +9,7 @@ import {
   deleteWatchlist,
   updateWatchlist,
 } from "../api/moviesApi";
+import { Button } from "../primitives/Button";
 import { ImdbImportService } from "../services/imdbImportService";
 import { useAppState } from "../state/AppStateContext";
 import type { WatchlistDto } from "../types/movie";
@@ -160,9 +161,9 @@ export const StudioPage = () => {
             value={adminKey}
             onChange={(event) => setAdminKeyInput(event.target.value)}
           />
-          <button className="studio__button" type="submit">
+          <Button className="studio__button" variant="plain" type="submit">
             Sign in
-          </button>
+          </Button>
           <p className="studio__status">
             Same key as on the server. If <code>ADMIN_API_KEY</code> is not set on Render,
             use <code>admin</code>.
@@ -181,9 +182,13 @@ export const StudioPage = () => {
     <div className="studio">
       <div className="studio__header">
         <h1 className="studio__title">Studio</h1>
-        <button className="studio__button studio__button--ghost" type="button" onClick={handleLogout}>
+        <Button
+          className="studio__button studio__button--ghost"
+          variant="plain"
+          onClick={handleLogout}
+        >
           Sign out
-        </button>
+        </Button>
       </div>
 
       <section className="studio__panel">
@@ -198,16 +203,16 @@ export const StudioPage = () => {
           aria-label="IMDb list URL"
         />
         <div className="studio__actions">
-          <button
+          <Button
             className="studio__button"
-            type="button"
+            variant="plain"
             disabled={isBusy || !url.trim()}
             onClick={() => {
               void handleImport();
             }}
           >
             {hasNativeImporter ? "Import from IMDb" : "Import (server)"}
-          </button>
+          </Button>
         </div>
         {importLog.length > 0 ? (
           <div className="studio__log" role="status" aria-live="polite">
@@ -232,24 +237,24 @@ export const StudioPage = () => {
                     onChange={(event) => setEditingName(event.target.value)}
                     disabled={isBusy}
                   />
-                  <button
+                  <Button
                     className="studio__button"
-                    type="button"
+                    variant="plain"
                     disabled={isBusy}
                     onClick={() => {
                       void handleSaveName(list.id);
                     }}
                   >
                     Save
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="studio__button studio__button--ghost"
-                    type="button"
+                    variant="plain"
                     disabled={isBusy}
                     onClick={() => setEditingId(null)}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -260,9 +265,9 @@ export const StudioPage = () => {
                     </span>
                   </div>
                   <div className="studio__list-actions">
-                    <button
+                    <Button
                       className="studio__button studio__button--ghost"
-                      type="button"
+                      variant="plain"
                       disabled={isBusy}
                       onClick={() => {
                         setEditingId(list.id);
@@ -270,27 +275,27 @@ export const StudioPage = () => {
                       }}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className="studio__button studio__button--ghost"
-                      type="button"
+                      variant="plain"
                       disabled={isBusy}
                       onClick={() => {
                         void handleRefresh(list);
                       }}
                     >
                       Refresh
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className="studio__button studio__button--danger"
-                      type="button"
+                      variant="plain"
                       disabled={isBusy}
                       onClick={() => {
                         void handleDelete(list);
                       }}
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}

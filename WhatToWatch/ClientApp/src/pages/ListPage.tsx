@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getWatchlist } from "../api/moviesApi";
 import listFrameLong from "../assets/list-frame-long.svg";
 import listFrameShort from "../assets/list-frame-short.svg";
-import popcornFull from "../assets/popcorn-full.svg";
+import { MainButton } from "../components/MainButton";
 import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
 import { routePaths } from "../routes/routePaths";
@@ -110,8 +110,8 @@ export const ListPage = () => {
               {headline.subtitle ? (
                 <p className="list-page__subtitle">{headline.subtitle}</p>
               ) : null}
-              <button
-                type="button"
+              <Button
+                variant="plain"
                 className="list-page__count"
                 onClick={() => {
                   setExpanded((open) => !open);
@@ -120,7 +120,7 @@ export const ListPage = () => {
                 aria-label={text(expanded ? "list.collapseAria" : "list.expandAria")}
               >
                 {text("list.movieCount", { count: movieCount })}
-              </button>
+              </Button>
 
               {expanded ? (
                 <ul className="list-page__movies">
@@ -134,18 +134,16 @@ export const ListPage = () => {
             </div>
           </div>
 
-          <Button
-            variant="icon"
+          <MainButton
+            size="middle"
+            label={text("list.randomAria", { name: watchlist.name })}
             className="list-page__random"
             onClick={() => {
               void handleRandom();
             }}
             disabled={isPicking || movieCount === 0}
             aria-busy={isPicking}
-            aria-label={text("list.randomAria", { name: watchlist.name })}
-          >
-            <img src={popcornFull} alt="" draggable={false} />
-          </Button>
+          />
 
           {pickError ? (
             <p className="list-page__error" role="alert">
