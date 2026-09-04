@@ -1,6 +1,6 @@
 /**
- * Title labels sit inside a fixed-size frame on the popcorn bucket, so the font size
- * has to shrink until the text fits instead of the frame growing with the title.
+ * Labels sit inside fixed-size pill frames, so the font size has to shrink
+ * until the text fits instead of allowing the frame to grow with the label.
  */
 export type LabelFrame = {
   widthRem: number;
@@ -23,18 +23,25 @@ export const LARGE_LABEL_FRAME: LabelFrame = {
   minFontRem: 1.05,
 };
 
-/** Measured average glyph width of Lobster for Cyrillic titles, expressed in em. */
+export const WIDE_LABEL_FRAME: LabelFrame = {
+  widthRem: 12.5,
+  heightRem: 4.25,
+  maxFontRem: 2.2,
+  minFontRem: 1,
+};
+
+/** Measured average glyph width of Lobster for Cyrillic labels, expressed in em. */
 const AVG_CHAR_WIDTH_EM = 0.53;
 const LINE_HEIGHT = 1.08;
-/** Frame padding plus border, mirroring WatchlistBucket.scss. */
+/** Frame padding plus border, mirroring LabelPill.scss. */
 const INSET_X_REM = 0.95;
 const INSET_Y_REM = 0.6;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
 
-export const fitLabelFontRem = (title: string, frame: LabelFrame): number => {
-  const words = title.trim().split(/\s+/).filter(Boolean);
+export const fitLabelFontRem = (label: string, frame: LabelFrame): number => {
+  const words = label.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) {
     return frame.maxFontRem;
   }

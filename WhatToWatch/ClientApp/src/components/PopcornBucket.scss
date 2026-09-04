@@ -1,0 +1,28 @@
+.popcorn-bucket {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.popcorn-bucket:active {
+  transform: scale(0.97);
+}
+
+.popcorn-bucket:focus-visible {
+  border-radius: 0.75rem;
+}
+
+.popcorn-bucket__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.popcorn-bucket__label {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   COMPACT_LABEL_FRAME,
   LARGE_LABEL_FRAME,
+  WIDE_LABEL_FRAME,
   fitLabelFontRem,
-} from "./watchlistBucketLabel";
+} from "./labelPill";
 
-describe("watchlist bucket label", () => {
+describe("label pill", () => {
   it("uses the largest font for short titles", () => {
     expect(fitLabelFontRem("Хорори", COMPACT_LABEL_FRAME)).toBe(COMPACT_LABEL_FRAME.maxFontRem);
   });
@@ -52,5 +53,13 @@ describe("watchlist bucket label", () => {
 
   it("falls back to the maximum font for blank titles", () => {
     expect(fitLabelFontRem("   ", COMPACT_LABEL_FRAME)).toBe(COMPACT_LABEL_FRAME.maxFontRem);
+  });
+
+  it("fits the party label inside the wide frame", () => {
+    const font = fitLabelFontRem("Оберемо разом", WIDE_LABEL_FRAME);
+
+    expect(font).toBeGreaterThanOrEqual(WIDE_LABEL_FRAME.minFontRem);
+    expect(font).toBeLessThanOrEqual(WIDE_LABEL_FRAME.maxFontRem);
+    expect(font).toBeGreaterThan(fitLabelFontRem("Оберемо разом", COMPACT_LABEL_FRAME));
   });
 });

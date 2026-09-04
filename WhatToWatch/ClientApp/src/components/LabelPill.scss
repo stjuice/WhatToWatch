@@ -1,0 +1,23 @@
+@use "../styles/variables" as *;
+
+%pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.7rem;
+  background: #fff;
+  border: 4px solid $frame-red;
+  border-radius: 999px;
+}
+
+.label-pill {
+  @extend %pill;
+}
+
+.label-pill__text {
+  font-family: $font-label;
+  color: #111;
+  line-height: 1.08;
+  text-align: center;
+  overflow-wrap: break-word;
+}
