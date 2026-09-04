@@ -6,6 +6,8 @@ import listFrameShort from "../assets/list-frame-short.svg";
 import { MainButton } from "../components/MainButton";
 import { text } from "../i18n/text";
 import { Button } from "../primitives/Button";
+import { ErrorText } from "../primitives/ErrorText";
+import { StatusText } from "../primitives/StatusText";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import type { WatchlistDto } from "../types/movie";
@@ -38,18 +40,16 @@ export const ListPage = () => {
     const load = async () => {
       try {
         const list = await getWatchlist(id);
-        if (!cancelled) {
+        if (!cancelled)
           setWatchlist(list);
-        }
       } catch (err) {
         if (!cancelled) {
           setWatchlist(null);
           setError(err instanceof Error ? err.message : text("list.loadFailed"));
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled)
           setLoading(false);
-        }
       }
     };
 
@@ -60,13 +60,12 @@ export const ListPage = () => {
   }, [id, setActiveWatchlistId]);
 
   const handleRandom = async () => {
-    if (!id) {
+    if (!id)
       return;
-    }
+    
     const picked = await pickRandomMovie(id);
-    if (picked) {
+    if (picked)
       navigate(routePaths.movie);
-    }
   };
 
   const headline = watchlist ? splitWatchlistHeadline(watchlist.name) : null;
@@ -78,12 +77,10 @@ export const ListPage = () => {
         <img src={listFrameShort} alt="" />
         <img src={listFrameLong} alt="" />
       </div>
-      {loading ? <p className="list-page__status">{text("list.loading")}</p> : null}
-      {error ? (
-        <p className="list-page__error" role="alert">
-          {error}
-        </p>
+      {loading ? (
+        <StatusText className="list-page__status">{text("list.loading")}</StatusText>
       ) : null}
+      <ErrorText className="list-page__error">{error}</ErrorText>
 
       {watchlist && headline ? (
         <>
@@ -145,11 +142,7 @@ export const ListPage = () => {
             aria-busy={isPicking}
           />
 
-          {pickError ? (
-            <p className="list-page__error" role="alert">
-              {pickError}
-            </p>
-          ) : null}
+          <ErrorText className="list-page__error">{pickError}</ErrorText>
         </>
       ) : null}
     </div>

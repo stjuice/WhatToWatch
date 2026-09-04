@@ -8,8 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWatchlist } from "../api/moviesApi";
 import { RerollButton } from "../components/RerollButton";
 import { useViewportZoom } from "../hooks/useViewportZoom";
+import { text } from "../i18n/text";
 import { HomePage } from "../pages/HomePage";
 import { ListPage } from "../pages/ListPage";
+import { MoviePage } from "../pages/MoviePage";
 import { useAppState } from "../state/AppStateContext";
 import type { AppState } from "../state/AppStateContext";
 import type { WatchlistDto } from "../types/movie";
@@ -92,5 +94,43 @@ describe("existing Button call sites", () => {
     render(<RerollButton />);
 
     expect(screen.getByRole("button", { name: "Інший випадковий фільм" })).toBeTruthy();
+  });
+});
+
+describe("status and error text call sites", () => {
+  it("keeps the ListPage loading message", () => {
+    render(
+      <MemoryRouter initialEntries={["/list/weekend"]}>
+        <Routes>
+          <Route path="/list/:id" element={<ListPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText(text("list.loading"))).toBeTruthy();
+  });
+
+  it("keeps the ListPage pick error", async () => {
+    vi.mocked(useAppState).mockReturnValue(
+      createAppState({ pickError: "Could not choose a movie" })
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/list/weekend"]}>
+        <Routes>
+          <Route path="/list/:id" element={<ListPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Could not choose a movie");
+  });
+
+  it("keeps the MoviePage pick error", () => {
+    vi.mocked(useAppState).mockReturnValue(createAppState({ pickError: "Try again" }));
+
+    render(<MoviePage />);
+
+    expect(screen.getByRole("alert").textContent).toBe("Try again");
   });
 });

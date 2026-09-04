@@ -1,6 +1,7 @@
 import frame from "../assets/frame.svg";
 import placeholder from "../assets/placeholder.svg";
 import { text } from "../i18n/text";
+import { ErrorText } from "../primitives/ErrorText";
 import { useAppState } from "../state/AppStateContext";
 import { getImdbTitleUrl, getMovieCoreFields } from "./movieCoreFields";
 import "./MoviePage.scss";
@@ -12,6 +13,7 @@ export const MoviePage = () => {
   const posterAlt = movie?.title
     ? text("movie.posterAlt", { title: movie.title })
     : text("movie.posterAltFallback");
+    
   const poster = (
     <img
       className="movie-detail__poster"
@@ -63,11 +65,7 @@ export const MoviePage = () => {
         </p>
       )}
 
-      {pickError && (
-        <p className="movie-detail__error" role="alert">
-          {pickError}
-        </p>
-      )}
+      <ErrorText className="movie-detail__error">{pickError}</ErrorText>
     </div>
   );
 };
