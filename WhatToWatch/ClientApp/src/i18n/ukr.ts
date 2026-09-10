@@ -8,6 +8,16 @@ export const ukr = {
   "home.watchlists": "Всі списки",
   "home.party": "Оберемо разом",
 
+  "party.allMovies": "Всі фільми",
+  "party.watchlistCarousel": "Вибір списку фільмів",
+  "party.codeLabel": "Код гри",
+  "party.create": "Створити гру",
+  "party.join": "Приєднатися",
+  "party.errors.suggestion": "Не вдалося отримати код гри",
+  "party.errors.codeTaken": "Цей код уже зайнятий. Спробуйте новий код.",
+  "party.errors.invalidCode": "Гру з таким кодом не знайдено.",
+  "party.errors.action": "Не вдалося почати гру",
+
   "watchlists.randomAll": "Випадковий фільм з усіх списків",
   "watchlists.randomAllAria": "Випадковий фільм з усіх списків",
   "watchlists.loading": "Завантаження…",

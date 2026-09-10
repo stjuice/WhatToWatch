@@ -1,0 +1,65 @@
+@use "../styles/variables" as *;
+
+.party-start {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  overflow: hidden;
+}
+
+.party-start__carousel {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.5rem calc(50% - 8.5rem);
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  transition: opacity 180ms ease;
+}
+
+.party-start__carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.party-start__carousel--disabled {
+  opacity: 0.35;
+  overflow: hidden;
+}
+
+.party-start__choice {
+  flex: 0 0 17rem;
+  scroll-snap-align: center;
+}
+
+.party-start__code {
+  width: 9rem;
+  min-height: 3.5rem;
+  box-sizing: border-box;
+  border: 0.2rem solid $frame-red;
+  border-radius: 999px;
+  background: #fff;
+  color: $bg;
+  font-family: $font-label;
+  font-size: 2rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  padding: 0.35rem 0.35rem 0.35rem 0.7rem;
+  outline: none;
+}
+
+.party-start__code::placeholder {
+  color: rgba(36, 34, 33, 0.35);
+  opacity: 1;
+}
+
+.party-start__code:focus-visible {
+  box-shadow: 0 0 0 0.2rem $cyan;
+}
+
+.party-start__error {
+  margin: 0;
+}

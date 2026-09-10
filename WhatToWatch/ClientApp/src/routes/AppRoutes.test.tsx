@@ -64,12 +64,15 @@ describe("AppRoutes", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("link", { name: "Всі списки" }).getAttribute("href")).toBe(
-      routePaths.watchlists
-    );
+    const partyLink = screen.getByRole("link", { name: "Оберемо разом" });
+    const watchlistsLink = screen.getByRole("link", { name: "Всі списки" });
+
+    expect(partyLink.getAttribute("href")).toBe(routePaths.party);
+    expect(watchlistsLink.getAttribute("href")).toBe(routePaths.watchlists);
     expect(
-      screen.getByRole("link", { name: "Оберемо разом" }).getAttribute("href")
-    ).toBe(routePaths.party);
+      partyLink.compareDocumentPosition(watchlistsLink) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it("renders the watchlist grid and random button at /lists", () => {

@@ -1,21 +1,7 @@
-@use "../styles/variables" as *;
-
 .home-page {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
-}
-
-.home-page__bucket {
-  --home-bucket-label-center: #{$bucket-label-center};
-
-  width: min(100%, 17rem);
-}
-
-.home-page__bucket--party {
-  --home-bucket-label-center: #{$wide-bucket-label-center};
-
-  width: min(100%, 19rem);
+  gap: clamp(2rem, 6vh, 2.75rem);
 }

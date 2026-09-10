@@ -8,6 +8,7 @@ interface CommonPopcornBucketProps {
   art: string;
   label: string;
   ariaLabel?: string;
+  ariaPressed?: boolean;
   frame: LabelFrame;
   labelCenter: string;
   className?: string;
@@ -33,6 +34,7 @@ export const PopcornBucket = ({
   art,
   label,
   ariaLabel,
+  ariaPressed,
   frame,
   labelCenter,
   className,
@@ -43,6 +45,7 @@ export const PopcornBucket = ({
     variant="plain"
     className={["popcorn-bucket", className].filter(Boolean).join(" ")}
     aria-label={ariaLabel ?? label}
+    aria-pressed={ariaPressed}
   >
     <img
       className="popcorn-bucket__art"
