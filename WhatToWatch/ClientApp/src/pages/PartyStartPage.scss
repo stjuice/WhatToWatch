@@ -15,7 +15,7 @@
   align-items: center;
   gap: 0.75rem;
   overflow-x: auto;
-  padding: 0.5rem calc(50% - 8.5rem);
+  padding: 0.5rem calc(50% - 6.5rem);
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   transition: opacity 180ms ease;
@@ -31,8 +31,17 @@
 }
 
 .party-start__choice {
-  flex: 0 0 17rem;
+  flex: 0 0 13rem;
   scroll-snap-align: center;
+}
+
+.party-start__watchlist .popcorn-bucket__art {
+  width: min(100%, 8.5rem);
+  transition: width 180ms ease;
+}
+
+.party-start__watchlist--active .popcorn-bucket__art {
+  width: min(100%, 13rem);
 }
 
 .party-start__code {

@@ -5,10 +5,9 @@ import popcornFull from "../assets/popcorn-full.svg";
 import { ApiError } from "../api/http";
 import { createParty, joinParty, suggestPartyCode } from "../api/partyApi";
 import { setPartySession } from "../api/partySession";
-import "../components/WatchlistBucket.scss";
 import {
   COMPACT_LABEL_FRAME,
-  LARGE_LABEL_FRAME,
+  type LabelFrame,
 } from "../components/labelPill";
 import { PartyBucket } from "../components/PartyBucket";
 import { PopcornBucket } from "../components/PopcornBucket";
@@ -17,6 +16,13 @@ import { ErrorText } from "../primitives/ErrorText";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import "./PartyStartPage.scss";
+
+const ACTIVE_WATCHLIST_LABEL_FRAME: LabelFrame = {
+  widthRem: 9.25,
+  heightRem: 4,
+  maxFontRem: 1.9,
+  minFontRem: 0.9,
+};
 
 export const resolveCarouselActiveIndex = (
   viewportCenter: number,
@@ -168,12 +174,16 @@ export const PartyStartPage = () => {
               key={choice.id ?? "all"}
             >
               <PopcornBucket
-                className={`watchlist-bucket watchlist-bucket--${
-                  isActive ? "large" : "compact"
+                className={`party-start__watchlist${
+                  isActive ? " party-start__watchlist--active" : ""
                 }`}
                 art={popcornFull}
                 label={choice.name}
-                frame={isActive ? LARGE_LABEL_FRAME : COMPACT_LABEL_FRAME}
+                frame={
+                  isActive
+                    ? ACTIVE_WATCHLIST_LABEL_FRAME
+                    : COMPACT_LABEL_FRAME
+                }
                 labelCenter="58%"
                 disabled={isJoining}
                 ariaLabel={choice.name}
