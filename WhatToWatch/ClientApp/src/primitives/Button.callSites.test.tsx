@@ -9,9 +9,9 @@ import { getWatchlist } from "../api/moviesApi";
 import { RerollButton } from "../components/RerollButton";
 import { useViewportZoom } from "../hooks/useViewportZoom";
 import { text } from "../i18n/text";
-import { HomePage } from "../pages/HomePage";
 import { ListPage } from "../pages/ListPage";
 import { MoviePage } from "../pages/MoviePage";
+import { WatchlistsPage } from "../pages/WatchlistsPage";
 import { useAppState } from "../state/AppStateContext";
 import type { AppState } from "../state/AppStateContext";
 import type { WatchlistDto } from "../types/movie";
@@ -62,10 +62,10 @@ afterEach(() => {
 });
 
 describe("existing Button call sites", () => {
-  it("renders the HomePage random action", () => {
+  it("renders the WatchlistsPage random action", () => {
     render(
       <MemoryRouter>
-        <HomePage />
+        <WatchlistsPage />
       </MemoryRouter>
     );
 

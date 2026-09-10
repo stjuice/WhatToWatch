@@ -1,45 +1,21 @@
 @use "../styles/variables" as *;
 
-.public-home {
+.home-page {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-}
-
-.public-home__hint,
-.public-home__status {
-  margin: 0;
-  text-align: center;
-  color: $text-muted;
-  font-size: 0.95rem;
-}
-
-.public-home__error {
-  margin: 0;
-  text-align: center;
-  color: $red;
-}
-
-.public-home__lists {
-  list-style: none;
-  margin: 1.5rem 0 0;
-  padding: 0;
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem 0.75rem;
-  justify-items: center;
-}
-
-.public-home__lists--large {
-  grid-template-columns: minmax(0, 1fr);
   gap: 2rem;
 }
 
-.public-home__list-item {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+.home-page__bucket {
+  --home-bucket-label-center: #{$bucket-label-center};
+
+  width: min(100%, 17rem);
+}
+
+.home-page__bucket--party {
+  --home-bucket-label-center: #{$wide-bucket-label-center};
+
+  width: min(100%, 19rem);
 }

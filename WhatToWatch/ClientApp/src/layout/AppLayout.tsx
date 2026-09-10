@@ -8,16 +8,30 @@ import { AppRoutes } from "../routes/AppRoutes";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 
+export const resolveGestureBackFallback = (
+  pathname: string,
+  watchlistId: string | null
+): string => {
+  if (pathname === routePaths.movie)
+    return watchlistId ? routePaths.list(watchlistId) : routePaths.watchlists;
+
+  if (Boolean(matchPath(routePaths.listPattern, pathname)))
+    return routePaths.watchlists;
+
+  return routePaths.home;
+};
+
 export const AppLayout = () => {
   const { pathname } = useLocation();
   const { watchlistId } = useAppState();
   const isMovieScreen = pathname === routePaths.movie;
   const isListScreen = Boolean(matchPath(routePaths.listPattern, pathname));
+  const isWatchlistsScreen = pathname === routePaths.watchlists;
   const isStudio = pathname.startsWith(routePaths.studio);
 
   useGestureBack({
-    enabled: isListScreen || isMovieScreen,
-    fallbackTo: isMovieScreen && watchlistId ? routePaths.list(watchlistId) : routePaths.home,
+    enabled: isWatchlistsScreen || isListScreen || isMovieScreen,
+    fallbackTo: resolveGestureBackFallback(pathname, watchlistId),
   });
 
   return (

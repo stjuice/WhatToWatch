@@ -5,11 +5,14 @@
 export const ukr = {
   "nav.homeAria": "На головну",
 
-  "home.randomAll": "Випадковий фільм з усіх списків",
-  "home.randomAllAria": "Випадковий фільм з усіх списків",
-  "home.loading": "Завантаження…",
-  "home.empty": "Поки немає жодного списку.",
-  "home.openList": "Відкрити список {name}",
+  "home.watchlists": "Всі списки",
+  "home.party": "Оберемо разом",
+
+  "watchlists.randomAll": "Випадковий фільм з усіх списків",
+  "watchlists.randomAllAria": "Випадковий фільм з усіх списків",
+  "watchlists.loading": "Завантаження…",
+  "watchlists.empty": "Поки немає жодного списку.",
+  "watchlists.openList": "Відкрити список {name}",
 
   "list.loading": "Завантаження…",
   "list.notFound": "Список не знайдено",

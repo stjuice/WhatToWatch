@@ -1,0 +1,45 @@
+@use "../styles/variables" as *;
+
+.watchlists-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.watchlists-page__random {
+  width: min(100%, 18rem);
+}
+
+.watchlists-page__hint,
+.watchlists-page__status {
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.watchlists-page__error {
+  text-align: center;
+}
+
+.watchlists-page__lists {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 0.75rem;
+  justify-items: center;
+}
+
+.watchlists-page__lists--large {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+}
+
+.watchlists-page__list-item {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}

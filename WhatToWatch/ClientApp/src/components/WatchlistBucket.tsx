@@ -27,7 +27,7 @@ export const WatchlistBucket = ({ id, name, size }: WatchlistBucketProps) => {
       frame={frame}
       labelCenter="58%"
       to={routePaths.list(id)}
-      ariaLabel={text("home.openList", { name })}
+      ariaLabel={text("watchlists.openList", { name })}
     />
   );
 };
