@@ -161,6 +161,9 @@ export const PartyPlayPage = () => {
 
   return (
     <main className="party-play">
+      <p className="party-play__code">
+        {text("party.playCode", { code: state.joinCode })}
+      </p>
       {!state.opponentPresent || !state.opponentOnline ? (
         <StatusText className="party-play__presence">
           {text("party.waitingForOpponent")}

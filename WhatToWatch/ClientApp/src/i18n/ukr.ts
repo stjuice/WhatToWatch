@@ -24,6 +24,7 @@ export const ukr = {
   "party.errors.vote": "Не вдалося зберегти вибір.",
   "party.joining": "Приєднуємося до гри…",
   "party.loading": "Відновлюємо гру…",
+  "party.playCode": "Код гри: {code}",
   "party.waitingForOpponent": "Очікуємо іншого гравця…",
   "party.voteNo": "Ні",
   "party.voteYes": "Так",

@@ -4,6 +4,16 @@
   width: 100%;
 }
 
+.party-play__code {
+  margin: 0 0 0.35rem;
+  color: $cyan;
+  font-family: $font-display;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
 .party-play__presence {
   margin: 0 0 0.75rem;
   text-align: center;

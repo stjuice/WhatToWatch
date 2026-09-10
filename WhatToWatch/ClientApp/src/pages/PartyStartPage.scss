@@ -32,7 +32,15 @@
 
 .party-start__choice {
   flex: 0 0 13rem;
+  height: 18.25rem;
+  display: flex;
+  align-items: center;
   scroll-snap-align: center;
+}
+
+.party-start__watchlist {
+  height: 100%;
+  align-items: center;
 }
 
 .party-start__watchlist .popcorn-bucket__art {

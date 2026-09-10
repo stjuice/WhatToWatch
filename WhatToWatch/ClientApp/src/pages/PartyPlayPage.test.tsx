@@ -146,6 +146,7 @@ describe("PartyPlayPage", () => {
     await waitFor(() =>
       expect(getPartyState).toHaveBeenCalledWith("party-1", "token-1")
     );
+    expect(screen.getByText("Код гри: 1234")).toBeTruthy();
     expect(
       await screen.findByRole("heading", { name: "First Movie" })
     ).toBeTruthy();
