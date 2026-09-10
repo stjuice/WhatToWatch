@@ -3,11 +3,28 @@ import placeholder from "../assets/placeholder.svg";
 import { text } from "../i18n/text";
 import { ErrorText } from "../primitives/ErrorText";
 import { useAppState } from "../state/AppStateContext";
+import type { MovieDto } from "../types/movie";
 import { getImdbTitleUrl, getMovieCoreFields } from "./movieCoreFields";
 import "./MoviePage.scss";
 
-export const MoviePage = () => {
-  const { movie, isPicking, pickError } = useAppState();
+export interface MoviePageProps {
+  movie?: MovieDto | null;
+  showImdbLink?: boolean;
+}
+
+export const MoviePage = ({
+  movie: movieOverride,
+  showImdbLink = true,
+}: MoviePageProps = {}) => {
+  const {
+    movie: contextMovie,
+    isPicking: contextIsPicking,
+    pickError: contextPickError,
+  } = useAppState();
+  const usesContextMovie = movieOverride === undefined;
+  const movie = usesContextMovie ? contextMovie : movieOverride;
+  const isPicking = usesContextMovie && contextIsPicking;
+  const pickError = usesContextMovie ? contextPickError : null;
   const posterSrc = movie?.posterUrl || placeholder;
   const fields = getMovieCoreFields(movie);
   const posterAlt = movie?.title
@@ -26,7 +43,7 @@ export const MoviePage = () => {
     <div className="movie-detail">
       <div className="movie-detail__poster-stack" data-loading={isPicking}>
         <div className="movie-detail__window">
-          {movie?.id ? (
+          {movie?.id && showImdbLink ? (
             <a
               className="movie-detail__poster-link"
               href={getImdbTitleUrl(movie.id)}

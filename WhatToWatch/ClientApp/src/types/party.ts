@@ -12,7 +12,6 @@ export interface JoinPartyRequest {
 }
 
 export interface PartyVoteRequest {
-  watchlistId: string;
   movieId: string;
   liked: boolean;
 }

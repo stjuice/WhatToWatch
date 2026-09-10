@@ -90,7 +90,7 @@ public sealed class SqlitePartyRepository(WhatToWatchDbContext db) : IPartyRepos
     public async Task<PartyEntity> VoteAsync(
         string partyId,
         string playerToken,
-        string movieReference,
+        string movieId,
         bool liked,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
@@ -124,8 +124,12 @@ public sealed class SqlitePartyRepository(WhatToWatchDbContext db) : IPartyRepos
                     System.Text.Encoding.UTF8.GetBytes(playerToken))) 
                 ?? throw PartyException.InvalidPlayerToken();
 
-            if (player.CurrentIndex >= player.MovieOrder.Count
-                || player.MovieOrder[player.CurrentIndex] != movieReference)
+            if (player.CurrentIndex >= player.MovieOrder.Count)
+                throw PartyException.NotYourCurrentMovie();
+
+            var movieReference = player.MovieOrder[player.CurrentIndex];
+            var reference = PartyMovieReference.Decode(movieReference);
+            if (reference.MovieId != movieId)
                 throw PartyException.NotYourCurrentMovie();
 
             player.LastSeenAt = now;
@@ -133,8 +137,6 @@ public sealed class SqlitePartyRepository(WhatToWatchDbContext db) : IPartyRepos
 
             if (liked)
             {
-                var movieId = PartyMovieReference.Decode(movieReference).MovieId;
-
                 if (!party.Likes.Any(item => item.PlayerId == player.Id && item.MovieId == movieId))
                 {
                     party.Likes.Add(new PartyLikeEntity
@@ -151,7 +153,6 @@ public sealed class SqlitePartyRepository(WhatToWatchDbContext db) : IPartyRepos
 
                 if (likedByOther)
                 {
-                    var reference = PartyMovieReference.Decode(movieReference);
                     party.Status = PartyStatus.Matched;
                     party.MatchedMovieId = reference.MovieId;
                     party.MatchedWatchlistId = reference.WatchlistId;

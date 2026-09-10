@@ -28,12 +28,11 @@ public sealed class SqlitePartyRepositoryTests
             await using var db2 = new WhatToWatchDbContext(options);
             var repository1 = new SqlitePartyRepository(db1);
             var repository2 = new SqlitePartyRepository(db2);
-            var reference = PartyMovieReference.Encode("list", "tt1");
             var now = DateTimeOffset.UtcNow;
 
             var votes = await Task.WhenAll(
-                repository1.VoteAsync("party", "token-one", reference, true, now),
-                repository2.VoteAsync("party", "token-two", reference, true, now));
+                repository1.VoteAsync("party", "token-one", "tt1", true, now),
+                repository2.VoteAsync("party", "token-two", "tt1", true, now));
 
             Assert.Contains(votes, party => party.Status == PartyStatus.Matched);
             await using var verify = new WhatToWatchDbContext(options);

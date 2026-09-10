@@ -13,7 +13,6 @@ public sealed record JoinPartyRequest
 
 public sealed record PartyVoteRequest
 {
-    public required string WatchlistId { get; init; }
     public required string MovieId { get; init; }
     public bool Liked { get; init; }
 }

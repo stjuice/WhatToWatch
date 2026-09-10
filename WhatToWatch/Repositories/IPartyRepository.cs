@@ -13,7 +13,7 @@ public interface IPartyRepository
     Task<PartyEntity> VoteAsync(
         string partyId,
         string playerToken,
-        string movieReference,
+        string movieId,
         bool liked,
         DateTimeOffset now,
         CancellationToken cancellationToken = default);

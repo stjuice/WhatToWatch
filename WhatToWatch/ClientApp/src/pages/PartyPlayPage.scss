@@ -1,0 +1,52 @@
+@use "../styles/variables" as *;
+
+.party-play {
+  width: 100%;
+}
+
+.party-play__presence {
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.party-play__card {
+  position: relative;
+  width: 100%;
+}
+
+.party-play__vote {
+  position: absolute;
+  top: clamp(5.5rem, 31vw, 8.75rem);
+  z-index: 2;
+  width: clamp(3.25rem, 16vw, 4.75rem);
+  min-height: 0;
+  transform: translateY(-50%);
+}
+
+.party-play__vote--no {
+  left: 0;
+}
+
+.party-play__vote--yes {
+  right: 0;
+}
+
+.party-play__vote:disabled {
+  opacity: 0.55;
+}
+
+.party-play--terminal,
+.party-play--matched {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.party-play__heading {
+  margin: 0;
+  color: $cyan;
+  font-family: $font-display;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+}

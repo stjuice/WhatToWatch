@@ -178,8 +178,7 @@ public sealed class PartyService(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.WatchlistId)
-            || string.IsNullOrWhiteSpace(request.MovieId))
+        if (string.IsNullOrWhiteSpace(request.MovieId))
             throw PartyException.NotYourCurrentMovie();
 
         await CleanupAsync(cancellationToken).ConfigureAwait(false);
@@ -188,7 +187,7 @@ public sealed class PartyService(
         var party = await repository.VoteAsync(
             partyId,
             playerToken,
-            PartyMovieReference.Encode(request.WatchlistId, request.MovieId),
+            request.MovieId,
             request.Liked,
             now,
             cancellationToken).ConfigureAwait(false);

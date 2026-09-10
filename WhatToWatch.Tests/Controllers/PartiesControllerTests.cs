@@ -30,7 +30,6 @@ public sealed class PartiesControllerTests
     {
         var request = new PartyVoteRequest
         {
-            WatchlistId = "list",
             MovieId = "tt1",
             Liked = true,
         };

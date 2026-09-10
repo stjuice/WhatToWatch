@@ -133,7 +133,7 @@ public sealed class PartyServiceTests : IDisposable
         var state = await _sut.VoteAsync(
             session.PartyId,
             session.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = currentId, Liked = false });
+            new PartyVoteRequest { MovieId = currentId, Liked = false });
 
         Assert.Equal(1, state.Progress.CurrentIndex);
         Assert.Empty(await _db.PartyLikes.ToListAsync());
@@ -160,7 +160,7 @@ public sealed class PartyServiceTests : IDisposable
         var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.VoteAsync(
             session.PartyId,
             session.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt999", Liked = true }));
+            new PartyVoteRequest { MovieId = "tt999", Liked = true }));
 
         Assert.Equal("NotYourCurrentMovie", exception.Code);
         Assert.Equal(0, (await _db.PartyPlayers.SingleAsync()).CurrentIndex);
@@ -175,12 +175,12 @@ public sealed class PartyServiceTests : IDisposable
 
         var first = await _sut.VoteAsync(
             owner.PartyId, owner.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = true });
+            new PartyVoteRequest { MovieId = "tt1", Liked = true });
         Assert.Equal("Playing", first.Status);
 
         var matched = await _sut.VoteAsync(
             guest.PartyId, guest.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = true });
+            new PartyVoteRequest { MovieId = "tt1", Liked = true });
 
         Assert.Equal("Matched", matched.Status);
         Assert.Equal("tt1", matched.MatchedMovie!.Id);
@@ -189,7 +189,7 @@ public sealed class PartyServiceTests : IDisposable
 
         var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.VoteAsync(
             owner.PartyId, owner.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = true }));
+            new PartyVoteRequest { MovieId = "tt1", Liked = true }));
         Assert.Equal("AlreadyFinished", exception.Code);
     }
 
@@ -202,13 +202,13 @@ public sealed class PartyServiceTests : IDisposable
 
         var ownerState = await _sut.VoteAsync(
             owner.PartyId, owner.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = false });
+            new PartyVoteRequest { MovieId = "tt1", Liked = false });
         Assert.Equal("Playing", ownerState.Status);
         Assert.True(ownerState.Progress.IsExhausted);
 
         var guestState = await _sut.VoteAsync(
             guest.PartyId, guest.PlayerToken,
-            new PartyVoteRequest { WatchlistId = "list", MovieId = "tt1", Liked = false });
+            new PartyVoteRequest { MovieId = "tt1", Liked = false });
         Assert.Equal("Finished", guestState.Status);
     }
 
