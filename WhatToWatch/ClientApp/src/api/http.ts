@@ -34,26 +34,55 @@ export const clearAdminApiKey = (): void => {
   sessionStorage.removeItem(ADMIN_KEY_STORAGE);
 };
 
-const readErrorMessage = async (response: Response): Promise<string> => {
+type ErrorResponseBody = {
+  error?: unknown;
+  message?: unknown;
+  code?: unknown;
+};
+
+const readError = async (
+  response: Response
+): Promise<{ message: string; code?: string }> => {
   try {
     const body: unknown = await response.json();
-    if (
-      body &&
-      typeof body === "object" &&
-      "error" in body &&
-      typeof (body as { error: unknown }).error === "string"
-    ) {
-      return (body as { error: string }).error;
+    if (body && typeof body === "object") {
+      const { error, message, code } = body as ErrorResponseBody;
+      const serverMessage =
+        typeof error === "string"
+          ? error
+          : typeof message === "string"
+            ? message
+            : undefined;
+
+      return {
+        message:
+          serverMessage ??
+          (response.statusText || `Request failed (${response.status})`),
+        ...(typeof code === "string" ? { code } : {}),
+      };
     }
   } catch {
     // Fall through to status text.
   }
 
-  return response.statusText || `Request failed (${response.status})`;
+  return {
+    message: response.statusText || `Request failed (${response.status})`,
+  };
 };
+
+export class ApiError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
 
 export type RequestJsonOptions = RequestInit & {
   admin?: boolean;
+  playerToken?: string;
 };
 
 export const requestJson = async <T>(
@@ -74,7 +103,11 @@ export const requestJson = async <T>(
     headers["X-Admin-Key"] = key;
   }
 
-  const { admin: _admin, ...fetchInit } = init ?? {};
+  if (init?.playerToken) {
+    headers["X-Player-Token"] = init.playerToken;
+  }
+
+  const { admin: _admin, playerToken: _playerToken, ...fetchInit } = init ?? {};
   const method = (fetchInit.method ?? "GET").toUpperCase();
   const url = apiUrl(path);
   const startedAt = performance.now();
@@ -100,9 +133,9 @@ export const requestJson = async <T>(
   log(`← ${method} ${url} ${response.status} (${elapsedMs}ms)`);
 
   if (!response.ok) {
-    const message = await readErrorMessage(response);
+    const { message, code } = await readError(response);
     log(`✗ ${method} ${url} ${response.status}: ${message}`);
-    throw new Error(message);
+    throw new ApiError(message, code);
   }
 
   if (response.status === 204) {
