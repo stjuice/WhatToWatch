@@ -3,12 +3,12 @@ import placeholder from "../assets/placeholder.svg";
 import { text } from "../i18n/text";
 import { ErrorText } from "../primitives/ErrorText";
 import { useAppState } from "../state/AppStateContext";
-import type { MovieDto } from "../types/movie";
+import type { Movie } from "../types/movie";
 import { getImdbTitleUrl, getMovieCoreFields } from "./movieCoreFields";
 import "./MoviePage.scss";
 
 export interface MoviePageProps {
-  movie?: MovieDto | null;
+  movie?: Movie | null;
   showImdbLink?: boolean;
 }
 

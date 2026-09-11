@@ -14,7 +14,7 @@ import { MoviePage } from "../pages/MoviePage";
 import { WatchlistsPage } from "../pages/WatchlistsPage";
 import { useAppState } from "../state/AppStateContext";
 import type { AppState } from "../state/AppStateContext";
-import type { WatchlistDto } from "../types/movie";
+import type { Watchlist } from "../types/movie";
 
 vi.mock("../api/moviesApi", () => ({
   getWatchlist: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("../state/AppStateContext", () => ({
   useAppState: vi.fn(),
 }));
 
-const watchlist: WatchlistDto = {
+const watchlist: Watchlist = {
   id: "weekend",
   name: "Weekend",
   movies: [{ id: "tt1", title: "Arrival", genres: ["Sci-Fi"] }],

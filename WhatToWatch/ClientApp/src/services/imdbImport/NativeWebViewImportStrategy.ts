@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { importImdbWatchlist } from "../../api/moviesApi";
 import { ImdbImporter } from "../../native/imdbImporter";
-import type { WatchlistDto } from "../../types/movie";
+import type { Watchlist } from "../../types/movie";
 import type { IImdbImportStrategy, ImportOptions } from "./ImdbImportStrategy";
 
 export class NativeWebViewImportStrategy implements IImdbImportStrategy {
@@ -9,7 +9,7 @@ export class NativeWebViewImportStrategy implements IImdbImportStrategy {
     return Capacitor.isNativePlatform();
   }
 
-  async import(url: string, options?: ImportOptions): Promise<WatchlistDto> {
+  async import(url: string, options?: ImportOptions): Promise<Watchlist> {
     if (!this.isAvailable())
       throw new Error("IMDb import is only available in the mobile app");
 
@@ -46,7 +46,7 @@ export class NativeWebViewImportStrategy implements IImdbImportStrategy {
     }
   }
 
-  async refresh(list: WatchlistDto, options?: ImportOptions): Promise<WatchlistDto> {
+  async refresh(list: Watchlist, options?: ImportOptions): Promise<Watchlist> {
     const listUrl = list.url?.trim();
     if (!listUrl)
       throw new Error(`Watchlist “${list.name}” has no URL to refresh from.`);

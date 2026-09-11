@@ -10,7 +10,7 @@ import { ErrorText } from "../primitives/ErrorText";
 import { StatusText } from "../primitives/StatusText";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
-import type { WatchlistDto } from "../types/movie";
+import type { Watchlist } from "../types/movie";
 import { LIST_VISIBLE_ROWS, splitWatchlistHeadline } from "./listMarquee";
 import "./ListPage.scss";
 
@@ -18,7 +18,7 @@ export const ListPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isPicking, pickError, pickRandomMovie, setActiveWatchlistId } = useAppState();
-  const [watchlist, setWatchlist] = useState<WatchlistDto | null>(null);
+  const [watchlist, setWatchlist] = useState<Watchlist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -62,7 +62,7 @@ export const ListPage = () => {
   const handleRandom = async () => {
     if (!id)
       return;
-    
+
     const picked = await pickRandomMovie(id);
     if (picked)
       navigate(routePaths.movie);

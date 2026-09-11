@@ -1,4 +1,4 @@
-import type { WatchlistDto } from "../../types/movie";
+import type { Watchlist } from "../../types/movie";
 
 export type ImportOptions = {
   onStatus?: (message: string) => void;
@@ -6,6 +6,6 @@ export type ImportOptions = {
 
 export interface IImdbImportStrategy {
   isAvailable(): boolean;
-  import(url: string, options?: ImportOptions): Promise<WatchlistDto>;
-  refresh(list: WatchlistDto, options?: ImportOptions): Promise<WatchlistDto>;
+  import(url: string, options?: ImportOptions): Promise<Watchlist>;
+  refresh(list: Watchlist, options?: ImportOptions): Promise<Watchlist>;
 }

@@ -6,19 +6,19 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppState } from "../state/AppStateContext";
 import type { AppState } from "../state/AppStateContext";
-import type { MovieDto } from "../types/movie";
+import type { Movie } from "../types/movie";
 import { MoviePage } from "./MoviePage";
 
 vi.mock("../state/AppStateContext", () => ({
   useAppState: vi.fn(),
 }));
 
-const contextMovie: MovieDto = {
+const contextMovie: Movie = {
   id: "tt-context",
   title: "Context Movie",
   genres: ["Drama"],
 };
-const passedMovie: MovieDto = {
+const passedMovie: Movie = {
   id: "tt-passed",
   title: "Passed Movie",
   genres: ["Comedy"],

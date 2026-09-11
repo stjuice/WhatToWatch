@@ -12,7 +12,7 @@ import {
 import { Button } from "../primitives/Button";
 import { ImdbImportService } from "../services/imdbImportService";
 import { useAppState } from "../state/AppStateContext";
-import type { WatchlistDto } from "../types/movie";
+import type { Watchlist } from "../types/movie";
 import "./StudioPage.scss";
 
 export const StudioPage = () => {
@@ -114,7 +114,7 @@ export const StudioPage = () => {
       }
     });
 
-  const handleRefresh = (list: WatchlistDto) =>
+  const handleRefresh = (list: Watchlist) =>
     runAction(async () => {
       const updated = await ImdbImportService.refreshFromImdb(list, {
         onStatus: hasNativeImporter
@@ -124,7 +124,7 @@ export const StudioPage = () => {
       setMessage(`Refreshed “${updated.name}” (${updated.movies.length})`);
     });
 
-  const handleDelete = (list: WatchlistDto) =>
+  const handleDelete = (list: Watchlist) =>
     runAction(async () => {
       if (!window.confirm(`Delete “${list.name}”?`))
         return;

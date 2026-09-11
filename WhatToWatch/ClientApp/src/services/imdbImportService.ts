@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { createImdbImportStrategy } from "./imdbImport/createImdbImportStrategy";
 import type { ImportOptions } from "./imdbImport/ImdbImportStrategy";
-import type { WatchlistDto } from "../types/movie";
+import type { Watchlist } from "../types/movie";
 
 const strategy = () => createImdbImportStrategy();
 
@@ -10,12 +10,12 @@ const isAvailable = (): boolean => Capacitor.isNativePlatform();
 const importFromImdb = async (
   url: string,
   options?: ImportOptions
-): Promise<WatchlistDto> => strategy().import(url, options);
+): Promise<Watchlist> => strategy().import(url, options);
 
 const refreshFromImdb = async (
-  list: WatchlistDto,
+  list: Watchlist,
   options?: ImportOptions
-): Promise<WatchlistDto> => strategy().refresh(list, options);
+): Promise<Watchlist> => strategy().refresh(list, options);
 
 export const ImdbImportService = {
   isAvailable,

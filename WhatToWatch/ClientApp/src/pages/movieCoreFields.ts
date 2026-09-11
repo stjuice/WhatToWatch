@@ -1,4 +1,4 @@
-import type { MovieDto } from "../types/movie";
+import type { Movie } from "../types/movie";
 
 export const GENRE_SEPARATOR = " | ";
 
@@ -48,7 +48,7 @@ export const formatYear = (year?: number): string | null => {
 
 export const getMovieCoreFields = (
   movie: Pick<
-    MovieDto,
+    Movie,
     "title" | "year" | "genres" | "runtimeMinutes" | "rating" | "director" | "plot"
   > | null
 ): MovieCoreFields => ({

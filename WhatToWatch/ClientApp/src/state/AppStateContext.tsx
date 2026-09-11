@@ -20,31 +20,31 @@ import {
   setStoredWatchlistId,
 } from "../api/moviesApi";
 import { text } from "../i18n/text";
-import type { MovieDto, WatchlistDto } from "../types/movie";
+import type { Movie, Watchlist } from "../types/movie";
 
 export interface AppState {
-  watchlists: WatchlistDto[];
+  watchlists: Watchlist[];
   watchlistsLoading: boolean;
   watchlistsError: string | null;
   refreshWatchlists: () => Promise<void>;
   watchlistId: string | null;
   setActiveWatchlistId: (id: string | null) => void;
-  movie: MovieDto | null;
-  setMovie: Dispatch<SetStateAction<MovieDto | null>>;
+  movie: Movie | null;
+  setMovie: Dispatch<SetStateAction<Movie | null>>;
   isRestoringMovie: boolean;
   isPicking: boolean;
   pickError: string | null;
-  pickRandomMovie: (watchlistId?: string | null) => Promise<MovieDto | null>;
+  pickRandomMovie: (watchlistId?: string | null) => Promise<Movie | null>;
 }
 
 const AppStateContext = createContext<AppState | null>(null);
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [watchlists, setWatchlists] = useState<WatchlistDto[]>([]);
+  const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
   const [watchlistsLoading, setWatchlistsLoading] = useState(true);
   const [watchlistsError, setWatchlistsError] = useState<string | null>(null);
   const [watchlistId, setWatchlistId] = useState<string | null>(() => getStoredWatchlistId());
-  const [movie, setMovie] = useState<MovieDto | null>(null);
+  const [movie, setMovie] = useState<Movie | null>(null);
   const [isRestoringMovie, setIsRestoringMovie] = useState(
     () => Boolean(getStoredWatchlistId() && getStoredMovieId())
   );
@@ -81,7 +81,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const pickRandomMovie = useCallback(
-    async (overrideWatchlistId?: string | null): Promise<MovieDto | null> => {
+    async (overrideWatchlistId?: string | null): Promise<Movie | null> => {
       if (isPickingRef.current) {
         return null;
       }

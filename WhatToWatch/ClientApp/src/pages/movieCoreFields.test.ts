@@ -8,9 +8,9 @@ import {
   getImdbTitleUrl,
   getMovieCoreFields,
 } from "./movieCoreFields";
-import type { MovieDto } from "../types/movie";
+import type { Movie } from "../types/movie";
 
-const fullMovie: MovieDto = {
+const fullMovie: Movie = {
   id: "tt0133093",
   title: "The Matrix",
   year: 1999,
