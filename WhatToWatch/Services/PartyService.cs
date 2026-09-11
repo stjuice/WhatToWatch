@@ -42,6 +42,14 @@ public sealed class PartyService(
         if (explicitCode && !IsValidCode(request.JoinCode!))
             throw PartyException.InvalidCode();
 
+        var takenCodes = await repository.GetActiveCodesAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var joinCode = explicitCode ? request.JoinCode! : Allocate(takenCodes);
+
+        if (takenCodes.Contains(joinCode))
+            throw PartyException.CodeTaken();
+
         var references = await movieService
             .GetMovieSetAsync(request.WatchlistId, cancellationToken)
             .ConfigureAwait(false);
@@ -53,14 +61,6 @@ public sealed class PartyService(
 
         if (movieSet.Length == 0)
             throw PartyException.NoMovies();
-
-        var takenCodes = await repository.GetActiveCodesAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var joinCode = explicitCode ? request.JoinCode! : Allocate(takenCodes);
-
-        if (takenCodes.Contains(joinCode))
-            throw PartyException.CodeTaken();
 
         var now = timeProvider.GetUtcNow();
         var player = CreatePlayer("1", randomizationService.Shuffle(movieSet), now);
@@ -236,7 +236,7 @@ public sealed class PartyService(
         }
 
         await repository.SaveAsync(cancellationToken).ConfigureAwait(false);
-        
+
         var opponent = party.Players.SingleOrDefault(item => item.Id != player.Id);
 
         return new PartyStateDto
