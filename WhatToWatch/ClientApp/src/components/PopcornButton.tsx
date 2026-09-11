@@ -1,5 +1,7 @@
 import type { MouseEventHandler } from "react";
 import { Button } from "../primitives/Button";
+import { artworkSizeClass, type ArtworkSize } from "./artworkSize";
+import "./ArtworkSize.scss";
 import "./PopcornButton.scss";
 
 export interface PopcornButtonProps {
@@ -7,6 +9,7 @@ export interface PopcornButtonProps {
   label: string;
   busy?: boolean;
   disabled?: boolean;
+  size: ArtworkSize;
   onClick: MouseEventHandler<HTMLButtonElement>;
   className?: string;
 }
@@ -16,12 +19,15 @@ export const PopcornButton = ({
   label,
   busy = false,
   disabled = false,
+  size,
   onClick,
   className,
 }: PopcornButtonProps) => (
   <Button
     variant="icon"
-    className={["popcorn-button", className].filter(Boolean).join(" ")}
+    className={["popcorn-button", artworkSizeClass(size), className]
+      .filter(Boolean)
+      .join(" ")}
     aria-label={label}
     aria-busy={busy}
     disabled={disabled}

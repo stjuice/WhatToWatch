@@ -1,18 +1,13 @@
 import type { MouseEventHandler } from "react";
 import party from "../assets/tinder.svg";
-import type { LabelFrame } from "./labelPill";
+import type { ArtworkSize } from "./artworkSize";
+import { COMPACT_LABEL_FRAME } from "./labelPill";
 import { PopcornBucket } from "./PopcornBucket";
 import "./PartyBucket.scss";
 
-const PARTY_LABEL_FRAME: LabelFrame = {
-  widthRem: 14.5,
-  heightRem: 3.25,
-  maxFontRem: 1.5,
-  minFontRem: 0.9,
-};
-
 interface CommonPartyBucketProps {
   label: string;
+  size: ArtworkSize;
   ariaLabel?: string;
   className?: string;
 }
@@ -35,6 +30,7 @@ export type PartyBucketProps =
 
 export const PartyBucket = ({
   label,
+  size,
   ariaLabel,
   className,
   ...actionProps
@@ -44,8 +40,9 @@ export const PartyBucket = ({
     className={["party-bucket", className].filter(Boolean).join(" ")}
     art={party}
     label={label}
+    size={size}
     ariaLabel={ariaLabel}
-    frame={PARTY_LABEL_FRAME}
+    frame={COMPACT_LABEL_FRAME}
     labelCenter="78%"
   />
 );

@@ -8,6 +8,7 @@ export const HomePage = () => (
   <div className="home-page">
     <PartyBucket
       label={text("home.party")}
+      size="ml"
       to={routePaths.party}
     />
     <AllWatchlistsBucket />

@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: 2.25rem;
   overflow: hidden;
 }
 
@@ -15,7 +15,7 @@
   align-items: center;
   gap: 0.75rem;
   overflow-x: auto;
-  padding: 0.5rem calc(50% - 6.5rem);
+  padding: 0.5rem calc(50% - 5.25rem);
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   transition: opacity 180ms ease;
@@ -31,8 +31,8 @@
 }
 
 .party-start__choice {
-  flex: 0 0 13rem;
-  height: 18.25rem;
+  flex: 0 0 10.5rem;
+  height: 14.75rem;
   display: flex;
   align-items: center;
   scroll-snap-align: center;
@@ -43,13 +43,8 @@
   align-items: center;
 }
 
-.party-start__watchlist .popcorn-bucket__art {
-  width: min(100%, 8.5rem);
+.party-start__watchlist {
   transition: width 180ms ease;
-}
-
-.party-start__watchlist--active .popcorn-bucket__art {
-  width: min(100%, 13rem);
 }
 
 .party-start__code {

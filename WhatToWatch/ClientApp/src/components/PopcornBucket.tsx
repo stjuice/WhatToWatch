@@ -1,7 +1,9 @@
 import type { MouseEventHandler } from "react";
 import { Button } from "../primitives/Button";
+import { artworkSizeClass, type ArtworkSize } from "./artworkSize";
 import type { LabelFrame } from "./labelPill";
 import { LabelPill } from "./LabelPillView";
+import "./ArtworkSize.scss";
 import "./PopcornBucket.scss";
 
 interface CommonPopcornBucketProps {
@@ -9,6 +11,7 @@ interface CommonPopcornBucketProps {
   label: string;
   ariaLabel?: string;
   ariaPressed?: boolean;
+  size: ArtworkSize;
   frame: LabelFrame;
   labelCenter: string;
   className?: string;
@@ -35,6 +38,7 @@ export const PopcornBucket = ({
   label,
   ariaLabel,
   ariaPressed,
+  size,
   frame,
   labelCenter,
   className,
@@ -43,7 +47,9 @@ export const PopcornBucket = ({
   <Button
     {...actionProps}
     variant="plain"
-    className={["popcorn-bucket", className].filter(Boolean).join(" ")}
+    className={["popcorn-bucket", artworkSizeClass(size), className]
+      .filter(Boolean)
+      .join(" ")}
     aria-label={ariaLabel ?? label}
     aria-pressed={ariaPressed}
   >

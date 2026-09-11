@@ -88,6 +88,13 @@ describe("PartyStartPage", () => {
 
     const allMovies = screen.getByRole("button", { name: "Всі фільми" });
     const family = screen.getByRole("button", { name: "Сімейні" });
+    expect(allMovies.classList.contains("artwork-size--m")).toBe(true);
+    expect(family.classList.contains("artwork-size--ms")).toBe(true);
+    expect(
+      screen
+        .getByRole("button", { name: "Створити гру" })
+        .classList.contains("artwork-size--ms")
+    ).toBe(true);
     expect(
       allMovies.compareDocumentPosition(family) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();

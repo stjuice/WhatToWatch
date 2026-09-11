@@ -1,8 +1,8 @@
 import { Button } from "../primitives/Button";
 import type { ButtonProps } from "../primitives/Button";
+import { artworkSizeClass, type ArtworkSize } from "./artworkSize";
+import "./ArtworkSize.scss";
 import "./ImageButton.scss";
-
-export type ImageButtonSize = "large" | "middle" | "small";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -11,7 +11,7 @@ export type ImageButtonProps = DistributiveOmit<
   "aria-label" | "children" | "variant"
 > & {
   label: string;
-  size: ImageButtonSize;
+  size: ArtworkSize;
 };
 
 type ImageButtonInternalProps = ImageButtonProps & {
@@ -28,7 +28,7 @@ export const ImageButton = ({
   <Button
     {...buttonProps}
     variant="icon"
-    className={["image-button", `image-button--${size}`, className].filter(Boolean).join(" ")}
+    className={["image-button", artworkSizeClass(size), className].filter(Boolean).join(" ")}
     aria-label={label}
   >
     <img src={art} alt="" draggable={false} />

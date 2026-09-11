@@ -32,6 +32,7 @@ describe("PopcornBucket", () => {
         <PopcornBucket
           art={popcorn}
           label="Всі списки"
+          size="ml"
           frame={COMPACT_LABEL_FRAME}
           labelCenter="58%"
           to="/lists"
@@ -50,6 +51,7 @@ describe("PopcornBucket", () => {
       <PopcornBucket
         art={popcorn}
         label="Почати"
+        size="m"
         frame={COMPACT_LABEL_FRAME}
         labelCenter="58%"
         onClick={onClick}
@@ -67,6 +69,7 @@ describe("PopcornButton", () => {
       <PopcornButton
         art={popcorn}
         label="Вибираємо"
+        size="l"
         disabled
         busy
         onClick={() => undefined}
@@ -83,7 +86,7 @@ describe("WatchlistBucket", () => {
   it("still links to its list", () => {
     render(
       <MemoryRouter>
-        <WatchlistBucket id="family night" name="Сімейні" size="compact" />
+        <WatchlistBucket id="family night" name="Сімейні" size="ml" />
       </MemoryRouter>
     );
 

@@ -132,7 +132,7 @@ export const ListPage = () => {
           </div>
 
           <MainButton
-            size="middle"
+            size="ml"
             label={text("list.randomAria", { name: watchlist.name })}
             className="list-page__random"
             onClick={() => {

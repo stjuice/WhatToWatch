@@ -34,6 +34,7 @@ export const WatchlistsPage = () => {
       <PopcornButton
         art={popcornFull}
         label={text("watchlists.randomAllAria")}
+        size="l"
         className="watchlists-page__random"
         onClick={() => {
           void handleRandomAll();
@@ -70,7 +71,7 @@ export const WatchlistsPage = () => {
             <WatchlistBucket
               id={list.id}
               name={list.name}
-              size={zoomedIn ? "large" : "compact"}
+              size="ml"
             />
           </li>
         ))}

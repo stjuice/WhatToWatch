@@ -8,7 +8,7 @@ export const RerollButton = () => {
 
   return (
     <RandomButton
-      size="small"
+      size="s"
       label={text("movie.rerollAria")}
       className="reroll-button"
       onClick={() => {

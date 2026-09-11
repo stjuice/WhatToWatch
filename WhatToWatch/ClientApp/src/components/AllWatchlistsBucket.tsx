@@ -10,6 +10,7 @@ export const AllWatchlistsBucket = () => (
     className="all-watchlists-bucket"
     art={popcornFull}
     label={text("home.watchlists")}
+    size="ml"
     frame={COMPACT_LABEL_FRAME}
     labelCenter="58%"
     to={routePaths.watchlists}

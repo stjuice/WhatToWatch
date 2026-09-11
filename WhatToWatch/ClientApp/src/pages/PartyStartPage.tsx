@@ -5,24 +5,14 @@ import popcornFull from "../assets/popcorn-full.svg";
 import { ApiError } from "../api/http";
 import { createParty, joinParty, suggestPartyCode } from "../api/partyApi";
 import { setPartySession } from "../api/partySession";
-import {
-  COMPACT_LABEL_FRAME,
-  type LabelFrame,
-} from "../components/labelPill";
-import { PartyBucket } from "../components/PartyBucket";
+import { COMPACT_LABEL_FRAME } from "../components/labelPill";
+import { PartyButton } from "../components/PartyButton";
 import { PopcornBucket } from "../components/PopcornBucket";
 import { text } from "../i18n/text";
 import { ErrorText } from "../primitives/ErrorText";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
 import "./PartyStartPage.scss";
-
-const ACTIVE_WATCHLIST_LABEL_FRAME: LabelFrame = {
-  widthRem: 9.25,
-  heightRem: 4,
-  maxFontRem: 1.9,
-  minFontRem: 0.9,
-};
 
 export const resolveCarouselActiveIndex = (
   viewportCenter: number,
@@ -179,11 +169,8 @@ export const PartyStartPage = () => {
                 }`}
                 art={popcornFull}
                 label={choice.name}
-                frame={
-                  isActive
-                    ? ACTIVE_WATCHLIST_LABEL_FRAME
-                    : COMPACT_LABEL_FRAME
-                }
+                size={isActive ? "m" : "ms"}
+                frame={COMPACT_LABEL_FRAME}
                 labelCenter="58%"
                 disabled={isJoining}
                 ariaLabel={choice.name}
@@ -217,9 +204,10 @@ export const PartyStartPage = () => {
 
       <ErrorText className="party-start__error">{error}</ErrorText>
 
-      <PartyBucket
+      <PartyButton
+        className="party-start__action"
         label={text(isJoining ? "party.join" : "party.create")}
-        ariaLabel={text(isJoining ? "party.join" : "party.create")}
+        size="ms"
         disabled={isSubmitting || (!isJoining && !suggestedCode)}
         onClick={() => {
           void handleSubmit();

@@ -1,17 +1,9 @@
 .image-button {
   flex: 0 0 auto;
-}
-
-.image-button--large {
-  width: min(100%, 18rem);
-}
-
-.image-button--middle {
-  width: min(100%, 14rem);
-}
-
-.image-button--small {
-  width: min(42vw, 7.5rem);
+  width: min(
+    100%,
+    calc(var(--artwork-width) * var(--artwork-type-scale, 1))
+  );
 }
 
 .image-button img {

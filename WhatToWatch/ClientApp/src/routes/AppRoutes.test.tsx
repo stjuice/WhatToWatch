@@ -69,6 +69,13 @@ describe("AppRoutes", () => {
 
     expect(partyLink.getAttribute("href")).toBe(routePaths.party);
     expect(watchlistsLink.getAttribute("href")).toBe(routePaths.watchlists);
+    expect(partyLink.classList.contains("artwork-size--ml")).toBe(true);
+    expect(watchlistsLink.classList.contains("artwork-size--ml")).toBe(true);
+    const partyLabel = partyLink.querySelector<HTMLElement>(".label-pill");
+    const watchlistsLabel =
+      watchlistsLink.querySelector<HTMLElement>(".label-pill");
+    expect(partyLabel?.style.width).toBe(watchlistsLabel?.style.width);
+    expect(partyLabel?.style.height).toBe(watchlistsLabel?.style.height);
     expect(
       partyLink.compareDocumentPosition(watchlistsLink) &
         Node.DOCUMENT_POSITION_FOLLOWING
@@ -82,14 +89,15 @@ describe("AppRoutes", () => {
       </MemoryRouter>
     );
 
-    expect(
-      screen.getByRole("button", {
-        name: "Випадковий фільм з усіх списків",
-      })
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("link", { name: "Відкрити список На вечір" }).getAttribute("href")
-    ).toBe(routePaths.list("movie-night"));
+    const randomButton = screen.getByRole("button", {
+      name: "Випадковий фільм з усіх списків",
+    });
+    const listBucket = screen.getByRole("link", {
+      name: "Відкрити список На вечір",
+    });
+    expect(randomButton.classList.contains("artwork-size--l")).toBe(true);
+    expect(listBucket.classList.contains("artwork-size--ml")).toBe(true);
+    expect(listBucket.getAttribute("href")).toBe(routePaths.list("movie-night"));
   });
 
   it("redirects an unknown route home", async () => {
