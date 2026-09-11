@@ -9,20 +9,31 @@ import {
   getPartySession,
 } from "../api/partySession";
 import { text } from "../i18n/text";
+import { TextKeys } from "../i18n/textKeys";
 import { Fireworks } from "../components/Fireworks";
 import { Button } from "../primitives/Button";
 import { ErrorText } from "../primitives/ErrorText";
 import { StatusText } from "../primitives/StatusText";
 import { routePaths } from "../routes/routePaths";
-import type { PartyStateDto } from "../types/party";
+import { PartyStatuses, type PartyState } from "../types/party";
 import { MoviePage } from "./MoviePage";
+import {
+  getPartyErrorText,
+  partyErrorCodes,
+  partyErrorTextKeys,
+} from "./partyText";
 import "./PartyPlayPage.scss";
 
-type TerminalView = "expired" | "sessionMissing" | null;
+type TerminalView =
+  | typeof TextKeys.Party_Expired
+  | typeof TextKeys.Party_Errors_Finished
+  | typeof TextKeys.Party_Errors_InvalidPlayerToken
+  | typeof TextKeys.Party_SessionMissing
+  | null;
 
 export const PartyPlayPage = () => {
   const { partyId = "" } = useParams();
-  const [state, setState] = useState<PartyStateDto | null>(null);
+  const [state, setState] = useState<PartyState | null>(null);
   const [terminalView, setTerminalView] = useState<TerminalView>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +42,7 @@ export const PartyPlayPage = () => {
   const refresh = useCallback(async () => {
     const session = getPartySession();
     if (!session || session.partyId !== partyId) {
-      setTerminalView("sessionMissing");
+      setTerminalView(TextKeys.Party_SessionMissing);
       setIsLoading(false);
       return;
     }
@@ -42,24 +53,29 @@ export const PartyPlayPage = () => {
       const nextState = await getPartyState(partyId, session.playerToken);
       setState(nextState);
       setTerminalView(null);
-      if (nextState.status === "Finished" || nextState.status === "Expired") {
+      if (
+        nextState.status === PartyStatuses.Finished ||
+        nextState.status === PartyStatuses.Expired
+      ) {
         clearPartySession();
       }
     } catch (loadError) {
       if (
         loadError instanceof ApiError &&
-        (loadError.code === "PartyExpired" ||
-          loadError.code === "AlreadyFinished" ||
-          loadError.code === "InvalidPlayerToken")
+        (loadError.code === partyErrorCodes.PartyExpired ||
+          loadError.code === partyErrorCodes.AlreadyFinished ||
+          loadError.code === partyErrorCodes.InvalidPlayerToken)
       ) {
         clearPartySession();
-        setTerminalView("expired");
-      } else {
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : text("party.errors.load")
+        setTerminalView(
+          loadError.code === partyErrorCodes.PartyExpired
+            ? partyErrorTextKeys.PartyExpired
+            : loadError.code === partyErrorCodes.AlreadyFinished
+              ? partyErrorTextKeys.AlreadyFinished
+              : partyErrorTextKeys.InvalidPlayerToken
         );
+      } else {
+        setError(getPartyErrorText(loadError, TextKeys.Party_Errors_Load));
       }
     } finally {
       setIsLoading(false);
@@ -83,23 +99,26 @@ export const PartyPlayPage = () => {
         liked,
       });
       setState(nextState);
-      if (nextState.status === "Finished" || nextState.status === "Expired") {
+      if (
+        nextState.status === PartyStatuses.Finished ||
+        nextState.status === PartyStatuses.Expired
+      ) {
         clearPartySession();
       }
     } catch (voteError) {
       if (
         voteError instanceof ApiError &&
-        (voteError.code === "PartyExpired" ||
-          voteError.code === "AlreadyFinished")
+        (voteError.code === partyErrorCodes.PartyExpired ||
+          voteError.code === partyErrorCodes.AlreadyFinished)
       ) {
         clearPartySession();
-        setTerminalView("expired");
-      } else {
-        setError(
-          voteError instanceof Error
-            ? voteError.message
-            : text("party.errors.vote")
+        setTerminalView(
+          voteError.code === partyErrorCodes.PartyExpired
+            ? partyErrorTextKeys.PartyExpired
+            : partyErrorTextKeys.AlreadyFinished
         );
+      } else {
+        setError(getPartyErrorText(voteError, TextKeys.Party_Errors_Vote));
       }
     } finally {
       setIsVoting(false);
@@ -107,54 +126,46 @@ export const PartyPlayPage = () => {
   };
 
   if (isLoading && !state) {
-    return <StatusText>{text("party.loading")}</StatusText>;
+    return <StatusText>{text(TextKeys.Party_Loading)}</StatusText>;
   }
 
   if (terminalView) {
-    return (
-      <PartyTerminal
-        message={text(
-          terminalView === "expired"
-            ? "party.expired"
-            : "party.sessionMissing"
-        )}
-      />
-    );
+    return <PartyTerminal message={text(terminalView)} />;
   }
 
   if (!state) {
     return (
       <main className="party-play party-play--terminal">
         <ErrorText>{error}</ErrorText>
-        <Button onClick={() => void refresh()}>{text("party.refresh")}</Button>
+        <Button onClick={() => void refresh()}>{text(TextKeys.Party_Refresh)}</Button>
       </main>
     );
   }
 
-  if (state.status === "Matched" && state.matchedMovie) {
+  if (state.status === PartyStatuses.Matched && state.matchedMovie) {
     return (
       <main className="party-play party-play--matched">
-        <h1 className="party-play__heading">{text("party.matched")}</h1>
+        <h1 className="party-play__heading">{text(TextKeys.Party_Matched)}</h1>
         <MoviePage movie={state.matchedMovie} />
         <Fireworks />
       </main>
     );
   }
 
-  if (state.status === "Finished") {
-    return <PartyTerminal message={text("party.finished")} />;
+  if (state.status === PartyStatuses.Finished) {
+    return <PartyTerminal message={text(TextKeys.Party_Finished)} />;
   }
 
-  if (state.status === "Expired") {
-    return <PartyTerminal message={text("party.expired")} />;
+  if (state.status === PartyStatuses.Expired) {
+    return <PartyTerminal message={text(TextKeys.Party_Expired)} />;
   }
 
   if (!state.currentMovie || state.progress.isExhausted) {
     return (
       <main className="party-play party-play--terminal">
-        <StatusText>{text("party.exhausted")}</StatusText>
+        <StatusText>{text(TextKeys.Party_Exhausted)}</StatusText>
         <Button disabled={isLoading} onClick={() => void refresh()}>
-          {text("party.refresh")}
+          {text(TextKeys.Party_Refresh)}
         </Button>
         <ErrorText>{error}</ErrorText>
       </main>
@@ -164,11 +175,11 @@ export const PartyPlayPage = () => {
   return (
     <main className="party-play">
       <h1 className="party-play__heading party-play__heading--code">
-        {text("party.playCode", { code: state.joinCode })}
+        {text(TextKeys.Party_PlayCode, { code: state.joinCode })}
       </h1>
       {!state.opponentPresent || !state.opponentOnline ? (
         <StatusText className="party-play__presence">
-          {text("party.waitingForOpponent")}
+          {text(TextKeys.Party_WaitingForOpponent)}
         </StatusText>
       ) : null}
       <div className="party-play__card">
@@ -176,7 +187,7 @@ export const PartyPlayPage = () => {
         <Button
           variant="icon"
           className="party-play__vote party-play__vote--no"
-          aria-label={text("party.voteNo")}
+          aria-label={text(TextKeys.Party_VoteNo)}
           disabled={isVoting}
           onClick={() => void vote(false)}
         >
@@ -185,7 +196,7 @@ export const PartyPlayPage = () => {
         <Button
           variant="icon"
           className="party-play__vote party-play__vote--yes"
-          aria-label={text("party.voteYes")}
+          aria-label={text(TextKeys.Party_VoteYes)}
           disabled={isVoting}
           onClick={() => void vote(true)}
         >
@@ -200,6 +211,6 @@ export const PartyPlayPage = () => {
 const PartyTerminal = ({ message }: { message: string }) => (
   <main className="party-play party-play--terminal">
     <StatusText>{message}</StatusText>
-    <Button to={routePaths.party}>{text("party.back")}</Button>
+    <Button to={routePaths.party}>{text(TextKeys.Party_Back)}</Button>
   </main>
 );

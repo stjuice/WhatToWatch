@@ -10,8 +10,8 @@ import { getPartyState, voteInParty } from "../api/partyApi";
 import { setPartySession } from "../api/partySession";
 import { useAppState } from "../state/AppStateContext";
 import type { AppState } from "../state/AppStateContext";
-import type { MovieDto } from "../types/movie";
-import type { PartyStateDto } from "../types/party";
+import type { Movie } from "../types/movie";
+import type { PartyState } from "../types/party";
 import { PartyPlayPage } from "./PartyPlayPage";
 
 vi.mock("../api/partyApi", () => ({
@@ -23,20 +23,20 @@ vi.mock("../state/AppStateContext", () => ({
   useAppState: vi.fn(),
 }));
 
-const firstMovie: MovieDto = {
+const firstMovie: Movie = {
   id: "tt1",
   title: "First Movie",
   genres: ["Drama"],
 };
-const secondMovie: MovieDto = {
+const secondMovie: Movie = {
   id: "tt2",
   title: "Second Movie",
   genres: ["Comedy"],
 };
 
 const playingState = (
-  movie: MovieDto | null = firstMovie
-): PartyStateDto => ({
+  movie: Movie | null = firstMovie
+): PartyState => ({
   partyId: "party-1",
   joinCode: "1234",
   status: "Playing",

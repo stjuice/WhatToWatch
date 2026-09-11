@@ -12,6 +12,7 @@ import { text } from "../i18n/text";
 import { ErrorText } from "../primitives/ErrorText";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
+import { getPartyErrorText } from "./partyText";
 import "./PartyStartPage.scss";
 
 export const resolveCarouselActiveIndex = (
@@ -61,11 +62,7 @@ export const PartyStartPage = () => {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : text("party.errors.suggestion")
-          );
+          setError(getPartyErrorText(loadError, "party.errors.suggestion"));
         }
       }
     };
@@ -115,22 +112,11 @@ export const PartyStartPage = () => {
           setError(text("party.errors.codeTaken"));
         } catch (suggestionError) {
           setError(
-            suggestionError instanceof Error
-              ? suggestionError.message
-              : text("party.errors.suggestion")
+            getPartyErrorText(suggestionError, "party.errors.suggestion")
           );
         }
-      } else if (
-        submitError instanceof ApiError &&
-        submitError.code === "InvalidCode"
-      ) {
-        setError(text("party.errors.invalidCode"));
       } else {
-        setError(
-          submitError instanceof Error
-            ? submitError.message
-            : text("party.errors.action")
-        );
+        setError(getPartyErrorText(submitError, "party.errors.action"));
       }
     } finally {
       setIsSubmitting(false);

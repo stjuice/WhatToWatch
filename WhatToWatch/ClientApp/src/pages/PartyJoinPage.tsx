@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ApiError } from "../api/http";
 import { getPartyPreview, joinParty } from "../api/partyApi";
 import { setPartySession } from "../api/partySession";
 import { text } from "../i18n/text";
 import { ErrorText } from "../primitives/ErrorText";
 import { StatusText } from "../primitives/StatusText";
 import { routePaths } from "../routes/routePaths";
+import { getPartyErrorText } from "./partyText";
+import { TextKeys } from "../i18n/textKeys";
 
 export const PartyJoinPage = () => {
   const { code = "" } = useParams();
@@ -30,22 +31,7 @@ export const PartyJoinPage = () => {
       } catch (joinError) {
         if (cancelled) return;
 
-        if (joinError instanceof ApiError) {
-          const key =
-            joinError.code === "PartyFull"
-              ? "party.errors.full"
-              : joinError.code === "PartyExpired" ||
-                  joinError.code === "AlreadyFinished"
-                ? "party.errors.expired"
-                : "party.errors.invalidCode";
-          setError(text(key));
-        } else {
-          setError(
-            joinError instanceof Error
-              ? joinError.message
-              : text("party.errors.join")
-          );
-        }
+        setError(getPartyErrorText(joinError, TextKeys.Party_Errors_Join));
       }
     };
 
