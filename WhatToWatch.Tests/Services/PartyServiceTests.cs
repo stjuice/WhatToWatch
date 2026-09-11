@@ -56,6 +56,8 @@ public sealed class PartyServiceTests : IDisposable
         Assert.Equal("0042", result.JoinCode);
         Assert.NotEmpty(result.PlayerToken);
         Assert.NotNull(result.CurrentMovie);
+        Assert.Equal(2, result.Batch.Count);
+        Assert.Equal([0, 1], result.Batch.Select(item => item.OrderIndex));
         Assert.Equal(1, result.PlayerCount);
         Assert.False(result.OpponentPresent);
 
@@ -140,6 +142,36 @@ public sealed class PartyServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task State_ReturnsFiveMovieBatch_AndShrinksAtTail()
+    {
+        SetupMovieSet(Enumerable.Range(1, 7)
+            .Select(index => ("list", Movie($"tt{index}", $"Movie {index}")))
+            .ToArray());
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+
+        Assert.Equal(5, session.Batch.Count);
+        Assert.Equal([0, 1, 2, 3, 4], session.Batch.Select(item => item.OrderIndex));
+
+        PartyStateDto state = session;
+        for (var vote = 0; vote < 3; vote++)
+        {
+            state = await _sut.VoteAsync(
+                session.PartyId,
+                session.PlayerToken,
+                new PartyVoteRequest
+                {
+                    MovieId = state.Batch[0].Movie.Id,
+                    Liked = false,
+                });
+        }
+
+        Assert.Equal(3, state.Progress.CurrentIndex);
+        Assert.Equal(4, state.Batch.Count);
+        Assert.Equal([3, 4, 5, 6], state.Batch.Select(item => item.OrderIndex));
+        Assert.Equal(state.Batch[0].Movie.Id, state.CurrentMovie!.Id);
+    }
+
+    [Fact]
     public async Task State_RejectsInvalidPlayerToken()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
@@ -185,6 +217,7 @@ public sealed class PartyServiceTests : IDisposable
         Assert.Equal("Matched", matched.Status);
         Assert.Equal("tt1", matched.MatchedMovie!.Id);
         Assert.Null(matched.CurrentMovie);
+        Assert.Empty(matched.Batch);
         Assert.Equal(2, await _db.PartyLikes.CountAsync());
 
         var ownerMatch = await _sut.VoteAsync(
@@ -229,7 +262,27 @@ public sealed class PartyServiceTests : IDisposable
 
         Assert.Equal(1, state.Progress.CurrentIndex);
         Assert.NotNull(state.CurrentMovie);
+        Assert.Single(state.Batch);
+        Assert.Equal(1, state.Batch[0].OrderIndex);
         Assert.Equal(_time.GetUtcNow(), (await _db.PartyPlayers.SingleAsync()).LastSeenAt);
+    }
+
+    [Fact]
+    public async Task State_OmitsVanishedMoviesInsideBatch_WithoutAdvancingPastCurrent()
+    {
+        SetupMovieSet(Enumerable.Range(1, 6)
+            .Select(index => ("list", Movie($"tt{index}", $"Movie {index}")))
+            .ToArray());
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var player = await _db.PartyPlayers.SingleAsync();
+        var vanished = PartyMovieReference.Decode(player.MovieOrder[2]);
+        _movieLookup.Remove((vanished.WatchlistId, vanished.MovieId));
+
+        var state = await _sut.GetStateAsync(owner.PartyId, owner.PlayerToken);
+
+        Assert.Equal(0, state.Progress.CurrentIndex);
+        Assert.Equal(5, state.Batch.Count);
+        Assert.Equal([0, 1, 3, 4, 5], state.Batch.Select(item => item.OrderIndex));
     }
 
     [Fact]
@@ -281,9 +334,16 @@ public sealed class PartyServiceTests : IDisposable
             _movieLookup.TryAdd((entry.WatchlistId, entry.Movie.Id), entry.Movie);
         _movies.Setup(service => service.GetMovieSetAsync(
                 It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(entries
-                .Select(entry => new MovieReference(entry.WatchlistId, entry.Movie))
-                .ToArray());
+            .ReturnsAsync((string? watchlistId, CancellationToken _) =>
+                _movieLookup
+                    .Where(entry => watchlistId is null
+                        || entry.Key.WatchlistId.Equals(
+                            watchlistId,
+                            StringComparison.OrdinalIgnoreCase))
+                    .Select(entry => new MovieReference(
+                        entry.Key.WatchlistId,
+                        entry.Value))
+                    .ToArray());
     }
 
     private static Movie Movie(string id, string title) =>

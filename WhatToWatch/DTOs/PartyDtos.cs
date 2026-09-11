@@ -24,6 +24,12 @@ public sealed record PartyProgressDto
     public bool IsExhausted { get; init; }
 }
 
+public sealed record PartyMovieBatchItemDto
+{
+    public int OrderIndex { get; init; }
+    public required MovieDto Movie { get; init; }
+}
+
 public record PartyStateDto
 {
     public required string PartyId { get; init; }
@@ -33,6 +39,7 @@ public record PartyStateDto
     public bool OpponentPresent { get; init; }
     public bool OpponentOnline { get; init; }
     public required PartyProgressDto Progress { get; init; }
+    public required IReadOnlyList<PartyMovieBatchItemDto> Batch { get; init; }
     public MovieDto? CurrentMovie { get; init; }
     public MovieDto? MatchedMovie { get; init; }
 }

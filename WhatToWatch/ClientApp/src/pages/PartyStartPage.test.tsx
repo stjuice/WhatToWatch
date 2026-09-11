@@ -41,6 +41,7 @@ const session = {
   opponentPresent: false,
   opponentOnline: false,
   progress: { currentIndex: 0, totalMovies: 2, isExhausted: false },
+  batch: [],
 };
 
 const LocationProbe = () => {

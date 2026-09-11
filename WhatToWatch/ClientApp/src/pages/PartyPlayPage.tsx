@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import noHeart from "../assets/no.svg";
 import yesHeart from "../assets/yes.svg";
@@ -38,6 +38,7 @@ export const PartyPlayPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
+  const isVotingRef = useRef(false);
 
   const refresh = useCallback(async () => {
     const session = getPartySession();
@@ -86,16 +87,32 @@ export const PartyPlayPage = () => {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    for (const item of getPartyBatch(state).slice(1)) {
+      if (item.movie.posterUrl) {
+        const image = new Image();
+        image.src = item.movie.posterUrl;
+      }
+    }
+  }, [state]);
+
   const vote = async (liked: boolean) => {
     const session = getPartySession();
-    const movie = state?.currentMovie;
-    if (!session || !movie || isVoting) return;
+    const submittedState = state;
+    const currentItem = getPartyBatch(submittedState)[0];
 
+    if (!session || !submittedState || !currentItem || isVotingRef.current) 
+      return;
+
+    isVotingRef.current = true;
     setIsVoting(true);
     setError(null);
+    if (submittedState.batch)
+      setState(advanceCachedBatch(submittedState));
+    
     try {
       const nextState = await voteInParty(partyId, session.playerToken, {
-        movieId: movie.id,
+        movieId: currentItem.movie.id,
         liked,
       });
       setState(nextState);
@@ -118,9 +135,19 @@ export const PartyPlayPage = () => {
             : partyErrorTextKeys.AlreadyFinished
         );
       } else {
+        try {
+          const reconciledState = await getPartyState(
+            partyId,
+            session.playerToken
+          );
+          setState(reconciledState);
+        } catch {
+          setState(submittedState);
+        }
         setError(getPartyErrorText(voteError, TextKeys.Party_Errors_Vote));
       }
     } finally {
+      isVotingRef.current = false;
       setIsVoting(false);
     }
   };
@@ -160,7 +187,9 @@ export const PartyPlayPage = () => {
     return <PartyTerminal message={text(TextKeys.Party_Expired)} />;
   }
 
-  if (!state.currentMovie || state.progress.isExhausted) {
+  const currentItem = getPartyBatch(state)[0];
+
+  if (!currentItem || state.progress.isExhausted) {
     return (
       <main className="party-play party-play--terminal">
         <StatusText>{text(TextKeys.Party_Exhausted)}</StatusText>
@@ -183,7 +212,7 @@ export const PartyPlayPage = () => {
         </StatusText>
       ) : null}
       <div className="party-play__card">
-        <MoviePage movie={state.currentMovie} showImdbLink={false} />
+        <MoviePage movie={currentItem.movie} showImdbLink={false} />
         <Button
           variant="icon"
           className="party-play__vote party-play__vote--no"
@@ -206,6 +235,33 @@ export const PartyPlayPage = () => {
       <ErrorText>{error}</ErrorText>
     </main>
   );
+};
+
+const advanceCachedBatch = (state: PartyState): PartyState => {
+  const batch = getPartyBatch(state).slice(1);
+  const currentIndex = batch[0]?.orderIndex ??
+    Math.min(state.progress.currentIndex + 1, state.progress.totalMovies);
+
+  return {
+    ...state,
+    batch,
+    currentMovie: batch[0]?.movie ?? null,
+    progress: {
+      ...state.progress,
+      currentIndex,
+      isExhausted: currentIndex >= state.progress.totalMovies,
+    },
+  };
+};
+
+const getPartyBatch = (state: PartyState | null | undefined) => {
+  if (state?.batch) return state.batch;
+  if (!state?.currentMovie) return [];
+
+  return [{
+    orderIndex: state.progress.currentIndex,
+    movie: state.currentMovie,
+  }];
 };
 
 const PartyTerminal = ({ message }: { message: string }) => (

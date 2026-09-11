@@ -30,6 +30,11 @@ export interface IPartyProgress {
   isExhausted: boolean;
 }
 
+export interface IPartyMovieBatchItem {
+  orderIndex: number;
+  movie: Movie;
+}
+
 export interface PartyState {
   partyId: string;
   joinCode: string;
@@ -38,6 +43,7 @@ export interface PartyState {
   opponentPresent: boolean;
   opponentOnline: boolean;
   progress: IPartyProgress;
+  batch: IPartyMovieBatchItem[];
   currentMovie?: Movie | null;
   matchedMovie?: Movie | null;
 }

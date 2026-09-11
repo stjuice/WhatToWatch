@@ -27,15 +27,24 @@ const firstMovie: Movie = {
   id: "tt1",
   title: "First Movie",
   genres: ["Drama"],
+  posterUrl: "https://example.com/first.jpg",
 };
 const secondMovie: Movie = {
   id: "tt2",
   title: "Second Movie",
   genres: ["Comedy"],
+  posterUrl: "https://example.com/second.jpg",
+};
+const thirdMovie: Movie = {
+  id: "tt3",
+  title: "Third Movie",
+  genres: ["Thriller"],
 };
 
 const playingState = (
-  movie: Movie | null = firstMovie
+  movies: Movie[] = [firstMovie, secondMovie],
+  currentIndex = 0,
+  totalMovies = 2
 ): PartyState => ({
   partyId: "party-1",
   joinCode: "1234",
@@ -44,11 +53,15 @@ const playingState = (
   opponentPresent: true,
   opponentOnline: true,
   progress: {
-    currentIndex: movie ? 0 : 2,
-    totalMovies: 2,
-    isExhausted: !movie,
+    currentIndex,
+    totalMovies,
+    isExhausted: currentIndex >= totalMovies,
   },
-  currentMovie: movie,
+  batch: movies.map((movie, offset) => ({
+    orderIndex: currentIndex + offset,
+    movie,
+  })),
+  currentMovie: movies[0] ?? null,
   matchedMovie: null,
 });
 
@@ -70,12 +83,13 @@ beforeEach(() => {
     pickError: null,
   } as unknown as AppState);
   vi.mocked(getPartyState).mockResolvedValue(playingState());
-  vi.mocked(voteInParty).mockResolvedValue(playingState(secondMovie));
+  vi.mocked(voteInParty).mockResolvedValue(playingState([secondMovie], 1));
 });
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("PartyPlayPage", () => {
@@ -100,9 +114,85 @@ describe("PartyPlayPage", () => {
     ).toBeTruthy();
   });
 
+  it("shows cached lookahead immediately and locks voting until acknowledgement", async () => {
+    const voteResult = deferred<PartyState>();
+    vi.mocked(voteInParty).mockReturnValue(voteResult.promise);
+    renderPage();
+    await screen.findByRole("heading", { name: "First Movie" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ні" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Second Movie" })
+    ).toBeTruthy();
+    const yesButton = screen.getByRole("button", { name: "Так" });
+    expect((yesButton as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(yesButton);
+    expect(voteInParty).toHaveBeenCalledTimes(1);
+
+    voteResult.resolve(playingState([thirdMovie], 2, 3));
+    expect(
+      await screen.findByRole("heading", { name: "Third Movie" })
+    ).toBeTruthy();
+  });
+
+  it("preloads poster URLs for the remaining batch", async () => {
+    const preloaded: string[] = [];
+    vi.stubGlobal("Image", class {
+      set src(value: string) {
+        preloaded.push(value);
+      }
+    });
+
+    renderPage();
+    await screen.findByRole("heading", { name: "First Movie" });
+
+    await waitFor(() =>
+      expect(preloaded).toContain("https://example.com/second.jpg")
+    );
+    expect(preloaded).not.toContain("https://example.com/first.jpg");
+  });
+
+  it("reconciles with authoritative state after a vote failure", async () => {
+    vi.mocked(voteInParty).mockRejectedValue(new Error("offline"));
+    vi.mocked(getPartyState)
+      .mockResolvedValueOnce(playingState())
+      .mockResolvedValueOnce(playingState([firstMovie], 0));
+    renderPage();
+    await screen.findByRole("heading", { name: "First Movie" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ні" }));
+    expect(
+      await screen.findByRole("heading", { name: "Second Movie" })
+    ).toBeTruthy();
+
+    await waitFor(() => expect(getPartyState).toHaveBeenCalledTimes(2));
+    expect(
+      await screen.findByRole("heading", { name: "First Movie" })
+    ).toBeTruthy();
+  });
+
+  it("immediately replaces an optimistic card with a terminal match", async () => {
+    const voteResult = deferred<PartyState>();
+    vi.mocked(voteInParty).mockReturnValue(voteResult.promise);
+    renderPage();
+    await screen.findByRole("heading", { name: "First Movie" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Так" }));
+    await screen.findByRole("heading", { name: "Second Movie" });
+
+    voteResult.resolve({
+      ...playingState([], 1),
+      status: "Matched",
+      matchedMovie: firstMovie,
+    });
+    expect(await screen.findByText("Є збіг!")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Second Movie" })).toBeNull();
+  });
+
   it("renders a matched movie without voting hearts and restores the IMDb link", async () => {
     vi.mocked(getPartyState).mockResolvedValue({
-      ...playingState(null),
+      ...playingState([], 2),
       status: "Matched",
       matchedMovie: firstMovie,
     });
@@ -118,8 +208,8 @@ describe("PartyPlayPage", () => {
 
   it("offers an explicit refresh after this player is exhausted", async () => {
     vi.mocked(getPartyState)
-      .mockResolvedValueOnce(playingState(null))
-      .mockResolvedValueOnce(playingState(secondMovie));
+      .mockResolvedValueOnce(playingState([], 2))
+      .mockResolvedValueOnce(playingState([secondMovie], 1));
     renderPage();
 
     fireEvent.click(await screen.findByRole("button", { name: "Оновити" }));
@@ -151,4 +241,35 @@ describe("PartyPlayPage", () => {
       await screen.findByRole("heading", { name: "First Movie" })
     ).toBeTruthy();
   });
+
+  it("supports a pre-batch server response during rolling deployment", async () => {
+    const legacyState = playingState([firstMovie]);
+    delete (legacyState as Partial<PartyState>).batch;
+    vi.mocked(getPartyState).mockResolvedValue(legacyState);
+    const voteResult = deferred<PartyState>();
+    vi.mocked(voteInParty).mockReturnValue(voteResult.promise);
+
+    renderPage();
+
+    expect(
+      await screen.findByRole("heading", { name: "First Movie" })
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Так" }));
+
+    expect(screen.getByRole("heading", { name: "First Movie" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Оновити" })).toBeNull();
+
+    voteResult.resolve(playingState([secondMovie], 1));
+    expect(
+      await screen.findByRole("heading", { name: "Second Movie" })
+    ).toBeTruthy();
+  });
 });
+
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+};

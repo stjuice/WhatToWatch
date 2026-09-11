@@ -97,5 +97,6 @@ public sealed class PartiesControllerTests
             Status = "Playing",
             PlayerCount = 1,
             Progress = new PartyProgressDto { TotalMovies = 1 },
+            Batch = [],
         };
 }

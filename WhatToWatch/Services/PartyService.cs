@@ -203,20 +203,9 @@ public sealed class PartyService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        ImdbWatchlists.Models.Movie? currentMovie = null;
-
-        while (party.Status == PartyStatus.Playing && player.CurrentIndex < player.MovieOrder.Count)
-        {
-            var reference = PartyMovieReference.Decode(player.MovieOrder[player.CurrentIndex]);
-            currentMovie = await movieService
-                .GetMovieAsync(reference.WatchlistId, reference.MovieId, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (currentMovie is not null)
-                break;
-
-            player.CurrentIndex++;
-        }
+        var batch = party.Status == PartyStatus.Playing
+            ? await BuildBatchAsync(player, cancellationToken).ConfigureAwait(false)
+            : [];
 
         if (party.Status == PartyStatus.Playing
             && party.Players.Count == 2
@@ -253,9 +242,77 @@ public sealed class PartyService(
                 TotalMovies = player.MovieOrder.Count,
                 IsExhausted = player.CurrentIndex >= player.MovieOrder.Count,
             },
-            CurrentMovie = currentMovie is null ? null : MovieMapper.ToDto(currentMovie),
+            Batch = batch,
+            CurrentMovie = batch.FirstOrDefault()?.Movie,
             MatchedMovie = matchedMovie is null ? null : MovieMapper.ToDto(matchedMovie),
         };
+    }
+
+    private async Task<IReadOnlyList<PartyMovieBatchItemDto>> BuildBatchAsync(
+        PartyPlayerEntity player,
+        CancellationToken cancellationToken)
+    {
+        if (player.CurrentIndex >= player.MovieOrder.Count)
+            return [];
+
+        var remaining = player.MovieOrder
+            .Skip(player.CurrentIndex)
+            .Select((encoded, offset) => new
+            {
+                OrderIndex = player.CurrentIndex + offset,
+                Reference = PartyMovieReference.Decode(encoded),
+            })
+            .ToArray();
+
+        var moviesByReference = new Dictionary<string, ImdbWatchlists.Models.Movie>(
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var watchlistId in remaining
+                     .Select(item => item.Reference.WatchlistId)
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var movies = await movieService
+                .GetMovieSetAsync(watchlistId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (movies is null)
+                continue;
+
+            foreach (var reference in movies)
+            {
+                moviesByReference.TryAdd(
+                    PartyMovieReference.Encode(reference.WatchlistId, reference.Movie.Id),
+                    reference.Movie);
+            }
+        }
+
+        var batch = new List<PartyMovieBatchItemDto>(Math.Max(1, _options.BatchSize));
+        
+        foreach (var item in remaining)
+        {
+            var encoded = PartyMovieReference.Encode(
+                item.Reference.WatchlistId,
+                item.Reference.MovieId);
+
+            if (!moviesByReference.TryGetValue(encoded, out var movie))
+            {
+                if (item.OrderIndex == player.CurrentIndex)
+                    player.CurrentIndex++;
+
+                continue;
+            }
+
+            batch.Add(new PartyMovieBatchItemDto
+            {
+                OrderIndex = item.OrderIndex,
+                Movie = MovieMapper.ToDto(movie),
+            });
+
+            if (batch.Count >= Math.Max(1, _options.BatchSize))
+                break;
+        }
+
+        return batch;
     }
 
     private Task CleanupAsync(CancellationToken cancellationToken) =>
@@ -321,6 +378,7 @@ public sealed class PartyService(
             OpponentPresent = state.OpponentPresent,
             OpponentOnline = state.OpponentOnline,
             Progress = state.Progress,
+            Batch = state.Batch,
             CurrentMovie = state.CurrentMovie,
             MatchedMovie = state.MatchedMovie,
             PlayerToken = token,

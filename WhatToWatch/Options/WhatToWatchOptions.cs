@@ -16,6 +16,8 @@ public class WhatToWatchOptions
 
 public class PartyOptions
 {
+    public int BatchSize { get; set; } = 5;
+
     public int InactivityTimeoutMinutes { get; set; } = 120;
 
     public int FinishedRetentionHours { get; set; } = 24;

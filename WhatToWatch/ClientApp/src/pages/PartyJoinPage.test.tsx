@@ -37,6 +37,7 @@ beforeEach(() => {
     opponentPresent: true,
     opponentOnline: true,
     progress: { currentIndex: 0, totalMovies: 1, isExhausted: false },
+    batch: [],
   });
 });
 
