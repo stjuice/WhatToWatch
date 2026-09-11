@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:native": "tsc -b && vite build --mode capacitor",
+    "build:native": "tsc -b && vite build",
     "build:imdb-extractor": "node scripts/build-imdb-extractor.mjs",
     "check:imdb-extractor": "node scripts/build-imdb-extractor.mjs --check",
     "preview": "vite preview",

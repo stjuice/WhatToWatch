@@ -2,14 +2,17 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig(({ mode }) => ({
-  plugins: [
+export default defineConfig(() => {
+  const isNativeBuild = process.env.npm_lifecycle_event === "build:native";
+
+  return {
+    plugins: [
     react(),
     VitePWA({
       registerType: "autoUpdate",
       // APK updates keep WebView storage. Replace any previously installed
       // worker and clear its cached bundle while retaining PWA caching on web.
-      selfDestroying: mode === "capacitor",
+      selfDestroying: isNativeBuild,
       includeAssets: ["icons/apple-touch-icon.png"],
       manifest: {
         name: "WHAT 2 WATCH",
@@ -81,4 +84,5 @@ export default defineConfig(({ mode }) => ({
       "/api": "http://localhost:5264",
     },
   },
-}));
+  };
+});
