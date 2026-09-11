@@ -2,10 +2,7 @@
   position: relative;
   display: flex;
   justify-content: center;
-  width: min(
-    100%,
-    calc(var(--artwork-width) * var(--artwork-type-scale, 1))
-  );
+  width: calc(var(--artwork-width) * var(--artwork-type-scale, 1));
   color: inherit;
   -webkit-tap-highlight-color: transparent;
 }

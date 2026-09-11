@@ -1,9 +1,6 @@
 .image-button {
   flex: 0 0 auto;
-  width: min(
-    100%,
-    calc(var(--artwork-width) * var(--artwork-type-scale, 1))
-  );
+  width: calc(var(--artwork-width) * var(--artwork-type-scale, 1));
 }
 
 .image-button img {

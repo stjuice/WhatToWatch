@@ -1,6 +1,6 @@
 .popcorn-button {
   flex: 0 0 auto;
-  width: min(100%, var(--artwork-width));
+  width: var(--artwork-width);
 }
 
 .popcorn-button img {
