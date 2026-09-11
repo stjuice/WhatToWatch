@@ -1,4 +1,4 @@
-export interface MovieDto {
+export interface Movie {
   id: string;
   title: string;
   year?: number;
@@ -10,12 +10,12 @@ export interface MovieDto {
   genres: string[];
 }
 
-export interface WatchlistDto {
+export interface Watchlist {
   id: string;
   name: string;
   url?: string;
   lastRefreshedAt?: string;
-  movies: MovieDto[];
+  movies: Movie[];
 }
 
 export interface MovieFilterRequest {

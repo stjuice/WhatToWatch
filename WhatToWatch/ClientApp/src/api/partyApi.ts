@@ -1,28 +1,28 @@
 import type {
+  IPartyPreview,
+  IPartySession,
+  PartyState,
+  ISuggestedCode,
   CreatePartyRequest,
-  PartyPreviewDto,
-  PartySessionDto,
-  PartyStateDto,
   PartyVoteRequest,
-  SuggestedCodeDto,
 } from "../types/party";
 import { requestJson } from "./http";
 
-export const suggestPartyCode = async (): Promise<SuggestedCodeDto> => {
-  return requestJson<SuggestedCodeDto>("/api/parties/suggest-code");
+export const suggestPartyCode = async (): Promise<ISuggestedCode> => {
+  return requestJson<ISuggestedCode>("/api/parties/suggest-code");
 };
 
 export const createParty = async (
   request: CreatePartyRequest
-): Promise<PartySessionDto> => {
-  return requestJson<PartySessionDto>("/api/parties", {
+): Promise<IPartySession> => {
+  return requestJson<IPartySession>("/api/parties", {
     method: "POST",
     body: JSON.stringify(request),
   });
 };
 
-export const joinParty = async (joinCode: string): Promise<PartySessionDto> => {
-  return requestJson<PartySessionDto>("/api/parties/join", {
+export const joinParty = async (joinCode: string): Promise<IPartySession> => {
+  return requestJson<IPartySession>("/api/parties/join", {
     method: "POST",
     body: JSON.stringify({ joinCode }),
   });
@@ -30,8 +30,8 @@ export const joinParty = async (joinCode: string): Promise<PartySessionDto> => {
 
 export const getPartyPreview = async (
   joinCode: string
-): Promise<PartyPreviewDto> => {
-  return requestJson<PartyPreviewDto>(
+): Promise<IPartyPreview> => {
+  return requestJson<IPartyPreview>(
     `/api/parties/by-code/${encodeURIComponent(joinCode)}`
   );
 };
@@ -39,8 +39,8 @@ export const getPartyPreview = async (
 export const getPartyState = async (
   partyId: string,
   playerToken: string
-): Promise<PartyStateDto> => {
-  return requestJson<PartyStateDto>(
+): Promise<PartyState> => {
+  return requestJson<PartyState>(
     `/api/parties/${encodeURIComponent(partyId)}`,
     { playerToken }
   );
@@ -50,8 +50,8 @@ export const voteInParty = async (
   partyId: string,
   playerToken: string,
   request: PartyVoteRequest
-): Promise<PartyStateDto> => {
-  return requestJson<PartyStateDto>(
+): Promise<PartyState> => {
+  return requestJson<PartyState>(
     `/api/parties/${encodeURIComponent(partyId)}/vote`,
     {
       method: "POST",

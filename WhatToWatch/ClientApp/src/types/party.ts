@@ -1,6 +1,14 @@
-import type { MovieDto } from "./movie";
+import type { Movie } from "./movie";
 
-export type PartyStatus = "Playing" | "Matched" | "Finished" | "Expired";
+export const PartyStatuses = {
+  Playing: "Playing",
+  Matched: "Matched",
+  Finished: "Finished",
+  Expired: "Expired",
+} as const;
+
+export type PartyStatus =
+  (typeof PartyStatuses)[keyof typeof PartyStatuses];
 
 export interface CreatePartyRequest {
   watchlistId?: string | null;
@@ -16,29 +24,29 @@ export interface PartyVoteRequest {
   liked: boolean;
 }
 
-export interface PartyProgressDto {
+export interface IPartyProgress {
   currentIndex: number;
   totalMovies: number;
   isExhausted: boolean;
 }
 
-export interface PartyStateDto {
+export interface PartyState {
   partyId: string;
   joinCode: string;
   status: PartyStatus;
   playerCount: number;
   opponentPresent: boolean;
   opponentOnline: boolean;
-  progress: PartyProgressDto;
-  currentMovie?: MovieDto | null;
-  matchedMovie?: MovieDto | null;
+  progress: IPartyProgress;
+  currentMovie?: Movie | null;
+  matchedMovie?: Movie | null;
 }
 
-export interface PartySessionDto extends PartyStateDto {
+export interface IPartySession extends PartyState {
   playerToken: string;
 }
 
-export interface PartyPreviewDto {
+export interface IPartyPreview {
   partyId: string;
   joinCode: string;
   status: PartyStatus;
@@ -46,11 +54,11 @@ export interface PartyPreviewDto {
   isFull: boolean;
 }
 
-export interface SuggestedCodeDto {
+export interface ISuggestedCode {
   joinCode: string;
 }
 
-export interface PartyErrorDto {
+export interface IPartyError {
   code: string;
   message: string;
 }
