@@ -113,16 +113,22 @@ public sealed class SqlitePartyRepository(WhatToWatchDbContext db) : IPartyRepos
             .ConfigureAwait(false)
             ?? throw PartyException.PartyExpired();
 
-            if (party.Status != PartyStatus.Playing)
-                throw party.Status == PartyStatus.Expired
-                ? PartyException.PartyExpired()
-                : PartyException.AlreadyFinished();
-
             var player = party.Players.SingleOrDefault(item =>
                 CryptographicOperations.FixedTimeEquals(
                     System.Text.Encoding.UTF8.GetBytes(item.PlayerToken),
                     System.Text.Encoding.UTF8.GetBytes(playerToken))) 
                 ?? throw PartyException.InvalidPlayerToken();
+
+            // A player's next action is how an already-created match is
+            // discovered when the client is not polling. Return that match
+            // without accepting or recording the attempted vote.
+            if (party.Status == PartyStatus.Matched)
+                return party;
+
+            if (party.Status != PartyStatus.Playing)
+                throw party.Status == PartyStatus.Expired
+                    ? PartyException.PartyExpired()
+                    : PartyException.AlreadyFinished();
 
             if (player.CurrentIndex >= player.MovieOrder.Count)
                 throw PartyException.NotYourCurrentMovie();

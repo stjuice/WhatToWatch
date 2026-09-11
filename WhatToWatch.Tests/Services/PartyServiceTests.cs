@@ -167,7 +167,7 @@ public sealed class PartyServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Vote_TwoYesVotes_ProduceMatch_AndRejectFurtherVotes()
+    public async Task Vote_TwoYesVotes_ProduceMatch_AndReturnItToTheOtherPlayer()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
         var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
@@ -187,10 +187,13 @@ public sealed class PartyServiceTests : IDisposable
         Assert.Null(matched.CurrentMovie);
         Assert.Equal(2, await _db.PartyLikes.CountAsync());
 
-        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.VoteAsync(
+        var ownerMatch = await _sut.VoteAsync(
             owner.PartyId, owner.PlayerToken,
-            new PartyVoteRequest { MovieId = "tt1", Liked = true }));
-        Assert.Equal("AlreadyFinished", exception.Code);
+            new PartyVoteRequest { MovieId = "tt1", Liked = true });
+
+        Assert.Equal("Matched", ownerMatch.Status);
+        Assert.Equal("tt1", ownerMatch.MatchedMovie!.Id);
+        Assert.Equal(2, await _db.PartyLikes.CountAsync());
     }
 
     [Fact]

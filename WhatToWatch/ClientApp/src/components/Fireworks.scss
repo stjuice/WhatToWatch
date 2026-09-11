@@ -1,0 +1,148 @@
+@use "sass:list";
+@use "sass:math";
+
+$particle-count: 50;
+$burst-width: 500;
+
+@function particle-shadows($count) {
+  $shadows: ();
+
+  @for $index from 1 through $count {
+    $x: math.random($burst-width) - math.div($burst-width, 2);
+    $y: math.random($burst-width) - math.div($burst-width, 2);
+    $color: hsl(math.random(360), 100%, 50%);
+    $shadow: #{$x}px #{$y}px 0 #{$color};
+    $shadows: list.append($shadows, $shadow, comma);
+  }
+
+  @return $shadows;
+}
+
+$first-particles: particle-shadows($particle-count);
+$second-particles: particle-shadows($particle-count);
+
+.fireworks {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity var(--fireworks-fade-duration, 1000ms) ease-out;
+}
+
+.fireworks--fading {
+  opacity: 0;
+}
+
+.fireworks__burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+}
+
+.fireworks__burst--first {
+  animation:
+    fireworks-bang-first 1.25s ease-out infinite backwards,
+    fireworks-gravity 1.25s ease-in infinite backwards,
+    fireworks-position-first 5s linear infinite backwards;
+}
+
+.fireworks__burst--second {
+  animation:
+    fireworks-bang-second 1.25s ease-out 0.65s infinite backwards,
+    fireworks-gravity 1.25s ease-in 0.65s infinite backwards,
+    fireworks-position-second 5s linear 0.65s infinite backwards;
+}
+
+@keyframes fireworks-bang-first {
+  to {
+    box-shadow: $first-particles;
+  }
+}
+
+@keyframes fireworks-bang-second {
+  to {
+    box-shadow: $second-particles;
+  }
+}
+
+@keyframes fireworks-gravity {
+  to {
+    opacity: 0;
+    transform: translateY(12rem);
+  }
+}
+
+@keyframes fireworks-position-first {
+  0%,
+  19.9% {
+    margin-top: 8%;
+    margin-left: -24%;
+  }
+
+  20%,
+  39.9% {
+    margin-top: -12%;
+    margin-left: 20%;
+  }
+
+  40%,
+  59.9% {
+    margin-top: -4%;
+    margin-left: -8%;
+  }
+
+  60%,
+  79.9% {
+    margin-top: 14%;
+    margin-left: 27%;
+  }
+
+  80%,
+  100% {
+    margin-top: -17%;
+    margin-left: -28%;
+  }
+}
+
+@keyframes fireworks-position-second {
+  0%,
+  19.9% {
+    margin-top: -16%;
+    margin-left: 27%;
+  }
+
+  20%,
+  39.9% {
+    margin-top: 12%;
+    margin-left: -18%;
+  }
+
+  40%,
+  59.9% {
+    margin-top: -22%;
+    margin-left: 5%;
+  }
+
+  60%,
+  79.9% {
+    margin-top: 1%;
+    margin-left: 31%;
+  }
+
+  80%,
+  100% {
+    margin-top: 17%;
+    margin-left: -31%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fireworks {
+    display: none;
+  }
+}

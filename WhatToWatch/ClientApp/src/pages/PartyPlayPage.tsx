@@ -9,6 +9,7 @@ import {
   getPartySession,
 } from "../api/partySession";
 import { text } from "../i18n/text";
+import { Fireworks } from "../components/Fireworks";
 import { Button } from "../primitives/Button";
 import { ErrorText } from "../primitives/ErrorText";
 import { StatusText } from "../primitives/StatusText";
@@ -135,6 +136,7 @@ export const PartyPlayPage = () => {
       <main className="party-play party-play--matched">
         <h1 className="party-play__heading">{text("party.matched")}</h1>
         <MoviePage movie={state.matchedMovie} />
+        <Fireworks />
       </main>
     );
   }
@@ -161,9 +163,9 @@ export const PartyPlayPage = () => {
 
   return (
     <main className="party-play">
-      <p className="party-play__code">
+      <h1 className="party-play__heading party-play__heading--code">
         {text("party.playCode", { code: state.joinCode })}
-      </p>
+      </h1>
       {!state.opponentPresent || !state.opponentOnline ? (
         <StatusText className="party-play__presence">
           {text("party.waitingForOpponent")}
