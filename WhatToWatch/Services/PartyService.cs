@@ -86,6 +86,7 @@ public sealed class PartyService(
 
     public async Task<PartySessionDto> JoinAsync(
         string joinCode,
+        string? watchlistId = null,
         CancellationToken cancellationToken = default)
     {
         ValidateCode(joinCode);
@@ -104,6 +105,29 @@ public sealed class PartyService(
 
         if (party.Players.Count >= 2)
             throw PartyException.PartyFull();
+
+        if (!string.Equals(
+                party.WatchlistId,
+                watchlistId,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var guestReferences = await movieService
+                .GetMovieSetAsync(watchlistId, cancellationToken)
+                .ConfigureAwait(false);
+
+            var combinedSet = party.MovieSet
+                .Concat(guestReferences?.Select(reference =>
+                    PartyMovieReference.Encode(
+                        reference.WatchlistId,
+                        reference.Movie.Id)) ?? [])
+                .DistinctBy(
+                    encoded => PartyMovieReference.Decode(encoded).MovieId,
+                    StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            RebuildOwnerQueue(party.Players.Single(), combinedSet);
+            party.MovieSet = [.. combinedSet];
+        }
 
         var now = timeProvider.GetUtcNow();
         var player = CreatePlayer(
@@ -141,6 +165,7 @@ public sealed class PartyService(
         {
             PartyId = party.Id,
             JoinCode = party.JoinCode,
+            WatchlistId = party.WatchlistId,
             Status = party.Status.ToString(),
             PlayerCount = party.Players.Count,
             IsFull = party.Players.Count >= 2,
@@ -349,6 +374,43 @@ public sealed class PartyService(
             JoinedAt = now,
             LastSeenAt = now,
         };
+
+    private void RebuildOwnerQueue(
+        PartyPlayerEntity owner,
+        IReadOnlyList<string> combinedSet)
+    {
+        var seenMovieIds = owner.MovieOrder
+            .Take(owner.CurrentIndex)
+            .Select(encoded => PartyMovieReference.Decode(encoded).MovieId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var current = owner.CurrentIndex < owner.MovieOrder.Count
+            ? owner.MovieOrder[owner.CurrentIndex]
+            : null;
+        var currentMovieId = current is null
+            ? null
+            : PartyMovieReference.Decode(current).MovieId;
+
+        var remaining = combinedSet
+            .Where(encoded =>
+            {
+                var movieId = PartyMovieReference.Decode(encoded).MovieId;
+                return !seenMovieIds.Contains(movieId)
+                    && !string.Equals(
+                        movieId,
+                        currentMovieId,
+                        StringComparison.OrdinalIgnoreCase);
+            })
+            .ToArray();
+
+        var rebuilt = new List<string>(remaining.Length + (current is null ? 0 : 1));
+        if (current is not null && !seenMovieIds.Contains(currentMovieId!))
+            rebuilt.Add(current);
+        rebuilt.AddRange(randomizationService.Shuffle(remaining));
+
+        owner.MovieOrder = rebuilt;
+        owner.CurrentIndex = 0;
+    }
 
     private static string GenerateToken() =>
         Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))

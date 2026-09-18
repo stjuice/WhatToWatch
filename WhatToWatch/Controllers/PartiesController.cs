@@ -30,7 +30,10 @@ public sealed class PartiesController(IPartyService partyService) : ControllerBa
         [FromBody] JoinPartyRequest request,
         CancellationToken cancellationToken) =>
         ExecuteAsync(
-            async () => await partyService.JoinAsync(request.JoinCode, cancellationToken)
+            async () => await partyService.JoinAsync(
+                request.JoinCode,
+                request.WatchlistId,
+                cancellationToken)
                 .ConfigureAwait(false));
 
     [HttpGet("by-code/{joinCode}")]

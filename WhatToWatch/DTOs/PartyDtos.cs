@@ -9,6 +9,7 @@ public sealed record CreatePartyRequest
 public sealed record JoinPartyRequest
 {
     public required string JoinCode { get; init; }
+    public string? WatchlistId { get; init; }
 }
 
 public sealed record PartyVoteRequest
@@ -53,6 +54,7 @@ public sealed record PartyPreviewDto
 {
     public required string PartyId { get; init; }
     public required string JoinCode { get; init; }
+    public string? WatchlistId { get; init; }
     public required string Status { get; init; }
     public int PlayerCount { get; init; }
     public bool IsFull { get; init; }

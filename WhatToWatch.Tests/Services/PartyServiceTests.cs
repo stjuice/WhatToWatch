@@ -126,6 +126,97 @@ public sealed class PartyServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Join_SameWatchlist_ReusesFrozenSetAndOwnerQueue()
+    {
+        SetupMovieSet(
+            ("list", Movie("tt1", "One")),
+            ("list", Movie("tt2", "Two")),
+            ("list", Movie("tt3", "Three")));
+        await _sut.CreateAsync(new CreatePartyRequest
+        {
+            JoinCode = "1234",
+            WatchlistId = "list",
+        });
+        var partyBeforeJoin = await _db.Parties
+            .Include(party => party.Players)
+            .SingleAsync();
+        var frozenSet = partyBeforeJoin.MovieSet.ToArray();
+        var ownerOrder = partyBeforeJoin.Players.Single().MovieOrder.ToArray();
+
+        await _sut.JoinAsync("1234", "LIST");
+
+        var party = await _db.Parties
+            .Include(item => item.Players)
+            .SingleAsync();
+        Assert.Equal(frozenSet, party.MovieSet);
+        Assert.Equal(ownerOrder, party.Players.Single(player => player.Slot == 1).MovieOrder);
+        Assert.Equal(
+            frozenSet.OrderBy(item => item),
+            party.Players.Single(player => player.Slot == 2).MovieOrder.OrderBy(item => item));
+    }
+
+    [Fact]
+    public async Task Join_DifferentWatchlist_MergesSetsAndRebuildsOwnerUnseenQueue()
+    {
+        SetupMovieSet(
+            ("host", Movie("tt1", "One")),
+            ("host", Movie("tt2", "Two")),
+            ("host", Movie("tt3", "Three")),
+            ("guest", Movie("tt2", "Duplicate Two")),
+            ("guest", Movie("tt4", "Four")),
+            ("guest", Movie("tt5", "Five")));
+        var owner = await _sut.CreateAsync(new CreatePartyRequest
+        {
+            JoinCode = "1234",
+            WatchlistId = "host",
+        });
+        var seenMovieId = owner.CurrentMovie!.Id;
+        var ownerBeforeJoin = await _sut.VoteAsync(
+            owner.PartyId,
+            owner.PlayerToken,
+            new PartyVoteRequest { MovieId = seenMovieId, Liked = true });
+        var currentMovieId = ownerBeforeJoin.CurrentMovie!.Id;
+
+        var guest = await _sut.JoinAsync("1234", "guest");
+
+        _db.ChangeTracker.Clear();
+        var party = await _db.Parties
+            .Include(item => item.Players)
+            .Include(item => item.Likes)
+            .SingleAsync();
+        var combinedReferences = party.MovieSet.Select(PartyMovieReference.Decode).ToArray();
+        Assert.Equal(5, combinedReferences.Length);
+        Assert.Equal(
+            "host",
+            combinedReferences.Single(reference => reference.MovieId == "tt2").WatchlistId);
+
+        var storedOwner = party.Players.Single(player => player.Slot == 1);
+        var ownerMovieIds = storedOwner.MovieOrder
+            .Select(encoded => PartyMovieReference.Decode(encoded).MovieId)
+            .ToArray();
+        Assert.Equal(0, storedOwner.CurrentIndex);
+        Assert.Equal(currentMovieId, ownerMovieIds[0]);
+        Assert.DoesNotContain(seenMovieId, ownerMovieIds);
+        Assert.Single(party.Likes);
+
+        var guestMovieIds = party.Players.Single(player => player.Slot == 2).MovieOrder
+            .Select(encoded => PartyMovieReference.Decode(encoded).MovieId)
+            .ToArray();
+        Assert.Equal(5, guestMovieIds.Length);
+        Assert.Equal(5, guestMovieIds.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+
+        var ownerAfterVote = await _sut.VoteAsync(
+            owner.PartyId,
+            owner.PlayerToken,
+            new PartyVoteRequest { MovieId = currentMovieId, Liked = false });
+        Assert.Equal(1, ownerAfterVote.Progress.CurrentIndex);
+        Assert.Equal(4, ownerAfterVote.Progress.TotalMovies);
+        Assert.Contains(ownerAfterVote.Batch, item => item.Movie.Id == "tt4");
+        Assert.Contains(ownerAfterVote.Batch, item => item.Movie.Id == "tt5");
+        Assert.Equal(2, guest.PlayerCount);
+    }
+
+    [Fact]
     public async Task Vote_No_AdvancesOnlyCaller()
     {
         SetupMovieSet(("list", Movie("tt1", "One")), ("list", Movie("tt2", "Two")));
@@ -317,14 +408,19 @@ public sealed class PartyServiceTests : IDisposable
     public async Task Preview_IsPublicAndReportsCapacity()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
-        await _sut.JoinAsync("1234");
+        await _sut.CreateAsync(new CreatePartyRequest
+        {
+            JoinCode = "1234",
+            WatchlistId = "list",
+        });
+        await _sut.JoinAsync("1234", "list");
 
         var preview = await _sut.GetPreviewAsync("1234");
 
         Assert.Equal(2, preview.PlayerCount);
         Assert.True(preview.IsFull);
         Assert.Equal("Playing", preview.Status);
+        Assert.Equal("list", preview.WatchlistId);
     }
 
     private void SetupMovieSet(params (string WatchlistId, Movie Movie)[] entries)

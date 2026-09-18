@@ -47,12 +47,17 @@ public sealed class PartiesControllerTests
     [Fact]
     public async Task PartyException_IsReturnedWithTypedErrorAndStatus()
     {
-        _service.Setup(service => service.JoinAsync("1234", It.IsAny<CancellationToken>()))
+        _service.Setup(service => service.JoinAsync(
+                "1234", "guest-list", It.IsAny<CancellationToken>()))
             .ThrowsAsync(PartyException.PartyFull());
         var controller = CreateController();
 
         var result = await controller.JoinAsync(
-            new JoinPartyRequest { JoinCode = "1234" },
+            new JoinPartyRequest
+            {
+                JoinCode = "1234",
+                WatchlistId = "guest-list",
+            },
             CancellationToken.None);
 
         var objectResult = Assert.IsType<ObjectResult>(result.Result);
