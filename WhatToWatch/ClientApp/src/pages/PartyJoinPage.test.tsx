@@ -23,7 +23,7 @@ beforeEach(() => {
   sessionStorage.clear();
   vi.mocked(getPartyPreview).mockResolvedValue({
     partyId: "party-1",
-    joinCode: "0042",
+    joinCode: "042",
     status: "Playing",
     playerCount: 1,
     isFull: false,
@@ -31,7 +31,7 @@ beforeEach(() => {
   vi.mocked(joinParty).mockResolvedValue({
     partyId: "party-1",
     playerToken: "token-2",
-    joinCode: "0042",
+    joinCode: "042",
     status: "Playing",
     playerCount: 2,
     opponentPresent: true,
@@ -48,7 +48,7 @@ afterEach(() => {
 
 it("validates, joins, stores the session, and redirects to play", async () => {
   render(
-    <MemoryRouter initialEntries={["/party/join/0042"]}>
+    <MemoryRouter initialEntries={["/party/join/042"]}>
       <Routes>
         <Route path="/party/join/:code" element={<PartyJoinPage />} />
         <Route path="/party/:partyId" element={<LocationProbe />} />
@@ -59,8 +59,8 @@ it("validates, joins, stores the session, and redirects to play", async () => {
   expect((await screen.findByLabelText("current path")).textContent).toBe(
     "/party/party-1"
   );
-  expect(getPartyPreview).toHaveBeenCalledWith("0042");
-  expect(joinParty).toHaveBeenCalledWith("0042");
+  expect(getPartyPreview).toHaveBeenCalledWith("042");
+  expect(joinParty).toHaveBeenCalledWith("042");
   await waitFor(() =>
     expect(getPartySession()).toEqual({
       partyId: "party-1",

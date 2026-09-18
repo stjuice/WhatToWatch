@@ -47,7 +47,7 @@ const playingState = (
   totalMovies = 2
 ): PartyState => ({
   partyId: "party-1",
-  joinCode: "1234",
+  joinCode: "123",
   status: "Playing",
   playerCount: 2,
   opponentPresent: true,
@@ -236,7 +236,7 @@ describe("PartyPlayPage", () => {
     await waitFor(() =>
       expect(getPartyState).toHaveBeenCalledWith("party-1", "token-1")
     );
-    expect(screen.getByText("Код гри: 1234")).toBeTruthy();
+    expect(screen.getByText("Код гри: 123")).toBeTruthy();
     expect(
       await screen.findByRole("heading", { name: "First Movie" })
     ).toBeTruthy();

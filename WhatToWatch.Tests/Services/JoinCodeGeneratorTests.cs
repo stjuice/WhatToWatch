@@ -5,35 +5,35 @@ namespace WhatToWatch.Tests.Services;
 public class JoinCodeGeneratorTests
 {
     [Fact]
-    public void Next_ReturnsFourDigitZeroPaddedCode()
+    public void Next_ReturnsThreeDigitZeroPaddedCode()
     {
         var generator = new JoinCodeGenerator(new FixedRandom(42));
 
         var code = generator.Next(new HashSet<string>());
 
-        Assert.Equal("0042", code);
+        Assert.Equal("042", code);
     }
 
     [Fact]
     public void Next_NeverReturnsTakenCode()
     {
-        var takenCodes = Enumerable.Range(0, 10_000)
-            .Select(value => value.ToString("D4"))
-            .Where(code => code != "0042")
+        var takenCodes = Enumerable.Range(0, 1_000)
+            .Select(value => value.ToString("D3"))
+            .Where(code => code != "042")
             .ToHashSet();
         var generator = new JoinCodeGenerator(new Random(42));
 
         var code = generator.Next(takenCodes);
 
-        Assert.Equal("0042", code);
+        Assert.Equal("042", code);
         Assert.DoesNotContain(code, takenCodes);
     }
 
     [Fact]
     public void Next_ThrowsNoCodesAvailable_WhenCodeSpaceIsFull()
     {
-        var takenCodes = Enumerable.Range(0, 10_000)
-            .Select(value => value.ToString("D4"))
+        var takenCodes = Enumerable.Range(0, 1_000)
+            .Select(value => value.ToString("D3"))
             .ToHashSet();
         var generator = new JoinCodeGenerator(new Random(42));
 
@@ -50,9 +50,9 @@ public class JoinCodeGeneratorTests
         var second = new JoinCodeGenerator(new Random(42));
         IReadOnlySet<string> takenCodes = new HashSet<string>
         {
-            "1409",
-            "1684",
-            "5227",
+            "140",
+            "168",
+            "522",
         };
 
         var firstSequence = Enumerable.Range(0, 5)

@@ -38,7 +38,7 @@ export const resolveCarouselActiveIndex = (
 };
 
 const sanitizePartyCode = (value: string): string =>
-  value.replace(/\D/g, "").slice(0, 4);
+  value.replace(/\D/g, "").slice(0, 3);
 
 export const PartyStartPage = () => {
   const { watchlists } = useAppState();
@@ -179,7 +179,7 @@ export const PartyStartPage = () => {
         className="party-start__code"
         aria-label={text("party.codeLabel")}
         inputMode="numeric"
-        maxLength={4}
+        maxLength={3}
         value={joinCode}
         placeholder={suggestedCode}
         onChange={(event) => {

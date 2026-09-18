@@ -60,7 +60,7 @@ public class PartySchemaTests
         await using var db = CreateDbContext(connection);
         await db.Database.EnsureCreatedAsync();
 
-        var firstParty = CreateParty("party-1", "1234");
+        var firstParty = CreateParty("party-1", "123");
         db.Parties.Add(firstParty);
         await db.SaveChangesAsync();
 
@@ -68,11 +68,11 @@ public class PartySchemaTests
         firstParty.FinishedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
 
-        db.Parties.Add(CreateParty("party-2", "1234"));
+        db.Parties.Add(CreateParty("party-2", "123"));
 
         await db.SaveChangesAsync();
 
-        Assert.Equal(2, await db.Parties.CountAsync(party => party.JoinCode == "1234"));
+        Assert.Equal(2, await db.Parties.CountAsync(party => party.JoinCode == "123"));
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class PartySchemaTests
         await using var db = CreateDbContext(connection);
         await db.Database.EnsureCreatedAsync();
 
-        db.Parties.Add(CreateParty("party-1", "1234"));
+        db.Parties.Add(CreateParty("party-1", "123"));
         db.PartyLikes.Add(CreateLike());
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();

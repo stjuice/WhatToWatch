@@ -446,10 +446,12 @@ public sealed class PartyService(
             PlayerToken = token,
         };
 
-    private static bool IsValidCode(string? code) =>
-        code is { Length: 4 } && code.All(char.IsAsciiDigit);
+    private bool IsValidCode(string? code) =>
+        code is not null
+        && code.Length == _options.JoinCodeLength
+        && code.All(char.IsAsciiDigit);
 
-    private static void ValidateCode(string? code)
+    private void ValidateCode(string? code)
     {
         if (!IsValidCode(code))
             throw PartyException.InvalidCode();

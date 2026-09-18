@@ -24,5 +24,5 @@ public class PartyOptions
 
     public int PresenceWindowSeconds { get; set; } = 90;
 
-    public int JoinCodeLength { get; set; } = 4;
+    public int JoinCodeLength { get; set; } = 3;
 }

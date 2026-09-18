@@ -35,7 +35,7 @@ const appState = {
 const session = {
   partyId: "party-1",
   playerToken: "token-1",
-  joinCode: "2468",
+  joinCode: "246",
   status: "Playing" as const,
   playerCount: 1,
   opponentPresent: false,
@@ -60,7 +60,7 @@ const renderPage = () =>
 beforeEach(() => {
   sessionStorage.clear();
   vi.mocked(useAppState).mockReturnValue(appState);
-  vi.mocked(suggestPartyCode).mockResolvedValue({ joinCode: "2468" });
+  vi.mocked(suggestPartyCode).mockResolvedValue({ joinCode: "246" });
   vi.mocked(createParty).mockResolvedValue(session);
   vi.mocked(joinParty).mockResolvedValue(session);
 });
@@ -81,7 +81,7 @@ describe("resolveCarouselActiveIndex", () => {
 describe("PartyStartPage", () => {
   it("puts Всі фільми first and selects it by default", async () => {
     renderPage();
-    await screen.findByPlaceholderText("2468");
+    await screen.findByPlaceholderText("246");
 
     const choices = screen.getAllByRole("button", { pressed: true });
     expect(choices).toHaveLength(1);
@@ -107,7 +107,7 @@ describe("PartyStartPage", () => {
 
     fireEvent.change(input, { target: { value: "12a34" } });
 
-    expect((input as HTMLInputElement).value).toBe("1234");
+    expect((input as HTMLInputElement).value).toBe("123");
     expect(
       screen.getByRole("region", { name: "Вибір списку фільмів" }).getAttribute(
         "aria-disabled"
@@ -121,14 +121,14 @@ describe("PartyStartPage", () => {
 
   it("creates with the suggested code when the field is empty", async () => {
     renderPage();
-    await screen.findByPlaceholderText("2468");
+    await screen.findByPlaceholderText("246");
 
     fireEvent.click(screen.getByRole("button", { name: "Створити гру" }));
 
     await waitFor(() =>
       expect(createParty).toHaveBeenCalledWith({
         watchlistId: null,
-        joinCode: "2468",
+        joinCode: "246",
       })
     );
     expect(joinParty).not.toHaveBeenCalled();
@@ -148,14 +148,14 @@ describe("PartyStartPage", () => {
       new ApiError("Already taken", "CodeTaken")
     );
     vi.mocked(suggestPartyCode)
-      .mockResolvedValueOnce({ joinCode: "2468" })
-      .mockResolvedValueOnce({ joinCode: "1357" });
+      .mockResolvedValueOnce({ joinCode: "246" })
+      .mockResolvedValueOnce({ joinCode: "135" });
     renderPage();
-    await screen.findByPlaceholderText("2468");
+    await screen.findByPlaceholderText("246");
 
     fireEvent.click(screen.getByRole("button", { name: "Створити гру" }));
 
-    expect(await screen.findByPlaceholderText("1357")).toBeTruthy();
+    expect(await screen.findByPlaceholderText("135")).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toContain("Цей код уже зайнятий");
     expect(suggestPartyCode).toHaveBeenCalledTimes(2);
   });
@@ -166,12 +166,12 @@ describe("PartyStartPage", () => {
     );
     renderPage();
     const input = await screen.findByLabelText("Код гри");
-    fireEvent.change(input, { target: { value: "9999" } });
+    fireEvent.change(input, { target: { value: "999" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Приєднатися" }));
 
     expect(await screen.findByText("Гру з таким кодом не знайдено.")).toBeTruthy();
-    expect(joinParty).toHaveBeenCalledWith("9999");
+    expect(joinParty).toHaveBeenCalledWith("999");
     expect(createParty).not.toHaveBeenCalled();
   });
 });

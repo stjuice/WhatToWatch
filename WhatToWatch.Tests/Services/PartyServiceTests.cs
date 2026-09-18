@@ -50,10 +50,10 @@ public sealed class PartyServiceTests : IDisposable
             ("other|list", Movie("tt1", "Duplicate")),
             ("other|list", Movie("tt2", "Second")));
 
-        var result = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "0042" });
+        var result = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "042" });
 
         Assert.Equal("Playing", result.Status);
-        Assert.Equal("0042", result.JoinCode);
+        Assert.Equal("042", result.JoinCode);
         Assert.NotEmpty(result.PlayerToken);
         Assert.NotNull(result.CurrentMovie);
         Assert.Equal(2, result.Batch.Count);
@@ -69,7 +69,7 @@ public sealed class PartyServiceTests : IDisposable
 
     [Theory]
     [InlineData("")]
-    [InlineData("123")]
+    [InlineData("12")]
     [InlineData("12345")]
     [InlineData("12a4")]
     public async Task Create_RejectsInvalidExplicitCode(string code)
@@ -95,10 +95,10 @@ public sealed class PartyServiceTests : IDisposable
     public async Task Create_RejectsTakenExplicitCode()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
 
         var exception = await Assert.ThrowsAsync<PartyException>(
-            () => _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" }));
+            () => _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" }));
 
         Assert.Equal("CodeTaken", exception.Code);
     }
@@ -110,9 +110,9 @@ public sealed class PartyServiceTests : IDisposable
             ("list", Movie("tt1", "One")),
             ("list", Movie("tt2", "Two")),
             ("list", Movie("tt3", "Three")));
-        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
 
-        var guest = await _sut.JoinAsync("1234");
+        var guest = await _sut.JoinAsync("123");
 
         Assert.NotEqual(owner.PlayerToken, guest.PlayerToken);
         Assert.Equal(2, guest.PlayerCount);
@@ -121,7 +121,7 @@ public sealed class PartyServiceTests : IDisposable
         Assert.Equal([1, 2], players.Select(player => player.Slot));
         Assert.NotSame(players[0].MovieOrder, players[1].MovieOrder);
 
-        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.JoinAsync("1234"));
+        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.JoinAsync("123"));
         Assert.Equal("PartyFull", exception.Code);
     }
 
@@ -134,7 +134,7 @@ public sealed class PartyServiceTests : IDisposable
             ("list", Movie("tt3", "Three")));
         await _sut.CreateAsync(new CreatePartyRequest
         {
-            JoinCode = "1234",
+            JoinCode = "123",
             WatchlistId = "list",
         });
         var partyBeforeJoin = await _db.Parties
@@ -143,7 +143,7 @@ public sealed class PartyServiceTests : IDisposable
         var frozenSet = partyBeforeJoin.MovieSet.ToArray();
         var ownerOrder = partyBeforeJoin.Players.Single().MovieOrder.ToArray();
 
-        await _sut.JoinAsync("1234", "LIST");
+        await _sut.JoinAsync("123", "LIST");
 
         var party = await _db.Parties
             .Include(item => item.Players)
@@ -167,7 +167,7 @@ public sealed class PartyServiceTests : IDisposable
             ("guest", Movie("tt5", "Five")));
         var owner = await _sut.CreateAsync(new CreatePartyRequest
         {
-            JoinCode = "1234",
+            JoinCode = "123",
             WatchlistId = "host",
         });
         var seenMovieId = owner.CurrentMovie!.Id;
@@ -177,7 +177,7 @@ public sealed class PartyServiceTests : IDisposable
             new PartyVoteRequest { MovieId = seenMovieId, Liked = true });
         var currentMovieId = ownerBeforeJoin.CurrentMovie!.Id;
 
-        var guest = await _sut.JoinAsync("1234", "guest");
+        var guest = await _sut.JoinAsync("123", "guest");
 
         _db.ChangeTracker.Clear();
         var party = await _db.Parties
@@ -220,7 +220,7 @@ public sealed class PartyServiceTests : IDisposable
     public async Task Vote_No_AdvancesOnlyCaller()
     {
         SetupMovieSet(("list", Movie("tt1", "One")), ("list", Movie("tt2", "Two")));
-        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
         var currentId = session.CurrentMovie!.Id;
 
         var state = await _sut.VoteAsync(
@@ -238,7 +238,7 @@ public sealed class PartyServiceTests : IDisposable
         SetupMovieSet(Enumerable.Range(1, 7)
             .Select(index => ("list", Movie($"tt{index}", $"Movie {index}")))
             .ToArray());
-        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
 
         Assert.Equal(5, session.Batch.Count);
         Assert.Equal([0, 1, 2, 3, 4], session.Batch.Select(item => item.OrderIndex));
@@ -266,7 +266,7 @@ public sealed class PartyServiceTests : IDisposable
     public async Task State_RejectsInvalidPlayerToken()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
 
         var exception = await Assert.ThrowsAsync<PartyException>(
             () => _sut.GetStateAsync(session.PartyId, "wrong-token"));
@@ -278,7 +278,7 @@ public sealed class PartyServiceTests : IDisposable
     public async Task Vote_RejectsMovieOtherThanCurrent()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var session = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
 
         var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.VoteAsync(
             session.PartyId,
@@ -293,8 +293,8 @@ public sealed class PartyServiceTests : IDisposable
     public async Task Vote_TwoYesVotes_ProduceMatch_AndReturnItToTheOtherPlayer()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
-        var guest = await _sut.JoinAsync("1234");
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
+        var guest = await _sut.JoinAsync("123");
 
         var first = await _sut.VoteAsync(
             owner.PartyId, owner.PlayerToken,
@@ -324,8 +324,8 @@ public sealed class PartyServiceTests : IDisposable
     public async Task Exhaustion_FinishesOnlyAfterBothPlayersExhausted()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
-        var guest = await _sut.JoinAsync("1234");
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
+        var guest = await _sut.JoinAsync("123");
 
         var ownerState = await _sut.VoteAsync(
             owner.PartyId, owner.PlayerToken,
@@ -343,7 +343,7 @@ public sealed class PartyServiceTests : IDisposable
     public async Task State_SkipsVanishedMovies_AndRefreshesPresence()
     {
         SetupMovieSet(("list", Movie("tt1", "One")), ("list", Movie("tt2", "Two")));
-        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
         var player = await _db.PartyPlayers.SingleAsync();
         var first = PartyMovieReference.Decode(player.MovieOrder[0]);
         _movieLookup.Remove((first.WatchlistId, first.MovieId));
@@ -364,7 +364,7 @@ public sealed class PartyServiceTests : IDisposable
         SetupMovieSet(Enumerable.Range(1, 6)
             .Select(index => ("list", Movie($"tt{index}", $"Movie {index}")))
             .ToArray());
-        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
         var player = await _db.PartyPlayers.SingleAsync();
         var vanished = PartyMovieReference.Decode(player.MovieOrder[2]);
         _movieLookup.Remove((vanished.WatchlistId, vanished.MovieId));
@@ -380,10 +380,10 @@ public sealed class PartyServiceTests : IDisposable
     public async Task LazyCleanup_ExpiresParty_WhenAllPlayersAreStale()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
+        await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
         _time.Advance(TimeSpan.FromMinutes(121));
 
-        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.JoinAsync("1234"));
+        var exception = await Assert.ThrowsAsync<PartyException>(() => _sut.JoinAsync("123"));
 
         Assert.Equal("PartyExpired", exception.Code);
         Assert.Equal(PartyStatus.Expired, (await _db.Parties.SingleAsync()).Status);
@@ -393,8 +393,8 @@ public sealed class PartyServiceTests : IDisposable
     public async Task State_DoesNotExposeOpponentSecrets()
     {
         SetupMovieSet(("list", Movie("tt1", "One")));
-        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "1234" });
-        var guest = await _sut.JoinAsync("1234");
+        var owner = await _sut.CreateAsync(new CreatePartyRequest { JoinCode = "123" });
+        var guest = await _sut.JoinAsync("123");
 
         var state = await _sut.GetStateAsync(owner.PartyId, owner.PlayerToken);
         var json = System.Text.Json.JsonSerializer.Serialize(state);
@@ -410,12 +410,12 @@ public sealed class PartyServiceTests : IDisposable
         SetupMovieSet(("list", Movie("tt1", "One")));
         await _sut.CreateAsync(new CreatePartyRequest
         {
-            JoinCode = "1234",
+            JoinCode = "123",
             WatchlistId = "list",
         });
-        await _sut.JoinAsync("1234", "list");
+        await _sut.JoinAsync("123", "list");
 
-        var preview = await _sut.GetPreviewAsync("1234");
+        var preview = await _sut.GetPreviewAsync("123");
 
         Assert.Equal(2, preview.PlayerCount);
         Assert.True(preview.IsFull);

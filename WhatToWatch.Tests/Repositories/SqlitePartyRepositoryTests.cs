@@ -63,7 +63,7 @@ public sealed class SqlitePartyRepositoryTests
         db.Parties.Add(new PartyEntity
         {
             Id = "old",
-            JoinCode = "1234",
+            JoinCode = "123",
             MovieSet = [],
             Status = PartyStatus.Finished,
             CreatedAt = old,
@@ -86,7 +86,7 @@ public sealed class SqlitePartyRepositoryTests
         return new PartyEntity
         {
             Id = "party",
-            JoinCode = "1234",
+            JoinCode = "123",
             MovieSet = [reference],
             Status = PartyStatus.Playing,
             CreatedAt = now,

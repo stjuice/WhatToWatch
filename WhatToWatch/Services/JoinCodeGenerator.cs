@@ -24,7 +24,7 @@ public sealed class JoinCodeGenerator
     {
     }
 
-    public JoinCodeGenerator(Random random, int codeLength = 4)
+    public JoinCodeGenerator(Random random, int codeLength = 3)
     {
         ArgumentNullException.ThrowIfNull(random);
 
