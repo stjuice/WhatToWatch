@@ -11,6 +11,8 @@ export const ukr = {
   [TextKeys.Party_CodeLabel]: "Код гри",
   [TextKeys.Party_Create]: "Створити гру",
   [TextKeys.Party_Join]: "Приєднатися",
+  [TextKeys.Party_ChooseWatchlist]:
+    "Залиште вибраний список або оберіть інший",
   [TextKeys.Party_Errors_Suggestion]: "Не вдалося отримати код гри",
   [TextKeys.Party_Errors_CodeTaken]: "Цей код уже зайнятий. Спробуйте новий код.",
   [TextKeys.Party_Errors_InvalidCode]: "Гру з таким кодом не знайдено.",

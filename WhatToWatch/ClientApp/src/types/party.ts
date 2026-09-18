@@ -17,6 +17,7 @@ export interface CreatePartyRequest {
 
 export interface JoinPartyRequest {
   joinCode: string;
+  watchlistId?: string | null;
 }
 
 export interface PartyVoteRequest {
@@ -55,6 +56,7 @@ export interface IPartySession extends PartyState {
 export interface IPartyPreview {
   partyId: string;
   joinCode: string;
+  watchlistId?: string | null;
   status: PartyStatus;
   playerCount: number;
   isFull: boolean;

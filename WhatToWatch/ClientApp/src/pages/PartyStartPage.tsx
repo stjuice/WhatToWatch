@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { UIEvent } from "react";
+import type { UIEvent, WheelEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import popcornFull from "../assets/popcorn-full.svg";
 import { ApiError } from "../api/http";
@@ -58,7 +58,7 @@ export const PartyStartPage = () => {
       try {
         const suggestion = await suggestPartyCode();
         if (!cancelled) {
-          setSuggestedCode(suggestion.joinCode);
+          setSuggestedCode(sanitizePartyCode(suggestion.joinCode));
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -83,8 +83,18 @@ export const PartyStartPage = () => {
     setActiveIndex(resolveCarouselActiveIndex(viewportCenter, itemCenters));
   };
 
+  const scrollCarouselWithWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+    event.preventDefault();
+    event.currentTarget.scrollLeft += event.deltaY;
+  };
+
   const handleSubmit = async () => {
-    if (isSubmitting || (!isJoining && !suggestedCode)) {
+    if (
+      isSubmitting
+      || (isJoining ? joinCode.length !== 3 : !suggestedCode)
+    ) {
       return;
     }
 
@@ -92,12 +102,11 @@ export const PartyStartPage = () => {
     setError(null);
 
     try {
+      const watchlistId =
+        activeIndex === 0 ? null : watchlists[activeIndex - 1]?.id;
       const session = isJoining
-        ? await joinParty(joinCode)
-        : await createParty({
-            watchlistId: activeIndex === 0 ? null : watchlists[activeIndex - 1]?.id,
-            joinCode: suggestedCode,
-          });
+        ? await joinParty({ joinCode, watchlistId })
+        : await createParty({ watchlistId, joinCode: suggestedCode });
 
       setPartySession({
         partyId: session.partyId,
@@ -108,7 +117,7 @@ export const PartyStartPage = () => {
       if (submitError instanceof ApiError && submitError.code === "CodeTaken") {
         try {
           const suggestion = await suggestPartyCode();
-          setSuggestedCode(suggestion.joinCode);
+          setSuggestedCode(sanitizePartyCode(suggestion.joinCode));
           setError(text("party.errors.codeTaken"));
         } catch (suggestionError) {
           setError(
@@ -132,13 +141,11 @@ export const PartyStartPage = () => {
     <main className="party-start">
       <div
         ref={carouselRef}
-        className={`party-start__carousel${
-          isJoining ? " party-start__carousel--disabled" : ""
-        }`}
+        className="party-start__carousel"
         role="region"
         aria-label={text("party.watchlistCarousel")}
-        aria-disabled={isJoining}
         onScroll={updateActiveIndex}
+        onWheel={scrollCarouselWithWheel}
       >
         {choices.map((choice, index) => {
           const isActive = index === activeIndex;
@@ -158,12 +165,12 @@ export const PartyStartPage = () => {
                 size={isActive ? "m" : "ms"}
                 frame={COMPACT_LABEL_FRAME}
                 labelCenter="58%"
-                disabled={isJoining}
+                disabled={isSubmitting}
                 ariaLabel={choice.name}
                 ariaPressed={isActive}
                 onClick={(event) => {
                   setActiveIndex(index);
-                  event.currentTarget.parentElement?.scrollIntoView({
+                  event.currentTarget.parentElement?.scrollIntoView?.({
                     behavior: "smooth",
                     inline: "center",
                     block: "nearest",
@@ -194,7 +201,10 @@ export const PartyStartPage = () => {
         className="party-start__action"
         label={text(isJoining ? "party.join" : "party.create")}
         size="ms"
-        disabled={isSubmitting || (!isJoining && !suggestedCode)}
+        disabled={
+          isSubmitting
+          || (isJoining ? joinCode.length !== 3 : !suggestedCode)
+        }
         onClick={() => {
           void handleSubmit();
         }}

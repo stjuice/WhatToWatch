@@ -9,6 +9,7 @@ export const TextKeys = {
   Party_CodeLabel: "party.codeLabel",
   Party_Create: "party.create",
   Party_Join: "party.join",
+  Party_ChooseWatchlist: "party.chooseWatchlist",
   Party_Errors_Suggestion: "party.errors.suggestion",
   Party_Errors_CodeTaken: "party.errors.codeTaken",
   Party_Errors_InvalidCode: "party.errors.invalidCode",

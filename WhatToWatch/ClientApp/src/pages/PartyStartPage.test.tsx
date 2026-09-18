@@ -62,7 +62,13 @@ beforeEach(() => {
   vi.mocked(useAppState).mockReturnValue(appState);
   vi.mocked(suggestPartyCode).mockResolvedValue({ joinCode: "246" });
   vi.mocked(createParty).mockResolvedValue(session);
-  vi.mocked(joinParty).mockResolvedValue(session);
+  vi.mocked(joinParty).mockResolvedValue({
+    ...session,
+    playerToken: "token-2",
+    playerCount: 2,
+    opponentPresent: true,
+    opponentOnline: true,
+  });
 });
 
 afterEach(() => {
@@ -79,6 +85,15 @@ describe("resolveCarouselActiveIndex", () => {
 });
 
 describe("PartyStartPage", () => {
+  it("limits a stale suggested code to the three-digit UI format", async () => {
+    vi.mocked(suggestPartyCode).mockResolvedValue({ joinCode: "2468" });
+
+    renderPage();
+
+    expect(await screen.findByPlaceholderText("246")).toBeTruthy();
+    expect(screen.queryByPlaceholderText("2468")).toBeNull();
+  });
+
   it("puts Всі фільми first and selects it by default", async () => {
     renderPage();
     await screen.findByPlaceholderText("246");
@@ -101,22 +116,24 @@ describe("PartyStartPage", () => {
     ).toBeTruthy();
   });
 
-  it("typing a code disables the carousel and switches the action to join", async () => {
+  it("typing a code keeps list selection enabled and switches the action to join", async () => {
     renderPage();
     const input = await screen.findByLabelText("Код гри");
+    const carousel = screen.getByRole("region", {
+      name: "Вибір списку фільмів",
+    });
 
     fireEvent.change(input, { target: { value: "12a34" } });
 
     expect((input as HTMLInputElement).value).toBe("123");
-    expect(
-      screen.getByRole("region", { name: "Вибір списку фільмів" }).getAttribute(
-        "aria-disabled"
-      )
-    ).toBe("true");
+    expect(carousel.getAttribute("aria-disabled")).toBeNull();
     expect(screen.getByRole("button", { name: "Сімейні" }).hasAttribute("disabled")).toBe(
-      true
+      false
     );
     expect(screen.getByRole("button", { name: "Приєднатися" })).toBeTruthy();
+
+    fireEvent.wheel(carousel, { deltaX: 0, deltaY: 120 });
+    expect(carousel.scrollLeft).toBe(120);
   });
 
   it("creates with the suggested code when the field is empty", async () => {
@@ -131,7 +148,6 @@ describe("PartyStartPage", () => {
         joinCode: "246",
       })
     );
-    expect(joinParty).not.toHaveBeenCalled();
     expect(getPartySession()).toEqual({
       partyId: "party-1",
       playerToken: "token-1",
@@ -160,18 +176,48 @@ describe("PartyStartPage", () => {
     expect(suggestPartyCode).toHaveBeenCalledTimes(2);
   });
 
-  it("shows InvalidCode and never falls back to creating", async () => {
-    vi.mocked(joinParty).mockRejectedValueOnce(
-      new ApiError("Invalid", "InvalidCode")
-    );
+  it("requires three digits and joins directly with the selected list", async () => {
     renderPage();
     const input = await screen.findByLabelText("Код гри");
-    fireEvent.change(input, { target: { value: "999" } });
+    fireEvent.change(input, { target: { value: "99" } });
 
+    const joinButton = screen.getByRole("button", { name: "Приєднатися" });
+    expect((joinButton as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(input, { target: { value: "999" } });
+    const enabledJoinButton = screen.getByRole("button", {
+      name: "Приєднатися",
+    });
+    expect((enabledJoinButton as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(enabledJoinButton);
+
+    await waitFor(() =>
+      expect(joinParty).toHaveBeenCalledWith({
+        joinCode: "999",
+        watchlistId: null,
+      })
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("current path").textContent).toBe(
+        "/party/party-1"
+      )
+    );
+    expect(createParty).not.toHaveBeenCalled();
+  });
+
+  it("joins with the list selected by player two", async () => {
+    renderPage();
+    const input = await screen.findByLabelText("Код гри");
+
+    fireEvent.click(screen.getByRole("button", { name: "Сімейні" }));
+    fireEvent.change(input, { target: { value: "123" } });
     fireEvent.click(screen.getByRole("button", { name: "Приєднатися" }));
 
-    expect(await screen.findByText("Гру з таким кодом не знайдено.")).toBeTruthy();
-    expect(joinParty).toHaveBeenCalledWith("999");
-    expect(createParty).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(joinParty).toHaveBeenCalledWith({
+        joinCode: "123",
+        watchlistId: "family",
+      })
+    );
   });
 });

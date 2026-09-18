@@ -4,6 +4,7 @@ import type {
   PartyState,
   ISuggestedCode,
   CreatePartyRequest,
+  JoinPartyRequest,
   PartyVoteRequest,
 } from "../types/party";
 import { requestJson } from "./http";
@@ -21,10 +22,12 @@ export const createParty = async (
   });
 };
 
-export const joinParty = async (joinCode: string): Promise<IPartySession> => {
+export const joinParty = async (
+  request: JoinPartyRequest
+): Promise<IPartySession> => {
   return requestJson<IPartySession>("/api/parties/join", {
     method: "POST",
-    body: JSON.stringify({ joinCode }),
+    body: JSON.stringify(request),
   });
 };
 
