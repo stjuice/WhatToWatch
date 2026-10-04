@@ -59,6 +59,7 @@ builder.Services.AddSingleton<IRandomizationService, RandomizationService>();
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IWatchlistService, WatchlistService>();
 builder.Services.AddScoped<IPartyService, PartyService>();
+builder.Services.AddScoped<ISpookieNightService, SpookieNightService>();
 
 var app = builder.Build();
 

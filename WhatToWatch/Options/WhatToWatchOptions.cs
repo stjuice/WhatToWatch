@@ -36,6 +36,11 @@ public class SpookieNightOptions
     /// </summary>
     public string TimeZone { get; set; } = "Europe/Kyiv";
 
+    /// <summary>
+    /// Imported IMDb watchlist (<c>ls...</c>) that every ticket's <see cref="SpookieTicketOptions.MovieId"/> belongs to.
+    /// </summary>
+    public string WatchlistId { get; set; } = string.Empty;
+
     public List<SpookieTicketOptions> Tickets { get; set; } = [];
 }
 
@@ -44,7 +49,7 @@ public class SpookieTicketOptions
     public string Key { get; set; } = string.Empty;
 
     /// <summary>
-    /// IMDb id (<c>tt...</c>). Must belong to an imported watchlist.
+    /// IMDb id (<c>tt...</c>). Must belong to <see cref="SpookieNightOptions.WatchlistId"/>.
     /// </summary>
     public string MovieId { get; set; } = string.Empty;
 
