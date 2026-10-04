@@ -29,6 +29,8 @@ builder.Services.Configure<WhatToWatchOptions>(options =>
 });
 builder.Services.Configure<PartyOptions>(
     builder.Configuration.GetSection($"{WhatToWatchOptions.SectionName}:Party"));
+builder.Services.Configure<SpookieNightOptions>(
+    builder.Configuration.GetSection($"{WhatToWatchOptions.SectionName}:SpookieNight"));
 
 var whatToWatchOptions = builder.Configuration
     .GetSection(WhatToWatchOptions.SectionName)

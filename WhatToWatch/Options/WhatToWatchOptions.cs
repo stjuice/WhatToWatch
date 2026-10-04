@@ -8,6 +8,8 @@ public class WhatToWatchOptions
 
     public PartyOptions Party { get; set; } = new();
 
+    public SpookieNightOptions SpookieNight { get; set; } = new();
+
     /// <summary>
     /// Shared secret for studio / Android write operations. Sent as <c>X-Admin-Key</c>.
     /// </summary>
@@ -25,4 +27,28 @@ public class PartyOptions
     public int PresenceWindowSeconds { get; set; } = 90;
 
     public int JoinCodeLength { get; set; } = 3;
+}
+
+public class SpookieNightOptions
+{
+    /// <summary>
+    /// Time zone used to decide whether a ticket's <see cref="SpookieTicketOptions.UnlockDate"/> has arrived.
+    /// </summary>
+    public string TimeZone { get; set; } = "Europe/Kyiv";
+
+    public List<SpookieTicketOptions> Tickets { get; set; } = [];
+}
+
+public class SpookieTicketOptions
+{
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>
+    /// IMDb id (<c>tt...</c>). Must belong to an imported watchlist.
+    /// </summary>
+    public string MovieId { get; set; } = string.Empty;
+
+    public DateOnly UnlockDate { get; set; }
+
+    public bool IsBonus { get; set; }
 }
