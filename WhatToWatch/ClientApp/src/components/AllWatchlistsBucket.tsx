@@ -1,7 +1,7 @@
 import popcornFull from "../assets/popcorn-full.svg";
 import { text } from "../i18n/text";
 import { routePaths } from "../routes/routePaths";
-import { COMPACT_LABEL_FRAME } from "./labelPill";
+import { HOME_LABEL_FRAME } from "./labelPill";
 import { PopcornBucket } from "./PopcornBucket";
 import "./AllWatchlistsBucket.scss";
 
@@ -11,8 +11,8 @@ export const AllWatchlistsBucket = () => (
     art={popcornFull}
     label={text("home.watchlists")}
     size="ml"
-    frame={COMPACT_LABEL_FRAME}
-    labelCenter="58%"
+    frame={HOME_LABEL_FRAME}
+    labelCenter="100%"
     to={routePaths.watchlists}
   />
 );

@@ -1,7 +1,7 @@
 import type { MouseEventHandler } from "react";
 import party from "../assets/tinder.svg";
 import type { ArtworkSize } from "./artworkSize";
-import { COMPACT_LABEL_FRAME } from "./labelPill";
+import { HOME_LABEL_FRAME } from "./labelPill";
 import { PopcornBucket } from "./PopcornBucket";
 import "./PartyBucket.scss";
 
@@ -42,7 +42,7 @@ export const PartyBucket = ({
     label={label}
     size={size}
     ariaLabel={ariaLabel}
-    frame={COMPACT_LABEL_FRAME}
-    labelCenter="78%"
+    frame={HOME_LABEL_FRAME}
+    labelCenter="100%"
   />
 );

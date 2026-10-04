@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COMPACT_LABEL_FRAME,
+  HOME_LABEL_FRAME,
   LARGE_LABEL_FRAME,
   WIDE_LABEL_FRAME,
   fitLabelFontRem,
@@ -61,5 +62,11 @@ describe("label pill", () => {
     expect(font).toBeGreaterThanOrEqual(WIDE_LABEL_FRAME.minFontRem);
     expect(font).toBeLessThanOrEqual(WIDE_LABEL_FRAME.maxFontRem);
     expect(font).toBeGreaterThan(fitLabelFontRem("Оберемо разом", COMPACT_LABEL_FRAME));
+  });
+
+  it("renders both home labels at the same font size", () => {
+    expect(fitLabelFontRem("Оберемо разом", HOME_LABEL_FRAME)).toBe(
+      fitLabelFontRem("Всі списки", HOME_LABEL_FRAME)
+    );
   });
 });

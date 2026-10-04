@@ -30,6 +30,13 @@ export const WIDE_LABEL_FRAME: LabelFrame = {
   minFontRem: 1,
 };
 
+export const HOME_LABEL_FRAME: LabelFrame = {
+  widthRem: 16,
+  heightRem: 3.5,
+  maxFontRem: 1.2,
+  minFontRem: 1,
+};
+
 /** Measured average glyph width of Lobster for Cyrillic labels, expressed in em. */
 const AVG_CHAR_WIDTH_EM = 0.53;
 const LINE_HEIGHT = 1.08;
