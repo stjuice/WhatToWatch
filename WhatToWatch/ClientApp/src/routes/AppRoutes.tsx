@@ -5,6 +5,8 @@ import { MovieRoute } from "./MovieRoute";
 import { PartyJoinRoute } from "./PartyJoinRoute";
 import { PartyPlayRoute } from "./PartyPlayRoute";
 import { PartyStartRoute } from "./PartyStartRoute";
+import { SpookieMovieRoute } from "./SpookieMovieRoute";
+import { SpookieNightRoute } from "./SpookieNightRoute";
 import { StudioRoute } from "./StudioRoute";
 import { WatchlistsRoute } from "./WatchlistsRoute";
 import { routePaths } from "./routePaths";
@@ -20,6 +22,8 @@ export const AppRoutes = () => {
       <Route path={routePaths.partyJoinPattern} element={<PartyJoinRoute />} />
       <Route path={routePaths.partyPlayPattern} element={<PartyPlayRoute />} />
       <Route path={routePaths.studio} element={<StudioRoute />} />
+      <Route path={routePaths.spookieNight} element={<SpookieNightRoute />} />
+      <Route path={routePaths.spookieMoviePattern} element={<SpookieMovieRoute />} />
       <Route path="*" element={<Navigate to={routePaths.home} replace />} />
     </Routes>
   );

@@ -10,4 +10,7 @@ export const routePaths = {
   partyPlayPattern: "/party/:partyId",
   partyPlay: (partyId: string) => `/party/${encodeURIComponent(partyId)}`,
   studio: "/studio",
+  spookieNight: "/spookie-night",
+  spookieMoviePattern: "/spookie-night/:key",
+  spookieMovie: (key: string) => `/spookie-night/${encodeURIComponent(key)}`,
 } as const;
