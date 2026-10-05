@@ -20,6 +20,16 @@ vi.mock("../state/AppStateContext", () => ({
   useAppState: vi.fn(),
 }));
 
+vi.mock("../api/spookieNightApi", () => ({
+  getSpookieTickets: vi.fn(async () => []),
+  getSpookieMovie: vi.fn(async () => ({
+    id: "tt0075005",
+    title: "Suspiria",
+    genres: ["Horror"],
+    posterUrl: "https://example.com/imdb.jpg",
+  })),
+}));
+
 const appState: AppState = {
   watchlists: [
     {
@@ -100,6 +110,48 @@ describe("AppRoutes", () => {
     expect(listBucket.getAttribute("href")).toBe(routePaths.list("movie-night"));
   });
 
+  it("places the spookie night bucket first on the home page", () => {
+    render(
+      <MemoryRouter initialEntries={[routePaths.home]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    const spookieLink = screen.getByRole("link", { name: "Ніч-жахачка" });
+    const partyLink = screen.getByRole("link", { name: "Оберемо разом" });
+
+    expect(spookieLink.getAttribute("href")).toBe(routePaths.spookieNight);
+    expect(spookieLink.classList.contains("artwork-size--ml")).toBe(true);
+    expect(
+      spookieLink.compareDocumentPosition(partyLink) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("renders the spookie night tickets page", async () => {
+    render(
+      <MemoryRouter initialEntries={[routePaths.spookieNight]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByText("Перший квиток з'явиться в суботу.")
+    ).toBeTruthy();
+  });
+
+  it("renders a spookie movie with its season poster", async () => {
+    render(
+      <MemoryRouter initialEntries={[routePaths.spookieMovie("1")]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Suspiria" })).toBeTruthy();
+    const poster = screen.getByAltText("Постер: Suspiria");
+    expect(poster.getAttribute("src")).not.toBe("https://example.com/imdb.jpg");
+  });
+
   it("redirects an unknown route home", async () => {
     render(
       <MemoryRouter initialEntries={["/missing"]}>
@@ -119,6 +171,18 @@ describe("gesture-back targets", () => {
   it("falls back to /lists for a movie selected from all watchlists", () => {
     expect(resolveGestureBackFallback(routePaths.movie, null)).toBe(
       routePaths.watchlists
+    );
+  });
+
+  it("falls back to the tickets page from a spookie movie", () => {
+    expect(resolveGestureBackFallback(routePaths.spookieMovie("bonus"), null)).toBe(
+      routePaths.spookieNight
+    );
+  });
+
+  it("falls back home from the tickets page", () => {
+    expect(resolveGestureBackFallback(routePaths.spookieNight, null)).toBe(
+      routePaths.home
     );
   });
 });

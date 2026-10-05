@@ -1,0 +1,31 @@
+.spookie-night {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.75rem;
+}
+
+.spookie-night__status,
+.spookie-night__error {
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.spookie-night__tickets {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.spookie-night__item {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}

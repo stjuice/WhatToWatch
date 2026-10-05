@@ -18,6 +18,9 @@ export const resolveGestureBackFallback = (
   if (Boolean(matchPath(routePaths.listPattern, pathname)))
     return routePaths.watchlists;
 
+  if (Boolean(matchPath(routePaths.spookieMoviePattern, pathname)))
+    return routePaths.spookieNight;
+
   return routePaths.home;
 };
 
@@ -27,16 +30,25 @@ export const AppLayout = () => {
   const isMovieScreen = pathname === routePaths.movie;
   const isListScreen = Boolean(matchPath(routePaths.listPattern, pathname));
   const isWatchlistsScreen = pathname === routePaths.watchlists;
+  const isSpookieNightScreen = pathname === routePaths.spookieNight;
+  const isSpookieMovieScreen = Boolean(matchPath(routePaths.spookieMoviePattern, pathname));
   const isStudio = pathname.startsWith(routePaths.studio);
 
   useGestureBack({
-    enabled: isWatchlistsScreen || isListScreen || isMovieScreen,
+    enabled:
+      isWatchlistsScreen ||
+      isListScreen ||
+      isMovieScreen ||
+      isSpookieNightScreen ||
+      isSpookieMovieScreen,
     fallbackTo: resolveGestureBackFallback(pathname, watchlistId),
   });
 
+  const isCompactBrand = isMovieScreen || isSpookieMovieScreen;
+
   return (
     <div className="app">
-      <header className={`app__brand${isMovieScreen ? " app__brand--compact" : ""}`}>
+      <header className={`app__brand${isCompactBrand ? " app__brand--compact" : ""}`}>
         <Link className="app__brand-link" to={routePaths.home} aria-label={text("nav.homeAria")}>
           <img className="app__logo" src={logo} alt="WhatToWatch" draggable={false} />
         </Link>

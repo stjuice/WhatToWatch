@@ -1,0 +1,93 @@
+@use "../styles/variables" as *;
+
+// Perforation line on ticket.svg, as a share of the 648-unit viewBox width.
+$ticket-stub-width: 26.2%;
+$ticket-opened-filter: brightness(0.83);
+
+.spookie-ticket {
+  position: relative;
+  display: block;
+  width: min(100%, 20rem);
+  aspect-ratio: 648 / 242.25;
+  color: $bg;
+  font-family: $font-system;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.spookie-ticket:active {
+  transform: scale(0.97);
+}
+
+.spookie-ticket--past {
+  opacity: 0.8;
+}
+
+.spookie-ticket__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.spookie-ticket--opened .spookie-ticket__art {
+  filter: $ticket-opened-filter;
+}
+
+.spookie-ticket__stub,
+.spookie-ticket__body {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spookie-ticket__stub {
+  left: 0;
+  width: $ticket-stub-width;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.spookie-ticket--bonus .spookie-ticket__stub {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 1.2rem;
+}
+
+.spookie-ticket__body {
+  left: $ticket-stub-width;
+  right: 0;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  text-align: center;
+}
+
+.spookie-ticket__open {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.spookie-ticket__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.spookie-ticket__genres {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.6rem;
+  line-height: 1.4;
+}
