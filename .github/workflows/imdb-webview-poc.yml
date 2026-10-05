@@ -3,7 +3,7 @@ name: Build IMDb WebView POC APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, master, tinder]
+    branches: [main, master, spookie-night, tinder]
     paths:
       - "WhatToWatch/ClientApp/**"
       - ".github/workflows/imdb-webview-poc.yml"
@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "20"
           cache: npm
           cache-dependency-path: WhatToWatch/ClientApp/package-lock.json
 
@@ -41,13 +41,11 @@ jobs:
           java-version: "21"
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: ""
+        uses: android-actions/setup-android@v3
 
       - name: Install Android SDK packages
         run: |
-          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
           sdkmanager --licenses >/dev/null || true
 
       - name: Point Gradle at the SDK
