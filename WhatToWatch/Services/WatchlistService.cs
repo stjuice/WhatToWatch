@@ -69,7 +69,12 @@ public class WatchlistService(
             .GetAllAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return [.. watchlists.Select(MediaCategoryRules.WithMoviesOnly)];
+        return
+        [
+            .. watchlists
+                .Where(watchlist => !HiddenWatchlists.IsHidden(watchlist.Id))
+                .Select(MediaCategoryRules.WithMoviesOnly),
+        ];
     }
 
     public async Task<Watchlist?> UpdateWatchlistAsync(

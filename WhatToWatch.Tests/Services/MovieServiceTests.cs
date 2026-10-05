@@ -1,5 +1,6 @@
 using ImdbWatchlists.Models;
 using Moq;
+using WhatToWatch.Media;
 using WhatToWatch.Models;
 using WhatToWatch.Repositories;
 using WhatToWatch.Services;
@@ -332,6 +333,37 @@ public class MovieServiceTests
         _repository.Verify(
             r => r.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMoviesAsync_OmitsHiddenWatchlist_WhenWatchlistIdOmitted()
+    {
+        _repository
+            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                CreateWatchlist(),
+                CreateWatchlist() with
+                {
+                    Id = HiddenWatchlists.SpookieNightId,
+                    Movies =
+                    [
+                        new Movie
+                        {
+                            Id = "tt-hidden",
+                            Title = "Hidden",
+                            Year = 2020,
+                            Genres = ["Horror"],
+                            MediaCategory = MediaCategory.Movie,
+                        },
+                    ],
+                },
+            ]);
+
+        var movies = await CreateSut().GetMoviesAsync(new MovieFilter());
+
+        Assert.NotNull(movies);
+        Assert.DoesNotContain(movies, movie => movie.Id == "tt-hidden");
     }
 
     [Fact]

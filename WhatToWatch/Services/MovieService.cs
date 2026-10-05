@@ -98,8 +98,10 @@ public class MovieService(
 
         return
             [
-                .. watchlists.SelectMany(watchlist =>MediaCategoryRules.MoviesOnly(watchlist.Movies)
-                    .Select(movie => new MovieReference(watchlist.Id, movie))),
+                .. watchlists
+                    .Where(watchlist => !HiddenWatchlists.IsHidden(watchlist.Id))
+                    .SelectMany(watchlist => MediaCategoryRules.MoviesOnly(watchlist.Movies)
+                        .Select(movie => new MovieReference(watchlist.Id, movie))),
             ];
     }
 

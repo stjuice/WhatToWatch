@@ -2,6 +2,7 @@ using ImdbWatchlists;
 using ImdbWatchlists.Extraction;
 using ImdbWatchlists.Models;
 using Moq;
+using WhatToWatch.Media;
 using WhatToWatch.Repositories;
 using WhatToWatch.Services;
 
@@ -96,6 +97,22 @@ public class WatchlistServiceTests
         _imdb.Verify(
             i => i.GetListAsync(It.IsAny<WatchlistRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task GetWatchlistsAsync_OmitsHiddenWatchlist()
+    {
+        _repository
+            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                CreateWatchlist("ls1", refreshedAt: DateTimeOffset.UtcNow),
+                CreateWatchlist(HiddenWatchlists.SpookieNightId, refreshedAt: DateTimeOffset.UtcNow),
+            ]);
+
+        var result = await CreateSut().GetWatchlistsAsync();
+
+        Assert.Equal(["ls1"], result.Select(watchlist => watchlist.Id));
     }
 
     [Fact]
