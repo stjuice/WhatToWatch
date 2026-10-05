@@ -3,6 +3,16 @@ export const TextKeys = {
 
   Home_Watchlists: "home.watchlists",
   Home_Party: "home.party",
+  Home_SpookieNight: "home.spookieNight",
+
+  Spookie_Open: "spookie.open",
+  Spookie_Bonus: "spookie.bonus",
+  Spookie_TicketNumber: "spookie.ticketNumber",
+  Spookie_OpenTicketAria: "spookie.openTicketAria",
+  Spookie_Loading: "spookie.loading",
+  Spookie_Empty: "spookie.empty",
+  Spookie_LoadFailed: "spookie.loadFailed",
+  Spookie_NotFound: "spookie.notFound",
 
   Party_AllMovies: "party.allMovies",
   Party_WatchlistCarousel: "party.watchlistCarousel",

@@ -5,6 +5,16 @@ export const ukr = {
 
   [TextKeys.Home_Watchlists]: "Всі списки",
   [TextKeys.Home_Party]: "Оберемо разом",
+  [TextKeys.Home_SpookieNight]: "Ніч-жахачка",
+
+  [TextKeys.Spookie_Open]: "Відкрити",
+  [TextKeys.Spookie_Bonus]: "bonus",
+  [TextKeys.Spookie_TicketNumber]: "#{number}",
+  [TextKeys.Spookie_OpenTicketAria]: "Відкрити квиток {label}",
+  [TextKeys.Spookie_Loading]: "Завантаження…",
+  [TextKeys.Spookie_Empty]: "Перший квиток з'явиться в суботу.",
+  [TextKeys.Spookie_LoadFailed]: "Не вдалося завантажити квитки",
+  [TextKeys.Spookie_NotFound]: "Цей квиток ще не доступний",
 
   [TextKeys.Party_AllMovies]: "Всі фільми",
   [TextKeys.Party_WatchlistCarousel]: "Вибір списку фільмів",
