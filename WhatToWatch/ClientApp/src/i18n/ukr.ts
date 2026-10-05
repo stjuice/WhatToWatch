@@ -15,6 +15,7 @@ export const ukr = {
   [TextKeys.Spookie_Empty]: "Перший квиток з'явиться в суботу.",
   [TextKeys.Spookie_LoadFailed]: "Не вдалося завантажити квитки",
   [TextKeys.Spookie_NotFound]: "Цей квиток ще не доступний",
+  [TextKeys.Spookie_WatchHere]: "Лякатись тут",
 
   [TextKeys.Party_AllMovies]: "Всі фільми",
   [TextKeys.Party_WatchlistCarousel]: "Вибір списку фільмів",

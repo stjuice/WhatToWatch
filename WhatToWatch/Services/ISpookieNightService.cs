@@ -12,4 +12,9 @@ public interface ISpookieNightService
         CancellationToken cancellationToken = default);
 }
 
-public sealed record SpookieTicket(string Key, bool IsBonus, bool IsCurrent, Movie Movie);
+public sealed record SpookieTicket(
+    string Key,
+    bool IsBonus,
+    bool IsCurrent,
+    Movie Movie,
+    string? Link = null);

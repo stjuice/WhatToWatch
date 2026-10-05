@@ -4,6 +4,7 @@ import { getSpookieMovie } from "../api/spookieNightApi";
 import spider from "../assets/season/halloween/spider.svg";
 import web from "../assets/season/halloween/web.svg";
 import { text } from "../i18n/text";
+import { useSpookieWatchLink } from "../layout/spookieWatchLink";
 import { ErrorText } from "../primitives/ErrorText";
 import { StatusText } from "../primitives/StatusText";
 import type { Movie } from "../types/movie";
@@ -13,12 +14,15 @@ import "./SpookieMoviePage.scss";
 
 export const SpookieMoviePage = () => {
   const { key } = useParams<{ key: string }>();
+  const { setLink } = useSpookieWatchLink();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!key) {
+      setMovie(null);
+      setLink(null);
       setError(text("spookie.notFound"));
       setLoading(false);
       return;
@@ -27,15 +31,22 @@ export const SpookieMoviePage = () => {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setLink(null);
 
     const load = async () => {
       try {
         const loaded = await getSpookieMovie(key);
-        if (!cancelled)
-          setMovie({ ...loaded, posterUrl: getSpookiePoster(key) ?? loaded.posterUrl });
+        if (!cancelled) {
+          setMovie({
+            ...loaded.movie,
+            posterUrl: getSpookiePoster(key) ?? loaded.movie.posterUrl,
+          });
+          setLink(loaded.link?.trim() || null);
+        }
       } catch {
         if (!cancelled) {
           setMovie(null);
+          setLink(null);
           setError(text("spookie.notFound"));
         }
       } finally {
@@ -47,8 +58,9 @@ export const SpookieMoviePage = () => {
     void load();
     return () => {
       cancelled = true;
+      setLink(null);
     };
-  }, [key]);
+  }, [key, setLink]);
 
   return (
     <div className="spookie-movie">

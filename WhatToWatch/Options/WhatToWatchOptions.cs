@@ -56,4 +56,9 @@ public class SpookieTicketOptions
     public DateOnly UnlockDate { get; set; }
 
     public bool IsBonus { get; set; }
+
+    /// <summary>
+    /// Absolute http(s) page where this ticket's movie can be watched.
+    /// </summary>
+    public string Link { get; set; } = string.Empty;
 }

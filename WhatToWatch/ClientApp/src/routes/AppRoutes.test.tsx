@@ -23,10 +23,13 @@ vi.mock("../state/AppStateContext", () => ({
 vi.mock("../api/spookieNightApi", () => ({
   getSpookieTickets: vi.fn(async () => []),
   getSpookieMovie: vi.fn(async () => ({
-    id: "tt0075005",
-    title: "Suspiria",
-    genres: ["Horror"],
-    posterUrl: "https://example.com/imdb.jpg",
+    movie: {
+      id: "tt0075005",
+      title: "Suspiria",
+      genres: ["Horror"],
+      posterUrl: "https://example.com/imdb.jpg",
+    },
+    link: null,
   })),
 }));
 

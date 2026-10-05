@@ -62,13 +62,19 @@ public sealed class SpookieNightControllerTests
     {
         _service
             .Setup(s => s.GetTicketAsync("bonus", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SpookieTicket("bonus", true, true, CreateMovie("tt5", "Bonus")));
+            .ReturnsAsync(new SpookieTicket(
+                "bonus",
+                true,
+                true,
+                CreateMovie("tt5", "Bonus"),
+                "https://watch.example/bonus"));
 
         var result = await CreateSut().GetMovieAsync("bonus", CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var dto = Assert.IsType<MovieDto>(ok.Value);
-        Assert.Equal("tt5", dto.Id);
+        var dto = Assert.IsType<SpookieMovieDto>(ok.Value);
+        Assert.Equal("tt5", dto.Movie.Id);
+        Assert.Equal("https://watch.example/bonus", dto.Link);
     }
 
     [Theory]

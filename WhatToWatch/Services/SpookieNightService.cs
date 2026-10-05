@@ -47,6 +47,22 @@ public sealed class SpookieNightService(
         return movie is null ? null : ToTicket(ticket, movie, FindCurrent(unlocked));
     }
 
+    private string? WatchLink(SpookieTicketOptions ticket)
+    {
+        var link = ticket.Link?.Trim();
+        if (string.IsNullOrEmpty(link))
+            return null;
+
+        if (Uri.TryCreate(link, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp))
+            return link;
+
+        logger.LogWarning(
+            "Spookie night ticket {Key} has a watch link that is not an absolute http(s) URL.",
+            ticket.Key);
+        return null;
+    }
+
     private async Task<Movie?> FindMovieInListAsync(
         SpookieTicketOptions ticket,
         CancellationToken cancellationToken)
@@ -103,9 +119,9 @@ public sealed class SpookieNightService(
         unlocked.LastOrDefault(ticket =>
             ticket.UnlockDate == unlocked.Max(candidate => candidate.UnlockDate));
 
-    private static SpookieTicket ToTicket(
+    private SpookieTicket ToTicket(
         SpookieTicketOptions ticket,
         Movie movie,
         SpookieTicketOptions? current) =>
-        new(ticket.Key, ticket.IsBonus, ReferenceEquals(ticket, current), movie);
+        new(ticket.Key, ticket.IsBonus, ReferenceEquals(ticket, current), movie, WatchLink(ticket));
 }

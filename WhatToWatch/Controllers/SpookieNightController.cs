@@ -21,7 +21,7 @@ public sealed class SpookieNightController(ISpookieNightService spookieNightServ
     }
 
     [HttpGet("{key}")]
-    public async Task<ActionResult<MovieDto>> GetMovieAsync(
+    public async Task<ActionResult<SpookieMovieDto>> GetMovieAsync(
         string key,
         CancellationToken cancellationToken)
     {
@@ -35,7 +35,11 @@ public sealed class SpookieNightController(ISpookieNightService spookieNightServ
         if (ticket is null)
             return NotFound();
 
-        return Ok(MovieMapper.ToDto(ticket.Movie));
+        return Ok(new SpookieMovieDto
+        {
+            Movie = MovieMapper.ToDto(ticket.Movie),
+            Link = ticket.Link,
+        });
     }
 
     private static SpookieTicketDto ToDto(SpookieTicket ticket) =>

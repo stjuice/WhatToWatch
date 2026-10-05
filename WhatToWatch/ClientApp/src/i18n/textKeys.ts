@@ -13,6 +13,7 @@ export const TextKeys = {
   Spookie_Empty: "spookie.empty",
   Spookie_LoadFailed: "spookie.loadFailed",
   Spookie_NotFound: "spookie.notFound",
+  Spookie_WatchHere: "spookie.watchHere",
 
   Party_AllMovies: "party.allMovies",
   Party_WatchlistCarousel: "party.watchlistCarousel",

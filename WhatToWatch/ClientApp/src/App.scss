@@ -90,6 +90,15 @@ body {
   padding-top: 1.5rem;
 }
 
+.button.spookie-watch-link {
+  font-family: $font-label;
+  font-size: 2rem;
+  line-height: 1;
+  color: $text;
+  border-radius: 2.35rem;
+  font-weight: 1;
+}
+
 .app__studio-link {
   color: $text-muted;
   text-decoration: none;

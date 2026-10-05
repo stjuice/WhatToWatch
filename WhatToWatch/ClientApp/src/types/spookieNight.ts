@@ -6,3 +6,8 @@ export interface SpookieTicket {
   isCurrent: boolean;
   movie: Movie;
 }
+
+export interface SpookieMovie {
+  movie: Movie;
+  link: string | null;
+}

@@ -7,6 +7,7 @@ import { isAndroidApk } from "../platform/isAndroidApk";
 import { AppRoutes } from "../routes/AppRoutes";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
+import { SpookieWatchFooter, SpookieWatchLinkProvider } from "./spookieWatchLink";
 
 export const resolveGestureBackFallback = (
   pathname: string,
@@ -47,28 +48,32 @@ export const AppLayout = () => {
   const isCompactBrand = isMovieScreen || isSpookieMovieScreen;
 
   return (
-    <div className="app">
-      <header className={`app__brand${isCompactBrand ? " app__brand--compact" : ""}`}>
-        <Link className="app__brand-link" to={routePaths.home} aria-label={text("nav.homeAria")}>
-          <img className="app__logo" src={logo} alt="WhatToWatch" draggable={false} />
-        </Link>
-      </header>
-
-      <main className="app__main">
-        <AppRoutes />
-      </main>
-
-      {isMovieScreen ? (
-        <footer className="app__footer app__footer--reroll">
-          <RerollButton />
-        </footer>
-      ) : !isStudio && isAndroidApk() ? (
-        <footer className="app__footer">
-          <Link className="app__studio-link" to={routePaths.studio}>
-            Studio
+    <SpookieWatchLinkProvider>
+      <div className="app">
+        <header className={`app__brand${isCompactBrand ? " app__brand--compact" : ""}`}>
+          <Link className="app__brand-link" to={routePaths.home} aria-label={text("nav.homeAria")}>
+            <img className="app__logo" src={logo} alt="WhatToWatch" draggable={false} />
           </Link>
-        </footer>
-      ) : null}
-    </div>
+        </header>
+
+        <main className="app__main">
+          <AppRoutes />
+        </main>
+
+        {isMovieScreen ? (
+          <footer className="app__footer app__footer--reroll">
+            <RerollButton />
+          </footer>
+        ) : isSpookieMovieScreen ? (
+          <SpookieWatchFooter />
+        ) : !isStudio && isAndroidApk() ? (
+          <footer className="app__footer">
+            <Link className="app__studio-link" to={routePaths.studio}>
+              Studio
+            </Link>
+          </footer>
+        ) : null}
+      </div>
+    </SpookieWatchLinkProvider>
   );
 };
