@@ -42,6 +42,7 @@ body {
   margin-bottom: 1.25rem;
   flex-shrink: 0;
   padding: 2em;
+  z-index: 3;
 }
 
 .app__brand--compact {
@@ -79,6 +80,7 @@ body {
   flex: 1;
 }
 
+.app__actions,
 .app__footer {
   width: min(100%, $content-max-width);
   display: flex;
@@ -86,17 +88,22 @@ body {
   flex-shrink: 0;
 }
 
-.app__footer--reroll {
+.app__actions {
   padding-top: 1.5rem;
+}
+
+.app__footer {
+  margin-top: auto;
 }
 
 .button.spookie-watch-link {
   font-family: $font-label;
-  font-size: 2rem;
+  font-size: 1.2rem;
   line-height: 1;
   color: $text;
   border-radius: 2.35rem;
   font-weight: 1;
+  padding: 0.7rem 2.7rem;
 }
 
 .app__studio-link {

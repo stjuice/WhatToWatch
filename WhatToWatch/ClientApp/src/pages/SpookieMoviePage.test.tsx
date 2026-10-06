@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSpookieMovie } from "../api/spookieNightApi";
 import { useAppState } from "../state/AppStateContext";
 import type { AppState } from "../state/AppStateContext";
-import { SpookieWatchFooter, SpookieWatchLinkProvider } from "../layout/spookieWatchLink";
+import { SpookieWatchActions, SpookieWatchLinkProvider } from "../layout/spookieWatchLink";
 import { routePaths } from "../routes/routePaths";
 import type { SpookieMovie } from "../types/spookieNight";
 import { SpookieMoviePage } from "./SpookieMoviePage";
@@ -37,7 +37,7 @@ const renderPage = () =>
         <Routes>
           <Route path={routePaths.spookieMoviePattern} element={<SpookieMoviePage />} />
         </Routes>
-        <SpookieWatchFooter />
+        <SpookieWatchActions />
       </MemoryRouter>
     </SpookieWatchLinkProvider>
   );
@@ -67,7 +67,7 @@ describe("SpookieMoviePage", () => {
     expect(link.classList.contains("spookie-watch-link")).toBe(true);
     expect(link.classList.contains("button--primary")).toBe(true);
     expect(link.getAttribute("target")).toBe("_blank");
-    expect(link.parentElement?.classList.contains("app__footer--reroll")).toBe(true);
+    expect(link.parentElement?.classList.contains("app__actions")).toBe(true);
   });
 
   it("hides the watch link when the ticket has none", async () => {

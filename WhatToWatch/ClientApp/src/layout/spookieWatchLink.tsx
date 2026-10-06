@@ -26,13 +26,13 @@ export const SpookieWatchLinkProvider = ({ children }: { children: ReactNode }) 
 
 export const useSpookieWatchLink = (): SpookieWatchLinkState => useContext(SpookieWatchLinkContext);
 
-export const SpookieWatchFooter = () => {
+export const SpookieWatchActions = () => {
   const { link } = useSpookieWatchLink();
   if (!link)
     return null;
 
   return (
-    <footer className="app__footer app__footer--reroll">
+    <div className="app__actions">
       <Button
         variant="primary"
         className="spookie-watch-link"
@@ -42,6 +42,6 @@ export const SpookieWatchFooter = () => {
       >
         {text("spookie.watchHere")}
       </Button>
-    </footer>
+    </div>
   );
 };

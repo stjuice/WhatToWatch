@@ -24,6 +24,7 @@
   pointer-events: none;
   user-select: none;
   z-index: 2;
+  opacity: 75%;
 }
 
 .spookie-movie__web {
@@ -33,7 +34,8 @@
 
 .spookie-movie__spider {
   right: 0;
-  width: min(36%, 10rem);
+  top: -0.75rem;
+  width: min(29%, 10rem);
 }
 
 .spookie-movie__status,

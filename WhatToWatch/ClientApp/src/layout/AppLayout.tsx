@@ -7,7 +7,7 @@ import { isAndroidApk } from "../platform/isAndroidApk";
 import { AppRoutes } from "../routes/AppRoutes";
 import { routePaths } from "../routes/routePaths";
 import { useAppState } from "../state/AppStateContext";
-import { SpookieWatchFooter, SpookieWatchLinkProvider } from "./spookieWatchLink";
+import { SpookieWatchActions, SpookieWatchLinkProvider } from "./spookieWatchLink";
 
 export const resolveGestureBackFallback = (
   pathname: string,
@@ -61,12 +61,14 @@ export const AppLayout = () => {
         </main>
 
         {isMovieScreen ? (
-          <footer className="app__footer app__footer--reroll">
+          <div className="app__actions">
             <RerollButton />
-          </footer>
+          </div>
         ) : isSpookieMovieScreen ? (
-          <SpookieWatchFooter />
-        ) : !isStudio && isAndroidApk() ? (
+          <SpookieWatchActions />
+        ) : null}
+
+        {!isStudio && isAndroidApk() ? (
           <footer className="app__footer">
             <Link className="app__studio-link" to={routePaths.studio}>
               Studio
